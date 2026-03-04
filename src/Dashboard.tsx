@@ -358,7 +358,7 @@ export default function Dashboard() {
       return;
     }
 
-    const j = await res.json();
+    
     alert("PDF generado correctamente");
   }}
 >

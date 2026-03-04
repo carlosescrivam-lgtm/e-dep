@@ -30,7 +30,6 @@ export default function PublicPage() {
   const [loading, setLoading] = useState(true);
 const [photoFile, setPhotoFile] = useState<File | null>(null);
 const [photoPreview, setPhotoPreview] = useState<string>("");
-const [photoPath, setPhotoPath] = useState<string | null>(null);
 const fileInputRef = useRef<HTMLInputElement | null>(null);
   async function loadPage() {
     if (!slug || !token) {
