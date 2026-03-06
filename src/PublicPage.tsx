@@ -10,6 +10,7 @@ type Page = {
   theme: string;
   status: string;
   closes_at: string;
+  funeral_home_name?: string | null;
 };
 
 type Condolence = {
@@ -24,7 +25,6 @@ export default function PublicPage() {
   const { slug } = useParams<{ slug: string }>();
   const [searchParams] = useSearchParams();
   const token = searchParams.get("token");
-  const [animatedIds, setAnimatedIds] = useState<Record<string, boolean>>({});
   const [page, setPage] = useState<Page | null>(null);
   const [messages, setMessages] = useState<Condolence[]>([]);
   const [author, setAuthor] = useState("");
@@ -56,12 +56,6 @@ setPage(json.page);
 const next = json.messages ?? [];
 setMessages(next);
 
-// marcar como vistos para no animar todo cada vez
-setAnimatedIds((prev) => {
-  const copy = { ...prev };
-  for (const m of next) copy[m.id] = true;
-  return copy;
-});
 
 setLoading(false);
   }
@@ -133,22 +127,16 @@ setLoading(false);
   }
 
   // limpiar formulario
-  setAuthor("");
+    setAuthor("");
   setMessage("");
   setPhotoFile(null);
   setPhotoPreview("");
   if (fileInputRef.current) fileInputRef.current.value = "";
-setShowForm(false);
-setAnimatedIds((prev) => ({ ...prev })); // mantiene
+  setShowForm(false);
+
   await loadPage();
-  // permitir animación del nuevo mensaje (lo marcamos como no visto por 1 render)
-setAnimatedIds((prev) => {
-  const copy = { ...prev };
-  // quitamos el id más nuevo para que anime (si existe)
-  // lo más nuevo suele ser el primero si ordenas DESC, o el último si ASC
-  return copy;
-});
 }
+
 
   useEffect(() => {
     loadPage();
@@ -222,7 +210,6 @@ return (
     Gestionado por <strong>{page.funeral_home_name}</strong>
   </div>
 )}
-
 
       {/* Tarjeta del difunto (más estrecha) */}
 
@@ -534,12 +521,12 @@ onChange={async (e) => {
   <p style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>{m.message}</p>
 
   {m.photo_url && (
-    <img
-      src={m.photo_url}
-      alt="foto"
-      style={{ marginTop: 10, maxWidth: "100%", borderRadius: 8 }}
-    />
-  )}
+  <img
+    src={m.photo_url}
+    alt="foto"
+    style={{ marginTop: 10, maxWidth: "100%", borderRadius: 8 }}
+  />
+)}
 </div>
 </div>
             ))
@@ -547,6 +534,6 @@ onChange={async (e) => {
 
         </div>
       </div>
-      </div>
-    );
+    </div>
+  );
 }
