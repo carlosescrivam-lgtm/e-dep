@@ -487,27 +487,94 @@ async function handleLogoUpload(file: File) {
 }
 
   async function closePage(pageId: string, pageName: string) {
+  const ok = window.confirm(
+    `¿Seguro que quieres cerrar la página de ${pageName} y generar el PDF ahora?`
+  );
+  if (!ok) return;
+
+  try {
+    const { error } = await supabase
+      .from("deceased_pages")
+      .update({ status: "closed" })
+      .eq("id", pageId);
+
+    if (error) throw error;
+
+    const pdfRes = await fetch("/.netlify/functions/generatePdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+  pageId,
+}),
+    });
+
+    const pdfJson = await pdfRes.json().catch(() => ({}));
+
+    if (!pdfRes.ok) {
+      throw new Error(
+        pdfJson?.error || "La página se cerró, pero no se pudo generar el PDF."
+      );
+    }
+
+    await loadData();
+    alert("Página cerrada y PDF generado correctamente.");
+  } catch (err: any) {
+    console.error(err);
+    alert(err?.message || "No se pudo cerrar la página y generar el PDF.");
+  }
+}
+
+async function generatePdfNow(pageId: string, pageName: string) {
+  try {
     const ok = window.confirm(
-      `¿Seguro que quieres cerrar la página de ${pageName}?`
+      `¿Quieres generar ahora el PDF de ${pageName}?`
     );
     if (!ok) return;
 
-    try {
-      const { error } = await supabase
-        .from("deceased_pages")
-        .update({ status: "closed" })
-        .eq("id", pageId);
+    const generateRes = await fetch("/.netlify/functions/generatePdf", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        pageId,
+      }),
+    });
 
-      if (error) throw error;
+    const generateData = await generateRes.json().catch(() => ({}));
 
-      await loadData();
-      alert("Página cerrada.");
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "No se pudo cerrar la página.");
+    if (!generateRes.ok) {
+      throw new Error(generateData?.error || "No se pudo generar el PDF.");
     }
-  }
 
+    const linkRes = await fetch(
+      `/.netlify/functions/getPdfLink?pageId=${encodeURIComponent(pageId)}`
+    );
+
+    const linkData = await linkRes.json().catch(() => ({}));
+
+    if (!linkRes.ok) {
+      throw new Error(linkData?.error || "El PDF se generó, pero no se pudo obtener el enlace.");
+    }
+
+    const pdfUrl =
+      linkData?.pdfUrl ||
+      linkData?.url ||
+      linkData?.link ||
+      linkData?.signedUrl;
+
+    if (!pdfUrl) {
+      throw new Error("El PDF se generó, pero no se encontró la URL del archivo.");
+    }
+
+    window.open(pdfUrl, "_blank");
+  } catch (err: any) {
+    console.error(err);
+    alert(err?.message || "No se pudo generar o abrir el PDF.");
+  }
+}
   async function reopenPage(pageId: string, pageName: string) {
     const ok = window.confirm(
       `¿Quieres reabrir la página de ${pageName}?`
@@ -1936,6 +2003,15 @@ if (currentRole === "admin" && !isAdminSupportView) {
                           >
                             QR
                           </button>
+
+                         {item.status === "closed" ? (
+  <button
+    onClick={() => generatePdfNow(item.id, item.full_name)}
+    style={ghostButtonStyle}
+  >
+    Generar PDF
+  </button>
+) : null}
 
                           {isOpen ? (
                             <button
