@@ -67,6 +67,8 @@ export default function Dashboard() {
   const [website, setWebsite] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [savingFuneralHome, setSavingFuneralHome] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+const [logoFileError, setLogoFileError] = useState("");
   const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
 
@@ -446,6 +448,43 @@ async function saveFuneralHomeData() {
   }
 }
  
+async function handleLogoUpload(file: File) {
+  try {
+    setUploadingLogo(true);
+    setLogoFileError("");
+
+    if (!currentFuneralHomeId) {
+      throw new Error("No se encontró la funeraria actual.");
+    }
+
+    const fileExt = file.name.split(".").pop()?.toLowerCase() || "png";
+    const fileName = `${currentFuneralHomeId}-${Date.now()}.${fileExt}`;
+    const filePath = fileName;
+
+    const { error: uploadError } = await supabase.storage
+      .from("funeral-logos")
+      .upload(filePath, file, {
+        upsert: true,
+      });
+
+    if (uploadError) throw uploadError;
+
+    const { data } = supabase.storage
+      .from("funeral-logos")
+      .getPublicUrl(filePath);
+
+    if (!data?.publicUrl) {
+      throw new Error("No se pudo obtener la URL pública del logo.");
+    }
+
+    setLogoUrl(data.publicUrl);
+  } catch (err: any) {
+    console.error(err);
+    setLogoFileError(err?.message || "No se pudo subir el logo.");
+  } finally {
+    setUploadingLogo(false);
+  }
+}
 
   async function closePage(pageId: string, pageName: string) {
     const ok = window.confirm(
@@ -1440,13 +1479,74 @@ if (currentRole === "admin" && !isAdminSupportView) {
     style={inputStyle}
   />
 
-  <FieldLabel>Logo URL</FieldLabel>
-  <input
-    value={logoUrl}
-    onChange={(e) => setLogoUrl(e.target.value)}
-    placeholder="https://..."
-    style={inputStyle}
-  />
+  <FieldLabel>Logo de la funeraria</FieldLabel>
+
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleLogoUpload(file);
+    }
+  }}
+  style={{
+    ...inputStyle,
+    padding: 12,
+    background: "white",
+  }}
+/>
+
+{uploadingLogo ? (
+  <div
+    style={{
+      marginTop: 8,
+      fontSize: 13,
+      color: "#475569",
+    }}
+  >
+    Subiendo logo...
+  </div>
+) : null}
+
+{logoFileError ? (
+  <div
+    style={{
+      marginTop: 8,
+      fontSize: 13,
+      color: "#b91c1c",
+      fontWeight: 600,
+    }}
+  >
+    {logoFileError}
+  </div>
+) : null}
+
+{logoUrl ? (
+  <div
+    style={{
+      marginTop: 12,
+      background: "#fff",
+      border: "1px solid #e2e8f0",
+      borderRadius: 16,
+      padding: 12,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 120,
+    }}
+  >
+    <img
+      src={logoUrl}
+      alt="Logo funeraria"
+      style={{
+        maxWidth: "100%",
+        maxHeight: 90,
+        objectFit: "contain",
+      }}
+    />
+  </div>
+) : null}
 
   <button
     type="button"
