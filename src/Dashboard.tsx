@@ -67,6 +67,8 @@ export default function Dashboard() {
   const [website, setWebsite] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [savingFuneralHome, setSavingFuneralHome] = useState(false);
+  const [uploadingLogo, setUploadingLogo] = useState(false);
+const [logoFileError, setLogoFileError] = useState("");
   const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
 
@@ -445,6 +447,7 @@ async function saveFuneralHomeData() {
     setSavingFuneralHome(false);
   }
 }
+ 
 
   async function closePage(pageId: string, pageName: string) {
     const ok = window.confirm(
@@ -707,7 +710,9 @@ if (currentRole === "admin" && !isAdminSupportView) {
             padding: 28,
             borderRadius: 30,
             background:
-              "linear-gradient(135deg, #0f172a 0%, #1e293b 45%, #334155 100%)",
+  currentRole === "admin"
+    ? "linear-gradient(135deg, #020524 0%, #dbd0f0 100%)"
+    : "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
             color: "#fff",
             boxShadow: "0 30px 80px rgba(15,23,42,0.22)",
             position: "relative",
@@ -1131,35 +1136,48 @@ if (currentRole === "admin" && !isAdminSupportView) {
             }}
           />
 
-          <div style={{ position: "relative", zIndex: 1 }}>
-
-         {isAdminSupportView ? (
+          {logoUrl ? (
   <div
     style={{
       position: "absolute",
-      top: 24,
-      right: 100,
-      zIndex: 2,
+      right: 260,
+      top: 58,
+      width: 150,
+      height: 150,
+      background: "#ffffff",
+      borderRadius: 24,
+      boxShadow: "0 18px 40px rgba(15,23,42,0.22)",
+      border: "1px solid rgba(255,255,255,0.85)",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      overflow: "hidden",
+      zIndex: 3,
     }}
   >
-    <button
-      onClick={closeFuneralHomeSupportView}
+    <img
+      src={logoUrl}
+      alt={currentFuneralHomeName || "Logo funeraria"}
       style={{
-        border: "1px solid rgba(255,255,255,0.3)",
-        background: "rgba(255,255,255,0.15)",
-        color: "#fff",
-        borderRadius: 10,
-        padding: "8px 14px",
-        fontWeight: 600,
-        fontSize: 13,
-        cursor: "pointer",
-        backdropFilter: "blur(4px)",
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+        padding: 16,
+        boxSizing: "border-box",
       }}
-    >
-      Volver al panel admin
-    </button>
+    />
   </div>
-) : null}   
+) : null}
+
+          <div
+  style={{
+    position: "relative",
+    zIndex: 2,
+    paddingRight: logoUrl ? 220 : 0,
+  }}
+>
+
+   
 
 <div
   style={{
@@ -1184,6 +1202,31 @@ if (currentRole === "admin" && !isAdminSupportView) {
   >
     Salir
   </button>
+{isAdminSupportView && (
+  <button
+    onClick={() => {
+      setAdminViewingFuneralHomeId(null);
+      setAdminViewingFuneralHomeName("");
+    }}
+    style={{
+      marginTop: 8,
+      border: "1px solid rgba(255,255,255,0.3)",
+      background: "rgba(255,255,255,0.15)",
+      color: "#fff",
+      borderRadius: 10,
+      padding: "8px 14px",
+      fontWeight: 600,
+      fontSize: 13,
+      cursor: "pointer",
+      backdropFilter: "blur(4px)",
+      display: "block",
+      width: "100%",
+    }}
+  >
+    Volver al panel admin
+  </button>
+)}
+  
 </div>
 
             <div
@@ -1200,7 +1243,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
                 marginBottom: 16,
               }}
             >
-              E-Dep · Panel funeraria
+              E-Dep.org · Libro de condolencias digital
             </div>
 
             <h1
@@ -1212,7 +1255,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
                 letterSpacing: "-0.03em",
               }}
             >
-              Dashboard profesional
+              Cuadro de mandos 
             </h1>
 
 {isAdminSupportView ? (
@@ -1248,11 +1291,11 @@ if (currentRole === "admin" && !isAdminSupportView) {
     background:
       isAdminSupportView
         ? "rgba(59,130,246,0.18)"
-        : "rgba(16,185,129,0.18)",
+        : "rgba(33, 155, 230, 0.18)",
     border:
       isAdminSupportView
         ? "1px solid rgba(96,165,250,0.35)"
-        : "1px solid rgba(52,211,153,0.35)",
+        : "1px solid rgba(255, 255, 255, 0.63)",
     color: "#fff",
     fontSize: 13,
     fontWeight: 700,
@@ -1261,7 +1304,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
   {isAdminSupportView
     ? `Modo soporte · ${adminViewingFuneralHomeName || "funeraria"}`
     : currentFuneralHomeName
-    ? `Panel de funeraria · ${currentFuneralHomeName}`
+    ? `Panel Empresa · ${currentFuneralHomeName}`
     : "Panel de funeraria · viendo solo tu cuenta"}
 </div>
 
@@ -1269,14 +1312,13 @@ if (currentRole === "admin" && !isAdminSupportView) {
               style={{
                 marginTop: 12,
                 marginBottom: 0,
-                maxWidth: 820,
+                maxWidth: logoUrl ? 620 : 820,
                 color: "rgba(255,255,255,0.82)",
                 fontSize: 16,
                 lineHeight: 1.6,
               }}
             >
-              Gestiona páginas de condolencias con una imagen moderna, elegante
-              y comercial. Crea nuevas páginas, comparte enlaces, genera QR y
+              Gestiona páginas de condolencias. Crea nuevas páginas, comparte enlaces, genera QR y
               controla el estado de cada recuerdo.
             </p>
           </div>
@@ -1311,6 +1353,8 @@ if (currentRole === "admin" && !isAdminSupportView) {
             subtitle="Condolencias recibidas"
           />
         </div>
+
+
 
         <div
           style={{
@@ -1454,79 +1498,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
   />
 </div>
 
-            <h2
-              style={{
-                marginTop: 0,
-                marginBottom: 8,
-                fontSize: 22,
-                fontWeight: 800,
-                letterSpacing: "-0.02em",
-              }}
-            >
-              Crear nueva página
-            </h2>
-
-            <p
-              style={{
-                marginTop: 0,
-                marginBottom: 20,
-                color: "#475569",
-                fontSize: 14,
-                lineHeight: 1.6,
-              }}
-            >
-              Rellena estos datos para generar una nueva página de condolencias.
-            </p>
-
-            <form onSubmit={handleCreate}>
-              <FieldLabel>Nombre del difunto</FieldLabel>
-              <input
-                value={fullName}
-                onChange={(e) => setFullName(e.target.value)}
-                placeholder="Ejemplo: Ricardo Borriquero"
-                style={inputStyle}
-              />
-
-              <FieldLabel>Texto de la familia</FieldLabel>
-              <textarea
-                value={customText}
-                onChange={(e) => setCustomText(e.target.value)}
-                placeholder="Escribe una dedicatoria o mensaje inicial"
-                rows={5}
-                style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
-              />
-
-              <FieldLabel>Email de la familia</FieldLabel>
-              <input
-                value={familyEmail}
-                onChange={(e) => setFamilyEmail(e.target.value)}
-                placeholder="familia@ejemplo.com"
-                type="email"
-                style={inputStyle}
-              />
-
-              <button
-                type="submit"
-                disabled={saving}
-                style={{
-                  width: "100%",
-                  marginTop: 16,
-                  border: "none",
-                  borderRadius: 16,
-                  padding: "15px 18px",
-                  background:
-                    "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
-                  color: "white",
-                  fontWeight: 700,
-                  fontSize: 15,
-                  cursor: saving ? "not-allowed" : "pointer",
-                  boxShadow: "0 14px 30px rgba(15,23,42,0.18)",
-                  opacity: saving ? 0.7 : 1,
-                }}
-              >
-                {saving ? "Creando..." : "Crear página"}
-              </button>
-            </form>
+            
           </div>
 
           <div>
@@ -1541,7 +1513,109 @@ if (currentRole === "admin" && !isAdminSupportView) {
                 marginBottom: 18,
               }}
             >
-              <div
+
+{/* Crear nueva página */}
+
+<div
+  style={{
+    background: "rgba(255,255,255,0.84)",
+    backdropFilter: "blur(14px)",
+    border: "1px solid rgba(255,255,255,0.75)",
+    borderRadius: 24,
+    boxShadow: "0 18px 50px rgba(15,23,42,0.08)",
+    padding: 18,
+    marginBottom: 18,
+  }}
+>
+  <h2
+    style={{
+      marginTop: 0,
+      marginBottom: 8,
+      fontSize: 22,
+      fontWeight: 800,
+      letterSpacing: "-0.02em",
+    }}
+  >
+    Crear nueva página
+  </h2>
+
+  <p
+    style={{
+      marginTop: 0,
+      marginBottom: 20,
+      color: "#475569",
+      fontSize: 14,
+      lineHeight: 1.6,
+    }}
+  >
+    Rellena estos datos para generar una nueva página de condolencias.
+  </p>
+
+  <form onSubmit={handleCreate}>
+    <FieldLabel>Nombre del difunto</FieldLabel>
+    <input
+      value={fullName}
+      onChange={(e) => setFullName(e.target.value)}
+      placeholder="Ejemplo: Antonio García"
+      style={inputStyle}
+    />
+
+    <FieldLabel>Texto de la cabecera</FieldLabel>
+    <textarea
+      value={customText}
+      onChange={(e) => setCustomText(e.target.value)}
+      placeholder="Escribe una dedicatoria o mensaje inicial"
+      rows={5}
+      style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
+    />
+
+    <FieldLabel>Email de la familia</FieldLabel>
+    <input
+      value={familyEmail}
+      onChange={(e) => setFamilyEmail(e.target.value)}
+      placeholder="familia@ejemplo.com"
+      type="email"
+      style={inputStyle}
+    />
+
+    <button
+      type="submit"
+      disabled={saving}
+      style={{
+        width: "100%",
+        marginTop: 16,
+        border: "none",
+        borderRadius: 16,
+        padding: "15px 18px",
+        background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+        color: "white",
+        fontWeight: 700,
+        fontSize: 15,
+        cursor: saving ? "not-allowed" : "pointer",
+        boxShadow: "0 14px 30px rgba(15,23,42,0.18)",
+        opacity: saving ? 0.7 : 1,
+      }}
+    >
+      {saving ? "Creando..." : "Crear página"}
+    </button>
+  </form>
+
+  
+</div>
+
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr auto auto auto",
+    gap: 12,
+    alignItems: "center",
+  }}
+></div>
+              
+             
+            </div>
+
+ <div
                 style={{
                   display: "grid",
                   gridTemplateColumns: "1fr auto auto auto",
@@ -1549,6 +1623,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
                   alignItems: "center",
                 }}
               >
+              
                 <input
                   value={search}
                   onChange={(e) => setSearch(e.target.value)}
@@ -1576,8 +1651,11 @@ if (currentRole === "admin" && !isAdminSupportView) {
                 >
                   Cerradas
                 </button>
+
+
               </div>
-            </div>
+
+<div style={{ height: 20 }} />
 
             {loading ? (
               <div style={panelStyle}>Cargando dashboard...</div>
@@ -1695,6 +1773,27 @@ if (currentRole === "admin" && !isAdminSupportView) {
                             value={item.theme || "default"}
                           />
                         </div>
+
+<div
+  style={{
+    marginBottom: 16,
+    padding: "12px 14px",
+    borderRadius: 16,
+    background:
+      item.status === "closed"
+        ? "rgba(239,68,68,0.08)"
+        : "rgba(59,130,246,0.08)",
+    border:
+      item.status === "closed"
+        ? "1px solid rgba(239,68,68,0.18)"
+        : "1px solid rgba(59,130,246,0.18)",
+    color: "#0f172a",
+    fontSize: 14,
+    fontWeight: 700,
+  }}
+>
+ ⏳ {getRemainingTimeLabel(item.closes_at, item.status)}
+</div>
 
                         <div
                           style={{
@@ -1818,6 +1917,34 @@ function formatDate(value: string | null) {
   }
 }
 
+function getRemainingTimeLabel(
+  closesAt: string | null,
+  status: string | null
+) {
+  if (status === "closed") {
+    return "Página cerrada";
+  }
+
+  if (!closesAt) return "Sin fecha de cierre";
+
+  const now = new Date();
+  const closeDate = new Date(closesAt);
+  const diffMs = closeDate.getTime() - now.getTime();
+
+  if (Number.isNaN(closeDate.getTime())) return "Sin fecha de cierre";
+
+  if (diffMs <= 0) {
+    return "Página vencida";
+  }
+
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays <= 1) return "Cierra hoy";
+  if (diffDays === 2) return "Cierra en 1 día";
+
+  return `Cierra en ${diffDays - 1} días`;
+}
+
 function StatCard({
   title,
   value,
@@ -1836,6 +1963,7 @@ function StatCard({
         borderRadius: 22,
         padding: 18,
         boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
+    
       }}
     >
       <div
