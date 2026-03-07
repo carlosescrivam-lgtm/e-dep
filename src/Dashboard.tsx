@@ -67,8 +67,6 @@ export default function Dashboard() {
   const [website, setWebsite] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [savingFuneralHome, setSavingFuneralHome] = useState(false);
-  const [uploadingLogo, setUploadingLogo] = useState(false);
-const [logoFileError, setLogoFileError] = useState("");
   const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
 
@@ -534,24 +532,7 @@ async function saveFuneralHomeData() {
   }
 }
 
-async function closeFuneralHomeSupportView() {
-  try {
-    setLoading(true);
 
-    setAdminViewingFuneralHomeId(null);
-    setAdminViewingFuneralHomeName("");
-
-    await loadCurrentUserProfile();
-    await loadFuneralHomeData();
-    await loadData();
-    await loadAdminData();
-  } catch (err: any) {
-    console.error(err);
-    alert(err?.message || "No se pudo volver al panel admin.");
-  } finally {
-    setLoading(false);
-  }
-}
 
 async function handleLogout() {
   await supabase.auth.signOut();
