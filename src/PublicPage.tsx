@@ -166,7 +166,7 @@ setLoading(false);
 
 const isPhotoTheme = page.theme === "photo";
 const isMinimalTheme = page.theme === "minimal";
-const isClassicTheme = !page.theme || page.theme === "classic" || page.theme === "default";
+
 
 return (
  <div
