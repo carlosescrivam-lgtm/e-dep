@@ -11,6 +11,7 @@ type Page = {
   status: string;
   closes_at: string;
   funeral_home_name?: string | null;
+  funeral_home_logo_url?: string | null;
   photo_url?: string | null;
 };
 
@@ -197,20 +198,35 @@ return (
     src={logoEdep}
     alt="E-Dep"
     style={{
-      width: 130,
+      width: 88,
       maxWidth: "55vw",
-      opacity: 0.9,
+      opacity: 0.72,
       display: "inline-block",
     }}
-  />
+    />
+    {page.funeral_home_logo_url && (
+  <div style={{ textAlign: "center", marginBottom: 8 }}>
+    <img
+      src={page.funeral_home_logo_url}
+      alt={page.funeral_home_name || "Funeraria"}
+      style={{
+        maxWidth: 90,
+        maxHeight: 42,
+        objectFit: "contain",
+        opacity: 0.9,
+        display: "inline-block",
+      }}
+    />
+  </div>
+)}
 </div>
 
 {page.funeral_home_name && (
   <div
     style={{
       textAlign: "center",
-      fontSize: 12,
-      color: "var(--muted)",
+      fontSize: 11,
+      color: "#7a7a7a",
       marginBottom: 14,
     }}
   >

@@ -54,6 +54,7 @@ export const handler: Handler = async (event) => {
           created_at,
           funeral_home_id,
           funeral_homes ( name )
+          is_searchable
         `
       )
       .eq("funeral_home_id", funeralHomeId)

@@ -1,6 +1,7 @@
 import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "./lib/supabaseClient";
 import logoEdep from "./assets/logo-edep.png";
+import imageCompression from "browser-image-compression";
 type DbPage = {
   id: string;
   full_name: string | null;
@@ -12,6 +13,7 @@ type DbPage = {
   access_token: string | null;
   created_at: string | null;
   funeral_home_id?: string | null;
+  is_searchable?: boolean | null;
   funeral_homes?: { name?: string | null } | { name?: string | null }[] | null;
 };
 
@@ -34,6 +36,7 @@ type PageCard = {
   created_at: string | null;
   funeral_home_name: string;
   condolences_count: number;
+  is_searchable: boolean;
 };
 
 export default function Dashboard() {
@@ -50,6 +53,7 @@ export default function Dashboard() {
   const [adminViewingFuneralHomeId, setAdminViewingFuneralHomeId] = useState<string | null>(null);
   const [adminViewingFuneralHomeName, setAdminViewingFuneralHomeName] = useState("");
   const [error, setError] = useState("");
+  const [isSearchable, setIsSearchable] = useState(false);
   const [currentRole, setCurrentRole] = useState<"admin" | "funeral_home" | "">("");
   const [currentFuneralHomeId, setCurrentFuneralHomeId] = useState<string | null>(null);
   const [currentFuneralHomeName, setCurrentFuneralHomeName] = useState("");
@@ -80,8 +84,10 @@ const [moderationPageId, setModerationPageId] = useState<string | null>(null);
 const [pageMessages, setPageMessages] = useState<Record<string, any[]>>({});
 const [loadingMessagesForPage, setLoadingMessagesForPage] = useState<string | null>(null);
 const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
-  const siteBase =
+const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
+
+
 
   useEffect(() => {
   async function init() {
@@ -222,6 +228,7 @@ let pagesQuery = supabase
     access_token,
     created_at,
     funeral_home_id,
+    is_searchable,
     funeral_homes ( name )
   `)
   .order("created_at", { ascending: false });
@@ -260,18 +267,19 @@ if (pagesError) throw pagesError;
           : page.funeral_homes;
 
         return {
-          id: String(page.id),
-          full_name: page.full_name || "Sin nombre",
-          custom_text: page.custom_text || "",
-          theme: page.theme || "default",
-          status: page.status || "open",
-          closes_at: page.closes_at || null,
-          slug: page.slug || "",
-          access_token: page.access_token || "",
-          created_at: page.created_at || null,
-          funeral_home_name: funeralHomeSource?.name || "",
-          condolences_count: countByPageId[String(page.id)] || 0,
-        };
+  id: String(page.id),
+  full_name: page.full_name || "Sin nombre",
+  custom_text: page.custom_text || "",
+  theme: page.theme || "default",
+  status: page.status || "open",
+  closes_at: page.closes_at || null,
+  slug: page.slug || "",
+  access_token: page.access_token || "",
+  created_at: page.created_at || null,
+  funeral_home_name: funeralHomeSource?.name || "",
+  condolences_count: countByPageId[String(page.id)] || 0,
+  is_searchable: !!page.is_searchable,
+};
       });
 
 
@@ -430,6 +438,7 @@ async function toggleFuneralHomeSubscription(
       family_email: familyEmail.trim() || null,
       funeral_home_id: currentFuneralHomeId,
       photo_url: photoUrl,
+      is_searchable: isSearchable,
     };
 
     const { error } = await supabase.from("deceased_pages").insert(payload);
@@ -440,6 +449,7 @@ async function toggleFuneralHomeSubscription(
     setCustomText("");
     setFamilyEmail("");
     setPhotoFile(null);
+    setIsSearchable(false);
 
     if (photoPreview) {
       URL.revokeObjectURL(photoPreview);
@@ -654,41 +664,49 @@ async function handleLogoUpload(file: File) {
 
   async function closePage(pageId: string, pageName: string) {
   const ok = window.confirm(
-    `¿Seguro que quieres cerrar la página de ${pageName} y generar el PDF ahora?`
+    `¿Seguro que quieres cerrar la página de "${pageName}" y generar el PDF ahora?`
   );
   if (!ok) return;
 
   try {
-    const { error } = await supabase
+    const { error: updateError } = await supabase
       .from("deceased_pages")
       .update({ status: "closed" })
       .eq("id", pageId);
 
-    if (error) throw error;
+    if (updateError) throw updateError;
 
-    const pdfRes = await fetch("/.netlify/functions/generatePdf", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-  pageId,
-}),
-    });
+    let pdfErrorMessage = "";
 
-    const pdfJson = await pdfRes.json().catch(() => ({}));
+    try {
+      const pdfRes = await fetch("/.netlify/functions/generatePdf", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ pageId }),
+      });
 
-    if (!pdfRes.ok) {
-      throw new Error(
-        pdfJson?.error || "La página se cerró, pero no se pudo generar el PDF."
-      );
+      const pdfData = await pdfRes.json().catch(() => ({}));
+
+      if (!pdfRes.ok) {
+        pdfErrorMessage =
+          pdfData?.error || "La página se cerró, pero no se pudo generar el PDF.";
+      }
+    } catch (pdfErr: any) {
+      console.error("Error generando PDF:", pdfErr);
+      pdfErrorMessage =
+        pdfErr?.message || "La página se cerró, pero no se pudo generar el PDF.";
     }
 
     await loadData();
-    alert("Página cerrada y PDF generado correctamente.");
+
+    if (pdfErrorMessage) {
+      alert(pdfErrorMessage);
+    } else {
+      alert("Página cerrada y PDF generado.");
+    }
   } catch (err: any) {
     console.error(err);
-    alert(err?.message || "No se pudo cerrar la página y generar el PDF.");
+    alert(err?.message || "No se pudo cerrar la página.");
   }
 }
 
@@ -812,7 +830,8 @@ async function handleLogout() {
 }
 
   const filteredItems = useMemo(() => {
-    return items.filter((item) => {
+  return [...items]
+    .filter((item) => {
       const matchesSearch =
         item.full_name.toLowerCase().includes(search.toLowerCase()) ||
         item.funeral_home_name.toLowerCase().includes(search.toLowerCase());
@@ -821,16 +840,32 @@ async function handleLogout() {
         filter === "all" ? true : item.status === filter;
 
       return matchesSearch && matchesFilter;
-    });
-  }, [items, search, filter]);
+    })
+    .sort((a, b) => {
+      const aIsOpen = a.status === "open" ? 0 : 1;
+      const bIsOpen = b.status === "open" ? 0 : 1;
 
-  const totalPages = items.length;
-  const openPages = items.filter((x) => x.status === "open").length;
-  const closedPages = items.filter((x) => x.status === "closed").length;
-  const totalCondolences = items.reduce(
-    (acc, item) => acc + item.condolences_count,
-    0
-  );
+      if (aIsOpen !== bIsOpen) {
+        return aIsOpen - bIsOpen;
+      }
+
+      const aTime = a.created_at ? new Date(a.created_at).getTime() : 0;
+      const bTime = b.created_at ? new Date(b.created_at).getTime() : 0;
+
+      return bTime - aTime;
+    });
+}, [items, search, filter]);
+
+const openItemsCount = filteredItems.filter((x) => x.status === "open").length;
+const closedItemsCount = filteredItems.length - openItemsCount;
+
+const totalPages = items.length;
+const openPages = items.filter((x) => x.status === "open").length;
+const closedPages = items.filter((x) => x.status === "closed").length;
+const totalCondolences = items.reduce(
+  (acc, item) => acc + item.condolences_count,
+  0
+);
 
  const isAdminSupportView =
   currentRole === "admin" && !!adminViewingFuneralHomeId;
@@ -1916,21 +1951,37 @@ if (currentRole === "admin" && !isAdminSupportView) {
                       ref={createPhotoInputRef}
                       type="file"
                       accept="image/*"
-                      onChange={(e) => {
-                        const file = e.target.files?.[0] || null;
-                        setPhotoFile(file);
+                  
+onChange={async (e) => {
+  const file = e.target.files?.[0] || null;
 
-                        if (photoPreview) {
-                          URL.revokeObjectURL(photoPreview);
-                        }
+  if (photoPreview) {
+    URL.revokeObjectURL(photoPreview);
+  }
 
-                        if (file) {
-                          const previewUrl = URL.createObjectURL(file);
-                          setPhotoPreview(previewUrl);
-                        } else {
-                          setPhotoPreview("");
-                        }
-                      }}
+  if (!file) {
+    setPhotoFile(null);
+    setPhotoPreview("");
+    return;
+  }
+
+  try {
+    const normalized = await imageCompression(file, {
+      maxSizeMB: 1.5,
+      maxWidthOrHeight: 1800,
+      useWebWorker: true,
+      initialQuality: 0.9,
+    });
+
+    setPhotoFile(normalized as File);
+    setPhotoPreview(URL.createObjectURL(normalized));
+  } catch (err) {
+    console.error("Error procesando foto del difunto:", err);
+    setPhotoFile(file);
+    setPhotoPreview(URL.createObjectURL(file));
+  }
+}}
+
                       style={{
                         ...inputStyle,
                         padding: 12,
@@ -1988,6 +2039,31 @@ if (currentRole === "admin" && !isAdminSupportView) {
                         <option value="minimal">Minimalista</option>
                       </select>
                     </div>
+
+<div style={{ marginTop: 12 }}>
+  <label
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      fontSize: 14,
+      fontWeight: 600,
+      color: "#334155",
+      cursor: "pointer",
+    }}
+  >
+    <input
+      type="checkbox"
+      checked={isSearchable}
+      onChange={(e) => setIsSearchable(e.target.checked)}
+    />
+    Buscador en E-Dep.org
+  </label>
+
+  <div style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
+    Si está activado, esta página podrá encontrarse desde el buscador público.
+  </div>
+</div>
 
                     <button
                       type="submit"
@@ -2069,10 +2145,49 @@ if (currentRole === "admin" && !isAdminSupportView) {
                   gap: 18,
                 }}
               >
-                {filteredItems.map((item) => {
-                  const isOpen = item.status === "open";
+
+
+
+               {filteredItems.map((item, index) => {
+  const isOpen = item.status === "open";
+  const showOpenHeader = index === 0 && openItemsCount > 0;
+  const showClosedHeader = index === openItemsCount && closedItemsCount > 0;
 
                   return (
+<>
+  {showOpenHeader && (
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        fontSize: 12,
+        fontWeight: 800,
+        letterSpacing: "0.08em",
+        color: "#475569",
+        marginBottom: 6,
+      }}
+    >
+      PÁGINAS ACTIVAS
+    </div>
+  )}
+
+  {showClosedHeader && (
+    <div
+      style={{
+        gridColumn: "1 / -1",
+        fontSize: 12,
+        fontWeight: 800,
+        letterSpacing: "0.08em",
+        color: "#475569",
+        marginTop: 10,
+        marginBottom: 6,
+      }}
+    >
+      PÁGINAS CERRADAS
+    </div>
+  )}
+
+  
+
                     <div
                       key={item.id}
                       style={{
@@ -2118,6 +2233,17 @@ if (currentRole === "admin" && !isAdminSupportView) {
                         >
                           {isOpen ? "Activa" : "Cerrada"}
                         </div>
+
+                       <div
+  style={{
+    marginTop: 4,
+    fontSize: 12,
+    fontWeight: 700,
+    color: item.is_searchable ? "#166534" : "#64748b",
+  }}
+>
+  {item.is_searchable ? "Pública en buscador" : "No pública"}
+</div> 
 
                         <h3
                           style={{
@@ -2385,9 +2511,10 @@ if (currentRole === "admin" && !isAdminSupportView) {
 )}
 
                       </div>
-                    </div>
-                  );
-                })}
+                       </div>
+  </>
+  );
+})}
               </div>
             )}
           </div>
@@ -2396,6 +2523,8 @@ if (currentRole === "admin" && !isAdminSupportView) {
     </div>
   );
 }
+
+
 
 function slugify(value: string) {
   return value

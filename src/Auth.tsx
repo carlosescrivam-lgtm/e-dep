@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabaseClient";
 
 export default function Auth() {
@@ -8,6 +8,10 @@ export default function Auth() {
   const [password, setPassword] = useState("");
   const [msg, setMsg] = useState<string>("");
   const [loading, setLoading] = useState(false);
+  const [searchQuery, setSearchQuery] = useState("");
+const [searchResults, setSearchResults] = useState<any[]>([]);
+const [searching, setSearching] = useState(false);
+
 
   async function signIn() {
     try {
@@ -26,6 +30,47 @@ export default function Auth() {
       setLoading(false);
     }
   }
+
+async function handlePublicSearch() {
+  if (!searchQuery.trim()) {
+    setSearchResults([]);
+    return;
+  }
+
+  try {
+    setSearching(true);
+
+    const res = await fetch(
+      `/.netlify/functions/searchPages?q=${encodeURIComponent(searchQuery)}`
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "No se pudo realizar la búsqueda.");
+    }
+
+    setSearchResults(data.items || []);
+  } catch (err: any) {
+    console.error(err);
+    alert(err?.message || "No se pudo buscar.");
+  } finally {
+    setSearching(false);
+  }
+}
+
+useEffect(() => {
+  if (searchQuery.trim().length < 2) {
+    setSearchResults([]);
+    return;
+  }
+
+  const timeout = setTimeout(() => {
+    handlePublicSearch();
+  }, 350);
+
+  return () => clearTimeout(timeout);
+}, [searchQuery]);
 
   async function signUp() {
     try {
@@ -225,10 +270,103 @@ export default function Auth() {
             {msg}
           </div>
         ) : null}
+
+<div style={{ marginTop: 40 }}>
+  <div
+    style={{
+      fontSize: 18,
+      fontWeight: 800,
+      marginBottom: 12,
+      textAlign: "center",
+    }}
+  >
+    Buscar página de condolencias
+  </div>
+
+  <div
+    style={{
+      display: "flex",
+      gap: 10,
+      maxWidth: 420,
+      margin: "0 auto",
+    }}
+  >
+    <input
+      value={searchQuery}
+      onChange={(e) => setSearchQuery(e.target.value)}
+      placeholder="Nombre del difunto"
+      style={{
+        flex: 1,
+        padding: 12,
+        borderRadius: 12,
+        border: "1px solid #cbd5e1",
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={handlePublicSearch}
+      style={{
+        padding: "12px 16px",
+        borderRadius: 12,
+        border: "none",
+        background: "#0f172a",
+        color: "white",
+        fontWeight: 700,
+        cursor: "pointer",
+      }}
+    >
+      Buscar
+    </button>
+  </div>
+
+  <div style={{ marginTop: 18, maxWidth: 420, marginInline: "auto" }}>
+    {searching ? (
+      <div style={{ textAlign: "center" }}>Buscando...</div>
+    ) : (
+      searchResults.map((item) => (
+        <div
+          key={item.id}
+          style={{
+            padding: 14,
+            borderRadius: 14,
+            background: "white",
+            border: "1px solid #e2e8f0",
+            marginBottom: 10,
+          }}
+        >
+          <div style={{ fontWeight: 800 }}>{item.full_name}</div>
+
+          {item.funeral_home_name && (
+            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+              Gestionado por {item.funeral_home_name}
+            </div>
+          )}
+
+          <div style={{ marginTop: 10 }}>
+            <a
+              href={`/p/${item.slug}?token=${item.access_token}`}
+              style={{
+                color: "#0f172a",
+                fontWeight: 700,
+                textDecoration: "none",
+              }}
+            >
+              Ver página
+            </a>
+          </div>
+        </div>
+      ))
+    )}
+  </div>
+</div>
+
       </div>
     </div>
   );
 }
+
+
 
 const labelStyle: React.CSSProperties = {
   display: "block",

@@ -25,7 +25,7 @@ export const handler: Handler = async (event) => {
     status,
     closes_at,
     photo_url,
-    funeral_homes ( name )
+    funeral_homes ( name, logo_url )
   `)
   .eq("slug", slug)
   .eq("access_token", token)
@@ -69,6 +69,7 @@ const withUrls = await Promise.all(
 const pageOut = {
   ...page,
   funeral_home_name: funeralHomeSource?.name ?? null,
+  funeral_home_logo_url: funeralHomeSource?.logo_url ?? null,
 };
 
 return {
