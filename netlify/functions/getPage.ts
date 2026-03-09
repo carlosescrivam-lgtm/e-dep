@@ -43,6 +43,7 @@ export const handler: Handler = async (event) => {
       .from("condolences")
       .select("id, author_name, message, photo_path, created_at")
       .eq("page_id", page.id)
+      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
 const withUrls = await Promise.all(

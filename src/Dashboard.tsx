@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { supabase } from "./lib/supabaseClient";
 import logoEdep from "./assets/logo-edep.png";
 type DbPage = {
@@ -19,6 +19,7 @@ type Condolence = {
   id: string;
   page_id: string;
   created_at: string | null;
+  deleted_at?: string | null;
 };
 
 type PageCard = {
@@ -73,9 +74,13 @@ export default function Dashboard() {
 const [logoFileError, setLogoFileError] = useState("");
 const [photoFile, setPhotoFile] = useState<File | null>(null);
 
+const createPhotoInputRef = useRef<HTMLInputElement | null>(null);
   const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
-
+const [moderationPageId, setModerationPageId] = useState<string | null>(null);
+const [pageMessages, setPageMessages] = useState<Record<string, any[]>>({});
+const [loadingMessagesForPage, setLoadingMessagesForPage] = useState<string | null>(null);
+const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
   useEffect(() => {
   async function init() {
     try {
@@ -230,8 +235,9 @@ const { data: pagesData, error: pagesError } = await pagesQuery;
 if (pagesError) throw pagesError;
 
       const { data: condolencesData, error: condolencesError } = await supabase
-        .from("condolences")
-        .select("id, page_id, created_at");
+  .from("condolences")
+  .select("id, page_id, created_at, deleted_at")
+  .is("deleted_at", null);
 
       if (condolencesError) throw condolencesError;
 
@@ -436,6 +442,10 @@ console.log("UPLOAD OK:", uploadData);
     setFamilyEmail("");
     setPhotoFile(null);
 
+    if (createPhotoInputRef.current) {
+  createPhotoInputRef.current.value = "";
+}
+
     await loadData();
     alert("Página creada correctamente.");
   } catch (err: any) {
@@ -487,6 +497,75 @@ async function handleDeletePage(pageId: string, fullName: string) {
     alert(err?.message || "No se pudo eliminar la página.");
   } finally {
     setDeletingPageId(null);
+  }
+}
+
+async function loadMessagesForPage(pageId: string) {
+  try {
+    setLoadingMessagesForPage(pageId);
+
+    const { data, error } = await supabase
+      .from("condolences")
+      .select("id, author_name, message, created_at, deleted_at")
+      .eq("page_id", pageId)
+      .is("deleted_at", null)
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    setPageMessages((prev) => ({
+      ...prev,
+      [pageId]: data || [],
+    }));
+  } catch (err: any) {
+    console.error("Error cargando mensajes:", err);
+    alert(err?.message || "No se pudieron cargar los mensajes.");
+  } finally {
+    setLoadingMessagesForPage(null);
+  }
+}
+
+async function toggleModerationPanel(pageId: string) {
+  if (moderationPageId === pageId) {
+    setModerationPageId(null);
+    return;
+  }
+
+  setModerationPageId(pageId);
+
+  if (!pageMessages[pageId]) {
+    await loadMessagesForPage(pageId);
+  }
+}
+
+async function handleDeleteMessage(messageId: string, pageId: string) {
+  const ok = window.confirm(
+    "¿Seguro que quieres eliminar este mensaje?\n\nDejará de verse en la página pública."
+  );
+
+  if (!ok) return;
+
+  try {
+    setDeletingMessageId(messageId);
+
+    const { error } = await supabase
+      .from("condolences")
+      .update({ deleted_at: new Date().toISOString() })
+      .eq("id", messageId);
+
+    if (error) throw error;
+
+    setPageMessages((prev) => ({
+      ...prev,
+      [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
+    }));
+
+    await loadData();
+  } catch (err: any) {
+    console.error("Error eliminando mensaje:", err);
+    alert(err?.message || "No se pudo eliminar el mensaje.");
+  } finally {
+    setDeletingMessageId(null);
   }
 }
 
@@ -1620,13 +1699,12 @@ if (currentRole === "admin" && !isAdminSupportView) {
   <FieldLabel>Logo de la funeraria</FieldLabel>
 
 <input
+  ref={createPhotoInputRef}
   type="file"
   accept="image/*"
   onChange={(e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleLogoUpload(file);
-    }
+    const file = e.target.files?.[0] || null;
+    setPhotoFile(file);
   }}
   style={{
     ...inputStyle,
@@ -2131,6 +2209,14 @@ if (currentRole === "admin" && !isAdminSupportView) {
   {deletingPageId === item.id ? "Eliminando..." : "Eliminar página"}
 </button>
 
+<button
+  type="button"
+  onClick={() => toggleModerationPanel(item.id)}
+  style={ghostButtonStyle}
+>
+  {moderationPageId === item.id ? "Ocultar mensajes" : "Moderar mensajes"}
+</button>
+
   {item.status === "closed" ? (
     <button
       type="button"
@@ -2163,6 +2249,74 @@ if (currentRole === "admin" && !isAdminSupportView) {
 
   )}
 </div>
+
+{moderationPageId === item.id && (
+  <div
+    style={{
+      marginTop: 14,
+      padding: 14,
+      background: "#f9fafb",
+      border: "1px solid rgba(0,0,0,0.06)",
+      borderRadius: 12,
+    }}
+  >
+    <div style={{ fontWeight: 800, marginBottom: 10 }}>
+      Moderación de mensajes
+    </div>
+
+    {loadingMessagesForPage === item.id ? (
+      <div style={{ color: "#666" }}>Cargando mensajes...</div>
+    ) : !pageMessages[item.id] || pageMessages[item.id].length === 0 ? (
+      <div style={{ color: "#666" }}>No hay mensajes visibles en esta página.</div>
+    ) : (
+      <div style={{ display: "grid", gap: 10 }}>
+        {pageMessages[item.id].map((msg) => (
+          <div
+            key={msg.id}
+            style={{
+              background: "white",
+              border: "1px solid rgba(0,0,0,0.06)",
+              borderRadius: 12,
+              padding: 12,
+            }}
+          >
+            <div style={{ fontWeight: 700 }}>
+              {msg.author_name || "Anónimo"}
+            </div>
+
+            <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+              {new Date(msg.created_at).toLocaleString()}
+            </div>
+
+            <div style={{ marginTop: 8, lineHeight: 1.5 }}>
+              {msg.message}
+            </div>
+
+            <div style={{ marginTop: 10 }}>
+              <button
+                type="button"
+                onClick={() => handleDeleteMessage(msg.id, item.id)}
+                disabled={deletingMessageId === msg.id}
+                style={{
+                  padding: "8px 12px",
+                  borderRadius: 10,
+                  border: "1px solid rgba(220,38,38,0.18)",
+                  background: deletingMessageId === msg.id ? "#f3f4f6" : "white",
+                  color: "#b91c1c",
+                  fontWeight: 700,
+                  cursor: deletingMessageId === msg.id ? "not-allowed" : "pointer",
+                  opacity: deletingMessageId === msg.id ? 0.7 : 1,
+                }}
+              >
+                {deletingMessageId === msg.id ? "Eliminando..." : "Eliminar mensaje"}
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
+    )}
+  </div>
+)}
 
                       </div>
                     </div>
