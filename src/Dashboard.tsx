@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState, useRef } from "react";
 import { supabase } from "./lib/supabaseClient";
 import logoEdep from "./assets/logo-edep.png";
 type DbPage = {
@@ -69,18 +69,20 @@ export default function Dashboard() {
   const [website, setWebsite] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [savingFuneralHome, setSavingFuneralHome] = useState(false);
-  const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 const [logoFileError, setLogoFileError] = useState("");
-const [photoFile, setPhotoFile] = useState<File | null>(null);
-
+const [photoPreview, setPhotoPreview] = useState("");
 const createPhotoInputRef = useRef<HTMLInputElement | null>(null);
-  const siteBase =
-    typeof window !== "undefined" ? window.location.origin : "";
+const [photoFile, setPhotoFile] = useState<File | null>(null);
+const [showCreateForm, setShowCreateForm] = useState(false);
+const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
 const [moderationPageId, setModerationPageId] = useState<string | null>(null);
 const [pageMessages, setPageMessages] = useState<Record<string, any[]>>({});
 const [loadingMessagesForPage, setLoadingMessagesForPage] = useState<string | null>(null);
 const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+  const siteBase =
+    typeof window !== "undefined" ? window.location.origin : "";
+
   useEffect(() => {
   async function init() {
     try {
@@ -397,17 +399,14 @@ async function toggleFuneralHomeSubscription(
       const fileName = `${slug}-${Date.now()}.${fileExt}`;
       const filePath = fileName;
 
-      const { error: uploadError, data: uploadData } = await supabase.storage
-  .from("deceased-photos")
-  .upload(filePath, photoFile);
+      const { error: uploadError } = await supabase.storage
+        .from("deceased-photos")
+        .upload(filePath, photoFile);
 
-if (uploadError) {
-  console.error("ERROR STORAGE FOTO:", uploadError);
-  alert(uploadError.message || "No se pudo subir la foto del difunto.");
-  return;
-}
-
-console.log("UPLOAD OK:", uploadData);
+      if (uploadError) {
+        console.error("ERROR STORAGE FOTO:", uploadError);
+        throw new Error(uploadError.message || "No se pudo subir la foto del difunto.");
+      }
 
       const { data: publicUrlData } = supabase.storage
         .from("deceased-photos")
@@ -442,9 +441,16 @@ console.log("UPLOAD OK:", uploadData);
     setFamilyEmail("");
     setPhotoFile(null);
 
+    if (photoPreview) {
+      URL.revokeObjectURL(photoPreview);
+    }
+    setPhotoPreview("");
+
     if (createPhotoInputRef.current) {
-  createPhotoInputRef.current.value = "";
-}
+      createPhotoInputRef.current.value = "";
+    }
+
+    setShowCreateForm(false);
 
     await loadData();
     alert("Página creada correctamente.");
@@ -499,6 +505,7 @@ async function handleDeletePage(pageId: string, fullName: string) {
     setDeletingPageId(null);
   }
 }
+
 
 async function loadMessagesForPage(pageId: string) {
   try {
@@ -568,6 +575,9 @@ async function handleDeleteMessage(messageId: string, pageId: string) {
     setDeletingMessageId(null);
   }
 }
+
+
+
 
 async function saveFuneralHomeData() {
   if (!currentFuneralHomeId) {
@@ -642,9 +652,9 @@ async function handleLogoUpload(file: File) {
   }
 }
 
- async function closePage(pageId: string, pageName: string) {
+  async function closePage(pageId: string, pageName: string) {
   const ok = window.confirm(
-    `¿Seguro que quieres cerrar la página de "${pageName}" y generar el PDF ahora?`
+    `¿Seguro que quieres cerrar la página de ${pageName} y generar el PDF ahora?`
   );
   if (!ok) return;
 
@@ -658,21 +668,27 @@ async function handleLogoUpload(file: File) {
 
     const pdfRes = await fetch("/.netlify/functions/generatePdf", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ pageId }),
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+  pageId,
+}),
     });
 
-    const pdfData = await pdfRes.json().catch(() => ({}));
+    const pdfJson = await pdfRes.json().catch(() => ({}));
 
     if (!pdfRes.ok) {
-      throw new Error(pdfData?.error || "No se pudo generar el PDF.");
+      throw new Error(
+        pdfJson?.error || "La página se cerró, pero no se pudo generar el PDF."
+      );
     }
 
     await loadData();
-    alert("Página cerrada y PDF generado.");
+    alert("Página cerrada y PDF generado correctamente.");
   } catch (err: any) {
     console.error(err);
-    alert(err?.message || "No se pudo cerrar la página.");
+    alert(err?.message || "No se pudo cerrar la página y generar el PDF.");
   }
 }
 
@@ -1699,12 +1715,13 @@ if (currentRole === "admin" && !isAdminSupportView) {
   <FieldLabel>Logo de la funeraria</FieldLabel>
 
 <input
-  ref={createPhotoInputRef}
   type="file"
   accept="image/*"
   onChange={(e) => {
-    const file = e.target.files?.[0] || null;
-    setPhotoFile(file);
+    const file = e.target.files?.[0];
+    if (file) {
+      handleLogoUpload(file);
+    }
   }}
   style={{
     ...inputStyle,
@@ -1797,197 +1814,242 @@ if (currentRole === "admin" && !isAdminSupportView) {
 
             
           </div>
-
-          <div>
+          <div
+            style={{
+              display: "grid",
+              gap: 18,
+              alignContent: "start",
+            }}
+          >
+            {/* Crear nueva página */}
             <div
               style={{
                 background: "rgba(255,255,255,0.84)",
                 backdropFilter: "blur(14px)",
                 border: "1px solid rgba(255,255,255,0.75)",
                 borderRadius: 24,
-                boxShadow: "0 18px 50px rgba(15,23,42,0.08)",
-                padding: 18,
-                marginBottom: 18,
+                boxShadow: "0 12px 30px rgba(0,0,0,0.12)",
+                marginBottom: 0,
               }}
             >
-
-{/* Crear nueva página */}
-
-<div
-  style={{
-    background: "rgba(255,255,255,0.84)",
-    backdropFilter: "blur(14px)",
-    border: "1px solid rgba(255,255,255,0.75)",
-    borderRadius: 24,
-    boxShadow: "0 18px 50px rgba(15,23,42,0.08)",
-    padding: 18,
-    marginBottom: 18,
-  }}
->
-  <h2
-    style={{
-      marginTop: 0,
-      marginBottom: 8,
-      fontSize: 22,
-      fontWeight: 800,
-      letterSpacing: "-0.02em",
-    }}
-  >
-    Crear nueva página
-  </h2>
-
-  <p
-    style={{
-      marginTop: 0,
-      marginBottom: 20,
-      color: "#475569",
-      fontSize: 14,
-      lineHeight: 1.6,
-    }}
-  >
-    Rellena estos datos para generar una nueva página de condolencias.
-  </p>
-
-  <form onSubmit={handleCreate}>
-    <FieldLabel>Nombre del difunto</FieldLabel>
-    <input
-      value={fullName}
-      onChange={(e) => setFullName(e.target.value)}
-      placeholder="Ejemplo: Antonio García"
-      style={inputStyle}
-    />
-
-    <FieldLabel>Texto de la cabecera</FieldLabel>
-    <textarea
-      value={customText}
-      onChange={(e) => setCustomText(e.target.value)}
-      placeholder="Escribe una dedicatoria o mensaje inicial"
-      rows={5}
-      style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
-    />
-
-    <FieldLabel>Email de la familia</FieldLabel>
-    <input
-      value={familyEmail}
-      onChange={(e) => setFamilyEmail(e.target.value)}
-      placeholder="familia@ejemplo.com"
-      type="email"
-      style={inputStyle}
-    />
-
-    <FieldLabel>Foto del difunto</FieldLabel>
-<input
-  type="file"
-  accept="image/*"
-  onChange={(e) => {
-    const file = e.target.files?.[0] || null;
-    setPhotoFile(file);
-  }}
-  style={{
-    ...inputStyle,
-    padding: 12,
-    background: "white",
-  }}
-/>
-
-<div style={{ marginTop: 10 }}>
-  <label style={{ fontSize: 13, fontWeight: 700 }}>
-    Estilo de página
-  </label>
-
-  <select
-    value={theme}
-    onChange={(e) => setTheme(e.target.value)}
-    style={{
-      width: "100%",
-      padding: 10,
-      borderRadius: 10,
-      border: "1px solid rgba(0,0,0,0.15)",
-      marginTop: 6,
-    }}
-  >
-    <option value="classic">Clásico</option>
-    <option value="photo">Foto grande</option>
-    <option value="minimal">Minimalista</option>
-  </select>
-</div>
-
-    <button
-      type="submit"
-      disabled={saving}
-      style={{
-        width: "100%",
-        marginTop: 16,
-        border: "none",
-        borderRadius: 16,
-        padding: "15px 18px",
-        background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
-        color: "white",
-        fontWeight: 700,
-        fontSize: 15,
-        cursor: saving ? "not-allowed" : "pointer",
-        boxShadow: "0 14px 30px rgba(15,23,42,0.18)",
-        opacity: saving ? 0.7 : 1,
-      }}
-    >
-      {saving ? "Creando..." : "Crear página"}
-    </button>
-  </form>
-
-  
-</div>
-
-<div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "1fr auto auto auto",
-    gap: 12,
-    alignItems: "center",
-  }}
-></div>
-              
-             
-            </div>
-
- <div
+              <div
                 style={{
-                  display: "grid",
-                  gridTemplateColumns: "1fr auto auto auto",
-                  gap: 12,
+                  display: "flex",
                   alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 18,
                 }}
               >
-              
-                <input
-                  value={search}
-                  onChange={(e) => setSearch(e.target.value)}
-                  placeholder="Buscar por nombre o funeraria"
-                  style={inputStyle}
-                />
+                <div>
+                  <div style={{ fontSize: 18, fontWeight: 900 }}>
+                    Crear nueva página
+                  </div>
+
+                  <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
+                    Crea una página memorial para una familia
+                  </div>
+                </div>
 
                 <button
-                  onClick={() => setFilter("all")}
-                  style={filter === "all" ? activeFilterStyle : filterStyle}
+                  type="button"
+                  onClick={() => {
+                    if (showCreateForm) {
+                      setFullName("");
+                      setCustomText("");
+                      setFamilyEmail("");
+                      setPhotoFile(null);
+                      if (photoPreview) {
+                        URL.revokeObjectURL(photoPreview);
+                      }
+                      setPhotoPreview("");
+                      if (createPhotoInputRef.current) {
+                        createPhotoInputRef.current.value = "";
+                      }
+                    }
+                    setShowCreateForm((prev) => !prev);
+                  }}
+                  style={{
+                    padding: "10px 14px",
+                    borderRadius: 12,
+                    border: "1px solid rgba(0,0,0,0.10)",
+                    background: showCreateForm ? "#111827" : "white",
+                    color: showCreateForm ? "white" : "#111827",
+                    fontWeight: 800,
+                    cursor: "pointer",
+                  }}
                 >
-                  Todas
+                  {showCreateForm ? "Cerrar" : "Nueva página"}
                 </button>
-
-                <button
-                  onClick={() => setFilter("open")}
-                  style={filter === "open" ? activeFilterStyle : filterStyle}
-                >
-                  Activas
-                </button>
-
-                <button
-                  onClick={() => setFilter("closed")}
-                  style={filter === "closed" ? activeFilterStyle : filterStyle}
-                >
-                  Cerradas
-                </button>
-
-
               </div>
+
+              {showCreateForm && (
+                <div style={{ padding: 18 }}>
+                  <form onSubmit={handleCreate}>
+                    <FieldLabel>Nombre del difunto</FieldLabel>
+                    <input
+                      value={fullName}
+                      onChange={(e) => setFullName(e.target.value)}
+                      placeholder="Ejemplo: Antonio García"
+                      style={inputStyle}
+                    />
+
+                    <FieldLabel>Texto de la cabecera</FieldLabel>
+                    <textarea
+                      value={customText}
+                      onChange={(e) => setCustomText(e.target.value)}
+                      placeholder="Escribe una dedicatoria o mensaje inicial"
+                      rows={5}
+                      style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
+                    />
+
+                    <FieldLabel>Email de la familia</FieldLabel>
+                    <input
+                      value={familyEmail}
+                      onChange={(e) => setFamilyEmail(e.target.value)}
+                      placeholder="familia@ejemplo.com"
+                      type="email"
+                      style={inputStyle}
+                    />
+
+                    <FieldLabel>Foto del difunto</FieldLabel>
+                    <input
+                      ref={createPhotoInputRef}
+                      type="file"
+                      accept="image/*"
+                      onChange={(e) => {
+                        const file = e.target.files?.[0] || null;
+                        setPhotoFile(file);
+
+                        if (photoPreview) {
+                          URL.revokeObjectURL(photoPreview);
+                        }
+
+                        if (file) {
+                          const previewUrl = URL.createObjectURL(file);
+                          setPhotoPreview(previewUrl);
+                        } else {
+                          setPhotoPreview("");
+                        }
+                      }}
+                      style={{
+                        ...inputStyle,
+                        padding: 12,
+                        background: "white",
+                      }}
+                    />
+
+                    {photoPreview && (
+                      <div style={{ marginTop: 10 }}>
+                        <div
+                          style={{
+                            fontSize: 12,
+                            color: "#666",
+                            marginBottom: 6,
+                            fontWeight: 700,
+                          }}
+                        >
+                          Vista previa
+                        </div>
+
+                        <img
+                          src={photoPreview}
+                          alt="Vista previa del difunto"
+                          style={{
+                            width: 120,
+                            height: 120,
+                            objectFit: "cover",
+                            borderRadius: 12,
+                            border: "1px solid rgba(0,0,0,0.08)",
+                            boxShadow: "0 6px 16px rgba(0,0,0,0.10)",
+                            display: "block",
+                          }}
+                        />
+                      </div>
+                    )}
+
+                    <div style={{ marginTop: 10 }}>
+                      <label style={{ fontSize: 13, fontWeight: 700 }}>
+                        Estilo de página
+                      </label>
+
+                      <select
+                        value={theme}
+                        onChange={(e) => setTheme(e.target.value)}
+                        style={{
+                          width: "100%",
+                          padding: 10,
+                          borderRadius: 10,
+                          border: "1px solid rgba(0,0,0,0.15)",
+                          marginTop: 6,
+                        }}
+                      >
+                        <option value="classic">Clásico</option>
+                        <option value="photo">Foto grande</option>
+                        <option value="minimal">Minimalista</option>
+                      </select>
+                    </div>
+
+                    <button
+                      type="submit"
+                      disabled={saving}
+                      style={{
+                        width: "100%",
+                        marginTop: 16,
+                        border: "none",
+                        borderRadius: 16,
+                        padding: "15px 18px",
+                        background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+                        color: "white",
+                        fontWeight: 700,
+                        fontSize: 15,
+                        cursor: saving ? "not-allowed" : "pointer",
+                        boxShadow: "0 14px 30px rgba(15,23,42,0.18)",
+                        opacity: saving ? 0.7 : 1,
+                      }}
+                    >
+                      {saving ? "Creando..." : "Crear página"}
+                    </button>
+                  </form>
+                </div>
+              )}
+            </div>
+
+            <div
+              style={{
+                display: "grid",
+                gridTemplateColumns: "1fr auto auto auto",
+                gap: 12,
+                alignItems: "center",
+              }}
+            >
+              <input
+                value={search}
+                onChange={(e) => setSearch(e.target.value)}
+                placeholder="Buscar por nombre o funeraria"
+                style={inputStyle}
+              />
+
+              <button
+                onClick={() => setFilter("all")}
+                style={filter === "all" ? activeFilterStyle : filterStyle}
+              >
+                Todas
+              </button>
+
+              <button
+                onClick={() => setFilter("open")}
+                style={filter === "open" ? activeFilterStyle : filterStyle}
+              >
+                Activas
+              </button>
+
+              <button
+                onClick={() => setFilter("closed")}
+                style={filter === "closed" ? activeFilterStyle : filterStyle}
+              >
+                Cerradas
+              </button>
+            </div>
 
 <div style={{ height: 20 }} />
 
@@ -2162,32 +2224,43 @@ if (currentRole === "admin" && !isAdminSupportView) {
                           </div>
                         </div>
 
-                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
-  <button
-    type="button"
-    onClick={() => openPage(item)}
-    style={primarySmallButtonStyle}
-  >
-    Ver página
-  </button>
+                        <div
+                          style={{
+                            display: "grid",
+                            gridTemplateColumns: "1fr 1fr",
+                            gap: 10,
+                          }}
+                        >
+                          <button
+                            onClick={() => openPage(item)}
+                            style={primarySmallButtonStyle}
+                          >
+                            Ver página
+                          </button>
 
-  <button
-    type="button"
-    onClick={() => copyLink(item)}
-    style={ghostButtonStyle}
-  >
-    Copiar enlace
-  </button>
+                          <button
+                            onClick={() => copyLink(item)}
+                            style={ghostButtonStyle}
+                          >
+                            Copiar enlace
+                          </button>
 
-  <button
-    type="button"
-    onClick={() => openQr(item)}
-    style={ghostButtonStyle}
-  >
-    QR
-  </button>
+                          <button
+                            onClick={() => openQr(item)}
+                            style={ghostButtonStyle}
+                          >
+                            QR
+                          </button>
 
-  <button
+                          <button
+  type="button"
+  onClick={() => toggleModerationPanel(item.id)}
+  style={ghostButtonStyle}
+>
+  {moderationPageId === item.id ? "Ocultar mensajes" : "Moderar mensajes"}
+</button>
+
+                          <button
   type="button"
   onClick={(e) => {
     e.preventDefault();
@@ -2196,12 +2269,13 @@ if (currentRole === "admin" && !isAdminSupportView) {
   }}
   disabled={deletingPageId === item.id}
   style={{
-    padding: "10px 12px",
-    borderRadius: 12,
-    border: "1px solid rgba(220,38,38,0.18)",
-    background: deletingPageId === item.id ? "#f3f4f6" : "white",
+    border: "1px solid rgba(239,68,68,0.22)",
+    background: deletingPageId === item.id ? "#f3f4f6" : "rgba(254,242,242,0.9)",
     color: "#b91c1c",
-    fontWeight: 800,
+    borderRadius: 14,
+    padding: "12px 14px",
+    fontWeight: 700,
+    fontSize: 14,
     cursor: deletingPageId === item.id ? "not-allowed" : "pointer",
     opacity: deletingPageId === item.id ? 0.7 : 1,
   }}
@@ -2209,46 +2283,38 @@ if (currentRole === "admin" && !isAdminSupportView) {
   {deletingPageId === item.id ? "Eliminando..." : "Eliminar página"}
 </button>
 
-<button
-  type="button"
-  onClick={() => toggleModerationPanel(item.id)}
-  style={ghostButtonStyle}
->
-  {moderationPageId === item.id ? "Ocultar mensajes" : "Moderar mensajes"}
-</button>
+                         {item.status === "closed" ? (
+  <button
+    onClick={() => generatePdfNow(item.id, item.full_name)}
+    style={ghostButtonStyle}
+  >
+    Generar PDF
+  </button>
+) : null}
 
-  {item.status === "closed" ? (
-    <button
-      type="button"
-      onClick={() => generatePdfNow(item.id, item.full_name)}
-      style={ghostButtonStyle}
-    >
-      Generar PDF
-    </button>
-  ) : null}
+                          {isOpen ? (
+                            <button
+                              onClick={() =>
+                                closePage(item.id, item.full_name)
+                              }
+                              style={dangerButtonStyle}
+                            >
+                              Cerrar página
+                            </button>
 
-  {isOpen ? (
 
-<button
-  type="button"
-  onClick={() => closePage(item.id, item.full_name)}
-  style={dangerButtonStyle}
->
-  Cerrar página
-</button>  
 
-  ) : (
-   
-<button
-  type="button"
-  onClick={() => reopenPage(item.id, item.full_name)}
-  style={ghostButtonStyle}
->
-  Reabrir página
-</button>
-
-  )}
-</div>
+                          ) : (
+                            <button
+                              onClick={() =>
+                                reopenPage(item.id, item.full_name)
+                              }
+                              style={ghostButtonStyle}
+                            >
+                              Reabrir página
+                            </button>
+                          )}
+                        </div>
 
 {moderationPageId === item.id && (
   <div
