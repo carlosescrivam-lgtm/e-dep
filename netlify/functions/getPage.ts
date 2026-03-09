@@ -17,18 +17,16 @@ export const handler: Handler = async (event) => {
 
     const { data: page, error: pageError } = await supabase
   .from("deceased_pages")
-  .select(
-    `
-      id,
-      full_name,
-      custom_text,
-      theme,
-      status,
-      closes_at,
-      funeral_home_id,
-      funeral_homes ( name )
-    `
-  )
+  .select(`
+    id,
+    full_name,
+    custom_text,
+    theme,
+    status,
+    closes_at,
+    photo_url,
+    funeral_homes ( name )
+  `)
   .eq("slug", slug)
   .eq("access_token", token)
   .maybeSingle();
@@ -63,9 +61,13 @@ const withUrls = await Promise.all(
       return { statusCode: 500, body: JSON.stringify({ error: msgError.message }) };
     }
 
-    const pageOut = {
+    const funeralHomeSource = Array.isArray((page as any).funeral_homes)
+  ? (page as any).funeral_homes[0]
+  : (page as any).funeral_homes;
+
+const pageOut = {
   ...page,
-  funeral_home_name: (page as any).funeral_homes?.name ?? null,
+  funeral_home_name: funeralHomeSource?.name ?? null,
 };
 
 return {

@@ -11,6 +11,7 @@ type Page = {
   status: string;
   closes_at: string;
   funeral_home_name?: string | null;
+  photo_url?: string | null;
 };
 
 type Condolence = {
@@ -51,6 +52,8 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
     }
 
     const json: { page: Page; messages: Condolence[] } = await res.json();
+    console.log("PAGE JSON:", json.page);
+console.log("PHOTO URL:", json.page?.photo_url);
 setPage(json.page);
 
 const next = json.messages ?? [];
@@ -161,6 +164,10 @@ setLoading(false);
       </div>
     );
 
+const isPhotoTheme = page.theme === "photo";
+const isMinimalTheme = page.theme === "minimal";
+const isClassicTheme = !page.theme || page.theme === "classic" || page.theme === "default";
+
 return (
  <div
   style={{
@@ -235,6 +242,26 @@ return (
     opacity: 0.85,
   }}
   />
+
+{page.photo_url && !isMinimalTheme && (
+  <div style={{ marginBottom: 12 }}>
+    <img
+      src={page.photo_url}
+      alt={page.full_name}
+      style={{
+  width: isPhotoTheme ? "100%" : 160,
+  height: isPhotoTheme ? "auto" : 160,
+  objectFit: "cover",
+  borderRadius: isPhotoTheme ? 12 : "50%",
+  border: isPhotoTheme ? "none" : "4px solid white",
+  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+  display: "block",
+  margin: "0 auto",
+}}
+    />
+  </div>
+)}
+
   <div
     style={{
       fontSize: 26,

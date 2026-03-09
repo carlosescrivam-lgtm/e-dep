@@ -57,6 +57,7 @@ export default function Dashboard() {
   const [filter, setFilter] = useState<"all" | "open" | "closed">("all");
   const [fullName, setFullName] = useState("");
   const [customText, setCustomText] = useState("");
+  const [theme, setTheme] = useState("classic");
   const [familyEmail, setFamilyEmail] = useState("");
   const [funeralHomeNameEdit, setFuneralHomeNameEdit] = useState("");
   const [address, setAddress] = useState("");
@@ -67,8 +68,11 @@ export default function Dashboard() {
   const [website, setWebsite] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [savingFuneralHome, setSavingFuneralHome] = useState(false);
+  const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
   const [uploadingLogo, setUploadingLogo] = useState(false);
 const [logoFileError, setLogoFileError] = useState("");
+const [photoFile, setPhotoFile] = useState<File | null>(null);
+
   const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
 
@@ -361,57 +365,130 @@ async function toggleFuneralHomeSubscription(
 }
 
   async function handleCreate(e: React.FormEvent) {
-    e.preventDefault();
+  e.preventDefault();
 
-    if (!fullName.trim()) {
-      alert("Debes escribir el nombre del difunto.");
-      return;
-    }
-
-
-    try {
-      setSaving(true);
-
-      const slug =
-        slugify(fullName) + "-" + Date.now().toString().slice(-6);
-
-      const accessToken =
-        Math.random().toString(36).slice(2) + Date.now().toString(36);
-
-      const closesAt = new Date();
-      closesAt.setDate(closesAt.getDate() + 10);
-
-      const payload = {
-  full_name: fullName.trim(),
-  custom_text: customText.trim() || null,
-  slug,
-  access_token: accessToken,
-  status: "open",
-  closes_at: closesAt.toISOString(),
-  theme: "default",
-  family_email: familyEmail.trim() || null,
-  funeral_home_id: currentFuneralHomeId,
-};
-
-      const { error } = await supabase.from("deceased_pages").insert(payload);
-
-      if (error) throw error;
-
-      setFullName("");
-      setCustomText("");
-      setFamilyEmail("");
-      await loadData();
-      alert("Página creada correctamente.");
-    } catch (err: any) {
-      console.error(err);
-      alert(
-        err?.message ||
-          "No se pudo crear la página. Es posible que tu tabla necesite algún campo adicional del dashboard antiguo, como funeral_home_id."
-      );
-    } finally {
-      setSaving(false);
-    }
+  if (!fullName.trim()) {
+    alert("Debes escribir el nombre del difunto.");
+    return;
   }
+
+  try {
+    setSaving(true);
+
+    const slug =
+      slugify(fullName) + "-" + Date.now().toString().slice(-6);
+
+    const accessToken =
+      Math.random().toString(36).slice(2) + Date.now().toString(36);
+
+    const closesAt = new Date();
+    closesAt.setDate(closesAt.getDate() + 10);
+
+    let photoUrl: string | null = null;
+
+    if (photoFile) {
+      const fileExt = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+      const fileName = `${slug}-${Date.now()}.${fileExt}`;
+      const filePath = fileName;
+
+      const { error: uploadError, data: uploadData } = await supabase.storage
+  .from("deceased-photos")
+  .upload(filePath, photoFile);
+
+if (uploadError) {
+  console.error("ERROR STORAGE FOTO:", uploadError);
+  alert(uploadError.message || "No se pudo subir la foto del difunto.");
+  return;
+}
+
+console.log("UPLOAD OK:", uploadData);
+
+      const { data: publicUrlData } = supabase.storage
+        .from("deceased-photos")
+        .getPublicUrl(filePath);
+
+      if (!publicUrlData?.publicUrl) {
+        throw new Error("No se pudo obtener la URL pública de la foto.");
+      }
+
+      photoUrl = publicUrlData.publicUrl;
+    }
+
+    const payload = {
+      full_name: fullName.trim(),
+      custom_text: customText.trim() || null,
+      slug,
+      access_token: accessToken,
+      status: "open",
+      closes_at: closesAt.toISOString(),
+      theme,
+      family_email: familyEmail.trim() || null,
+      funeral_home_id: currentFuneralHomeId,
+      photo_url: photoUrl,
+    };
+
+    const { error } = await supabase.from("deceased_pages").insert(payload);
+
+    if (error) throw error;
+
+    setFullName("");
+    setCustomText("");
+    setFamilyEmail("");
+    setPhotoFile(null);
+
+    await loadData();
+    alert("Página creada correctamente.");
+  } catch (err: any) {
+    console.error(err);
+    alert(
+      err?.message ||
+        "No se pudo crear la página. Es posible que tu tabla necesite algún campo adicional del dashboard antiguo, como funeral_home_id."
+    );
+  } finally {
+    setSaving(false);
+  }
+}
+
+async function handleDeletePage(pageId: string, fullName: string) {
+  const ok = window.confirm(
+    `Vas a eliminar la página de "${fullName}".\n\nSe borrarán también sus condolencias.\n\nEsta acción no se puede deshacer.\n\n¿Continuar?`
+  );
+
+  if (!ok) return;
+
+  try {
+    setDeletingPageId(pageId);
+
+    const { error: condolencesError } = await supabase
+      .from("condolences")
+      .delete()
+      .eq("page_id", pageId);
+
+    if (condolencesError) throw condolencesError;
+
+    const { data: deletedPages, error: pageError } = await supabase
+      .from("deceased_pages")
+      .delete()
+      .eq("id", pageId)
+      .select("id");
+
+    if (pageError) throw pageError;
+
+    if (!deletedPages || deletedPages.length === 0) {
+      throw new Error(
+        "La página no se ha eliminado en la base de datos. Revisa permisos/policies de Supabase."
+      );
+    }
+
+    await loadData();
+    alert("Página eliminada correctamente.");
+  } catch (err: any) {
+    console.error("Error eliminando página:", err);
+    alert(err?.message || "No se pudo eliminar la página.");
+  } finally {
+    setDeletingPageId(null);
+  }
+}
 
 async function saveFuneralHomeData() {
   if (!currentFuneralHomeId) {
@@ -486,9 +563,9 @@ async function handleLogoUpload(file: File) {
   }
 }
 
-  async function closePage(pageId: string, pageName: string) {
+ async function closePage(pageId: string, pageName: string) {
   const ok = window.confirm(
-    `¿Seguro que quieres cerrar la página de ${pageName} y generar el PDF ahora?`
+    `¿Seguro que quieres cerrar la página de "${pageName}" y generar el PDF ahora?`
   );
   if (!ok) return;
 
@@ -502,27 +579,21 @@ async function handleLogoUpload(file: File) {
 
     const pdfRes = await fetch("/.netlify/functions/generatePdf", {
       method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-  pageId,
-}),
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pageId }),
     });
 
-    const pdfJson = await pdfRes.json().catch(() => ({}));
+    const pdfData = await pdfRes.json().catch(() => ({}));
 
     if (!pdfRes.ok) {
-      throw new Error(
-        pdfJson?.error || "La página se cerró, pero no se pudo generar el PDF."
-      );
+      throw new Error(pdfData?.error || "No se pudo generar el PDF.");
     }
 
     await loadData();
-    alert("Página cerrada y PDF generado correctamente.");
+    alert("Página cerrada y PDF generado.");
   } catch (err: any) {
     console.error(err);
-    alert(err?.message || "No se pudo cerrar la página y generar el PDF.");
+    alert(err?.message || "No se pudo cerrar la página.");
   }
 }
 
@@ -1726,6 +1797,43 @@ if (currentRole === "admin" && !isAdminSupportView) {
       style={inputStyle}
     />
 
+    <FieldLabel>Foto del difunto</FieldLabel>
+<input
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0] || null;
+    setPhotoFile(file);
+  }}
+  style={{
+    ...inputStyle,
+    padding: 12,
+    background: "white",
+  }}
+/>
+
+<div style={{ marginTop: 10 }}>
+  <label style={{ fontSize: 13, fontWeight: 700 }}>
+    Estilo de página
+  </label>
+
+  <select
+    value={theme}
+    onChange={(e) => setTheme(e.target.value)}
+    style={{
+      width: "100%",
+      padding: 10,
+      borderRadius: 10,
+      border: "1px solid rgba(0,0,0,0.15)",
+      marginTop: 6,
+    }}
+  >
+    <option value="classic">Clásico</option>
+    <option value="photo">Foto grande</option>
+    <option value="minimal">Minimalista</option>
+  </select>
+</div>
+
     <button
       type="submit"
       disabled={saving}
@@ -1976,66 +2084,86 @@ if (currentRole === "admin" && !isAdminSupportView) {
                           </div>
                         </div>
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 10,
-                          }}
-                        >
-                          <button
-                            onClick={() => openPage(item)}
-                            style={primarySmallButtonStyle}
-                          >
-                            Ver página
-                          </button>
-
-                          <button
-                            onClick={() => copyLink(item)}
-                            style={ghostButtonStyle}
-                          >
-                            Copiar enlace
-                          </button>
-
-                          <button
-                            onClick={() => openQr(item)}
-                            style={ghostButtonStyle}
-                          >
-                            QR
-                          </button>
-
-                         {item.status === "closed" ? (
+                        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 12 }}>
   <button
-    onClick={() => generatePdfNow(item.id, item.full_name)}
+    type="button"
+    onClick={() => openPage(item)}
+    style={primarySmallButtonStyle}
+  >
+    Ver página
+  </button>
+
+  <button
+    type="button"
+    onClick={() => copyLink(item)}
     style={ghostButtonStyle}
   >
-    Generar PDF
+    Copiar enlace
   </button>
-) : null}
 
-                          {isOpen ? (
-                            <button
-                              onClick={() =>
-                                closePage(item.id, item.full_name)
-                              }
-                              style={dangerButtonStyle}
-                            >
-                              Cerrar página
-                            </button>
+  <button
+    type="button"
+    onClick={() => openQr(item)}
+    style={ghostButtonStyle}
+  >
+    QR
+  </button>
 
+  <button
+  type="button"
+  onClick={(e) => {
+    e.preventDefault();
+    e.stopPropagation();
+    handleDeletePage(item.id, item.full_name);
+  }}
+  disabled={deletingPageId === item.id}
+  style={{
+    padding: "10px 12px",
+    borderRadius: 12,
+    border: "1px solid rgba(220,38,38,0.18)",
+    background: deletingPageId === item.id ? "#f3f4f6" : "white",
+    color: "#b91c1c",
+    fontWeight: 800,
+    cursor: deletingPageId === item.id ? "not-allowed" : "pointer",
+    opacity: deletingPageId === item.id ? 0.7 : 1,
+  }}
+>
+  {deletingPageId === item.id ? "Eliminando..." : "Eliminar página"}
+</button>
 
+  {item.status === "closed" ? (
+    <button
+      type="button"
+      onClick={() => generatePdfNow(item.id, item.full_name)}
+      style={ghostButtonStyle}
+    >
+      Generar PDF
+    </button>
+  ) : null}
 
-                          ) : (
-                            <button
-                              onClick={() =>
-                                reopenPage(item.id, item.full_name)
-                              }
-                              style={ghostButtonStyle}
-                            >
-                              Reabrir página
-                            </button>
-                          )}
-                        </div>
+  {isOpen ? (
+
+<button
+  type="button"
+  onClick={() => closePage(item.id, item.full_name)}
+  style={dangerButtonStyle}
+>
+  Cerrar página
+</button>  
+
+  ) : (
+   
+<button
+  type="button"
+  onClick={() => reopenPage(item.id, item.full_name)}
+  style={ghostButtonStyle}
+>
+  Reabrir página
+</button>
+
+  )}
+</div>
+
                       </div>
                     </div>
                   );
