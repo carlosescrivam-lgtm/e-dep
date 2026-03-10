@@ -66,6 +66,7 @@ export default function Dashboard() {
   const [customText, setCustomText] = useState("");
   const [theme, setTheme] = useState("classic");
   const [familyEmail, setFamilyEmail] = useState("");
+  const [closeDays, setCloseDays] = useState("10");
   const [funeralHomeNameEdit, setFuneralHomeNameEdit] = useState("");
   const [address, setAddress] = useState("");
   const [city, setCity] = useState("");
@@ -410,7 +411,7 @@ async function toggleFuneralHomeSubscription(
       Math.random().toString(36).slice(2) + Date.now().toString(36);
 
     const closesAt = new Date();
-    closesAt.setDate(closesAt.getDate() + 10);
+closesAt.setDate(closesAt.getDate() + Number(closeDays));
 
     let photoUrl: string | null = null;
 
@@ -462,7 +463,8 @@ async function toggleFuneralHomeSubscription(
     setFamilyEmail("");
     setPhotoFile(null);
     setIsSearchable(false);
-
+    setCloseDays("10");
+    
     if (photoPreview) {
       URL.revokeObjectURL(photoPreview);
     }
@@ -612,9 +614,31 @@ async function handleDeleteMessage(messageId: string, pageId: string) {
     if (error) throw error;
 
     setPageMessages((prev) => ({
-      ...prev,
-      [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
-    }));
+  ...prev,
+  [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
+}));
+
+setPendingMessagesByPage((prev) => ({
+  ...prev,
+  [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
+}));
+
+setItems((prev) =>
+  prev.map((item) =>
+    item.id === pageId
+      ? {
+          ...item,
+          condolences_count: Math.max(0, item.condolences_count - 1),
+          pending_count: Math.max(
+            0,
+            (pendingMessagesByPage[pageId] || []).some((msg) => msg.id === messageId)
+              ? item.pending_count - 1
+              : item.pending_count
+          ),
+        }
+      : item
+  )
+);
 
     await loadData();
   } catch (err: any) {
@@ -654,6 +678,17 @@ async function handleApproveMessage(messageId: string, pageId: string) {
         [pageId]: [approvedMsg, ...(prev[pageId] || [])],
       }));
     }
+
+    setItems((prev) =>
+  prev.map((item) =>
+    item.id === pageId
+      ? {
+          ...item,
+          pending_count: Math.max(0, item.pending_count - 1),
+        }
+      : item
+  )
+);
 
     await loadData();
   } catch (err: any) {
@@ -2022,6 +2057,28 @@ if (currentRole === "admin" && !isAdminSupportView) {
                       style={inputStyle}
                     />
 
+<FieldLabel>Duración pública de la página</FieldLabel>
+<select
+  value={closeDays}
+  onChange={(e) => setCloseDays(e.target.value)}
+  style={{
+    width: "100%",
+    padding: 12,
+    borderRadius: 12,
+    border: "1px solid rgba(0,0,0,0.15)",
+    background: "white",
+    fontSize: 14,
+  }}
+>
+  <option value="3">3 días</option>
+  <option value="7">7 días</option>
+  <option value="10">10 días</option>
+</select>
+
+<div style={{ fontSize: 12, color: "#64748b", marginTop: 6 }}>
+  La familia decide cuánto tiempo estará visible la página antes de cerrarse automáticamente.
+</div>
+
                     <FieldLabel>Foto del difunto</FieldLabel>
                     <input
                       ref={createPhotoInputRef}
@@ -2110,9 +2167,9 @@ onChange={async (e) => {
                           marginTop: 6,
                         }}
                       >
-                        <option value="classic">Clásico</option>
+                        <option value="classic">Clásico (Foto Pequeña)</option>
                         <option value="photo">Foto grande</option>
-                        <option value="minimal">Minimalista</option>
+                        <option value="minimal">Minimalista (Sin foto)</option>
                       </select>
                     </div>
 
@@ -2177,7 +2234,7 @@ onChange={async (e) => {
               <input
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre o funeraria"
+                placeholder="Buscar por nombre"
                 style={inputStyle}
               />
 
@@ -2312,14 +2369,33 @@ onChange={async (e) => {
 
                        <div
   style={{
-    marginTop: 4,
-    fontSize: 12,
-    fontWeight: 700,
-    color: item.is_searchable ? "#166534" : "#64748b",
+    marginTop: 2,
+    marginBottom: 12,
+    fontSize: 13,
+    color: "#64748b",
+    display: "flex",
+    gap: 8,
+    flexWrap: "wrap",
+    alignItems: "center",
   }}
 >
-  {item.is_searchable ? "Pública en buscador" : "No pública"}
-</div> 
+  <span>{item.is_searchable ? "Pública" : "No pública"}</span>
+
+  {item.pending_count > 0 && (
+    <span
+      style={{
+        background: "#fee2e2",
+        color: "#b91c1c",
+        padding: "3px 9px",
+        borderRadius: 999,
+        fontSize: 12,
+        fontWeight: 800,
+      }}
+    >
+      ⚠ {item.pending_count} pendientes
+    </span>
+  )}
+</div>
 
                         <h3
                           style={{
@@ -2527,22 +2603,52 @@ onChange={async (e) => {
     style={{
       marginTop: 14,
       padding: 14,
-      background: "#f9fafb",
-      border: "1px solid rgba(0,0,0,0.06)",
+      background: "#f8fafc",
+      border: "1px solid #e2e8f0",
       borderRadius: 12,
     }}
   >
-    <div style={{ fontWeight: 800, marginBottom: 10 }}>
-      Moderación de mensajes
-    </div>
-
-<div style={{ fontWeight: 800, marginBottom: 10 }}>
-  Pendientes de revisión
+   <div
+  style={{
+    fontSize: 18,
+    fontWeight: 900,
+    color: "#0f172a",
+    marginBottom: 18,
+    paddingBottom: 8,
+    borderBottom: "2px solid #e2e8f0",
+    letterSpacing: "-0.01em",
+  }}
+>
+  Moderación de mensajes
 </div>
 
-<div style={{ fontWeight: 800, marginBottom: 10 }}>
-  Mensajes publicados
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    fontWeight: 800,
+    color: "#92400e",
+  }}
+>
+  <span>Pendientes de revisión</span>
+
+  <span
+    style={{
+      background: "#fef3c7",
+      color: "#92400e",
+      padding: "3px 10px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 800,
+    }}
+  >
+    {pendingMessagesByPage[item.id]?.length || 0}
+  </span>
 </div>
+
+
 
 {loadingPendingForPage === item.id ? (
   <div style={{ color: "#666", marginBottom: 14 }}>Cargando pendientes...</div>
@@ -2628,6 +2734,33 @@ onChange={async (e) => {
     ))}
   </div>
 )}
+
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    fontWeight: 800,
+    color: "#0f172a",
+    marginTop: 20,
+  }}
+>
+  <span>Mensajes publicados</span>
+
+  <span
+    style={{
+      background: "#e2e8f0",
+      color: "#0f172a",
+      padding: "3px 10px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 800,
+    }}
+  >
+    {pageMessages[item.id]?.length || 0}
+  </span>
+</div>
 
     {loadingMessagesForPage === item.id ? (
       <div style={{ color: "#666" }}>Cargando mensajes...</div>
