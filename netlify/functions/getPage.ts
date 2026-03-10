@@ -11,6 +11,9 @@ export const handler: Handler = async (event) => {
     const slug = event.queryStringParameters?.slug;
     const token = event.queryStringParameters?.token;
 
+console.log("SUPABASE URL:", supabaseUrl);
+console.log("GET PAGE PARAMS:", { slug, token });
+
     if (!slug || !token) {
       return { statusCode: 400, body: JSON.stringify({ error: "Missing slug or token" }) };
     }
@@ -40,11 +43,12 @@ export const handler: Handler = async (event) => {
     }
 
     const { data: messages, error: msgError } = await supabase
-      .from("condolences")
-      .select("id, author_name, message, photo_path, created_at")
-      .eq("page_id", page.id)
-      .is("deleted_at", null)
-      .order("created_at", { ascending: false });
+  .from("condolences")
+  .select("id, author_name, message, photo_path, created_at")
+  .eq("page_id", page.id)
+  .is("deleted_at", null)
+  .eq("moderation_status", "approved")
+  .order("created_at", { ascending: false });
 
 const withUrls = await Promise.all(
   (messages ?? []).map(async (m: any) => {

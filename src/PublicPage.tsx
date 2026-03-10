@@ -65,81 +65,101 @@ setLoading(false);
   }
 
 
+async function submitMessage() {
+  try {
+    if (!slug || !token) {
+      alert("Enlace inválido (falta token).");
+      return;
+    }
 
- async function submitMessage() {
-  if (!slug || !token) {
-    alert("Enlace inválido (falta token).");
-    return;
-  }
+    if (!message.trim()) {
+      alert("Escribe un mensaje.");
+      return;
+    }
 
-  if (!message.trim()) {
-    alert("Escribe un mensaje.");
-    return;
-  }
+    let uploadedPath: string | null = null;
 
-  let uploadedPath: string | null = null;
+    // Si hay foto: pedimos URL firmada y subimos por PUT
+    if (photoFile) {
+      const prep = await fetch("/.netlify/functions/createPhotoUpload", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          slug,
+          token,
+          fileName: photoFile.name,
+          mimeType: photoFile.type || "application/octet-stream",
+        }),
+      });
 
-  // Si hay foto: pedimos URL firmada y subimos por PUT (sin base64)
-  if (photoFile) {
-    const prep = await fetch("/.netlify/functions/createPhotoUpload", {
+      if (prep.ok) {
+        const j = await prep.json();
+        uploadedPath = j.photo_path;
+
+        const putRes = await fetch(j.upload_url, {
+          method: "PUT",
+          headers: {
+            "Content-Type": photoFile.type || "application/octet-stream",
+          },
+          body: photoFile,
+        });
+
+        if (!putRes.ok) {
+          alert("No se pudo subir la imagen. Se enviará el mensaje sin foto.");
+          uploadedPath = null;
+        }
+      } else {
+        const j = await prep.json().catch(() => ({}));
+        alert(
+          "Error preparando subida. Se enviará sin foto: " +
+            (j.error ?? "desconocido")
+        );
+      }
+    }
+
+    const res = await fetch("/.netlify/functions/postCondolence", {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify({
         slug,
         token,
-        fileName: photoFile.name,
-        mimeType: photoFile.type || "application/octet-stream",
+        author_name: author,
+        message,
+        photo_path: uploadedPath,
       }),
     });
 
-    if (prep.ok) {
-      const j = await prep.json();
-      uploadedPath = j.photo_path;
+    const data = await res.json();
 
-      const putRes = await fetch(j.upload_url, {
-        method: "PUT",
-        headers: { "Content-Type": photoFile.type || "application/octet-stream" },
-        body: photoFile,
-      });
-
-      if (!putRes.ok) {
-        alert("No se pudo subir la imagen. Se enviará el mensaje sin foto.");
-        uploadedPath = null;
-      }
-    } else {
-      const j = await prep.json().catch(() => ({}));
-      alert("Error preparando subida. Se enviará sin foto: " + (j.error ?? "desconocido"));
+    if (!res.ok) {
+      throw new Error(data?.error || "Error enviando mensaje");
     }
-  }
 
-  const res = await fetch("/.netlify/functions/postCondolence", {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({
-      slug,
-      token,
-      author_name: author.trim() || null,
-      message: message.trim(),
-      photo_path: uploadedPath,
-    }),
-  });
-
-  if (!res.ok) {
-    const j = await res.json().catch(() => ({}));
-    alert("Error enviando mensaje: " + (j.error ?? "desconocido"));
-    return;
-  }
-
-  // limpiar formulario
     setAuthor("");
-  setMessage("");
-  setPhotoFile(null);
-  setPhotoPreview("");
-  if (fileInputRef.current) fileInputRef.current.value = "";
-  setShowForm(false);
+    setMessage("");
+    setPhotoFile(null);
+    setPhotoPreview("");
+    if (fileInputRef.current) {
+      fileInputRef.current.value = "";
+    }
 
-  await loadPage();
+    if (data?.moderation_status === "pending") {
+      alert(
+        data?.message ||
+          "Tu mensaje ha quedado pendiente de revisión antes de publicarse."
+      );
+      setShowForm(false);
+      return;
+    }
+
+    await loadPage();
+    setShowForm(false);
+  } catch (err: any) {
+    console.error(err);
+    alert(err?.message || "No se pudo enviar el mensaje.");
+  }
 }
+ 
 
 
   useEffect(() => {

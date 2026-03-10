@@ -22,6 +22,7 @@ type Condolence = {
   page_id: string;
   created_at: string | null;
   deleted_at?: string | null;
+  moderation_status?: string | null;
 };
 
 type PageCard = {
@@ -37,6 +38,7 @@ type PageCard = {
   funeral_home_name: string;
   condolences_count: number;
   is_searchable: boolean;
+  pending_count: number;
 };
 
 export default function Dashboard() {
@@ -84,6 +86,8 @@ const [moderationPageId, setModerationPageId] = useState<string | null>(null);
 const [pageMessages, setPageMessages] = useState<Record<string, any[]>>({});
 const [loadingMessagesForPage, setLoadingMessagesForPage] = useState<string | null>(null);
 const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
+const [pendingMessagesByPage, setPendingMessagesByPage] = useState<Record<string, any[]>>({});
+const [loadingPendingForPage, setLoadingPendingForPage] = useState<string | null>(null);
 const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
 
@@ -243,23 +247,30 @@ const { data: pagesData, error: pagesError } = await pagesQuery;
 
 if (pagesError) throw pagesError;
 
-      const { data: condolencesData, error: condolencesError } = await supabase
+     const { data: condolencesData, error: condolencesError } = await supabase
   .from("condolences")
-  .select("id, page_id, created_at, deleted_at")
+  .select("id, page_id, created_at, deleted_at, moderation_status")
   .is("deleted_at", null);
 
       if (condolencesError) throw condolencesError;
 
       const pages = (pagesData ?? []) as DbPage[];
       const condolences = (condolencesData ?? []) as Condolence[];
-
       const countByPageId: Record<string, number> = {};
+const pendingCountByPageId: Record<string, number> = {};
 
-      for (const condolence of condolences) {
-        if (!condolence.page_id) continue;
-        countByPageId[condolence.page_id] =
-          (countByPageId[condolence.page_id] || 0) + 1;
-      }
+for (const condolence of condolences) {
+  if (!condolence.page_id) continue;
+
+  countByPageId[condolence.page_id] =
+    (countByPageId[condolence.page_id] || 0) + 1;
+
+  if (condolence.moderation_status === "pending") {
+    pendingCountByPageId[condolence.page_id] =
+      (pendingCountByPageId[condolence.page_id] || 0) + 1;
+  }
+}
+
 
       const normalized: PageCard[] = pages.map((page) => {
         const funeralHomeSource = Array.isArray(page.funeral_homes)
@@ -278,7 +289,8 @@ if (pagesError) throw pagesError;
   created_at: page.created_at || null,
   funeral_home_name: funeralHomeSource?.name || "",
   condolences_count: countByPageId[String(page.id)] || 0,
-  is_searchable: !!page.is_searchable,
+pending_count: pendingCountByPageId[String(page.id)] || 0,
+is_searchable: !!page.is_searchable,
 };
       });
 
@@ -542,6 +554,32 @@ async function loadMessagesForPage(pageId: string) {
   }
 }
 
+async function loadPendingMessagesForPage(pageId: string) {
+  try {
+    setLoadingPendingForPage(pageId);
+
+    const { data, error } = await supabase
+      .from("condolences")
+      .select("id, author_name, message, created_at, moderation_status, moderation_reason")
+      .eq("page_id", pageId)
+      .is("deleted_at", null)
+      .eq("moderation_status", "pending")
+      .order("created_at", { ascending: false });
+
+    if (error) throw error;
+
+    setPendingMessagesByPage((prev) => ({
+      ...prev,
+      [pageId]: data || [],
+    }));
+  } catch (err: any) {
+    console.error("Error cargando mensajes pendientes:", err);
+    alert(err?.message || "No se pudieron cargar los mensajes pendientes.");
+  } finally {
+    setLoadingPendingForPage(null);
+  }
+}
+
 async function toggleModerationPanel(pageId: string) {
   if (moderationPageId === pageId) {
     setModerationPageId(null);
@@ -550,9 +588,10 @@ async function toggleModerationPanel(pageId: string) {
 
   setModerationPageId(pageId);
 
-  if (!pageMessages[pageId]) {
-    await loadMessagesForPage(pageId);
-  }
+  await Promise.all([
+    !pageMessages[pageId] ? loadMessagesForPage(pageId) : Promise.resolve(),
+    !pendingMessagesByPage[pageId] ? loadPendingMessagesForPage(pageId) : Promise.resolve(),
+  ]);
 }
 
 async function handleDeleteMessage(messageId: string, pageId: string) {
@@ -586,7 +625,44 @@ async function handleDeleteMessage(messageId: string, pageId: string) {
   }
 }
 
+async function handleApproveMessage(messageId: string, pageId: string) {
+  try {
+    setDeletingMessageId(messageId);
 
+    const { error } = await supabase
+      .from("condolences")
+      .update({
+        moderation_status: "approved",
+        moderation_reason: null,
+      })
+      .eq("id", messageId);
+
+    if (error) throw error;
+
+    const approvedMsg = (pendingMessagesByPage[pageId] || []).find(
+      (msg) => msg.id === messageId
+    );
+
+    setPendingMessagesByPage((prev) => ({
+      ...prev,
+      [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
+    }));
+
+    if (approvedMsg) {
+      setPageMessages((prev) => ({
+        ...prev,
+        [pageId]: [approvedMsg, ...(prev[pageId] || [])],
+      }));
+    }
+
+    await loadData();
+  } catch (err: any) {
+    console.error("Error aprobando mensaje:", err);
+    alert(err?.message || "No se pudo aprobar el mensaje.");
+  } finally {
+    setDeletingMessageId(null);
+  }
+}
 
 
 async function saveFuneralHomeData() {
@@ -2378,12 +2454,16 @@ onChange={async (e) => {
                             QR
                           </button>
 
-                          <button
+                         <button
   type="button"
   onClick={() => toggleModerationPanel(item.id)}
   style={ghostButtonStyle}
 >
-  {moderationPageId === item.id ? "Ocultar mensajes" : "Moderar mensajes"}
+  {moderationPageId === item.id
+    ? "Ocultar mensajes"
+    : item.pending_count > 0
+    ? `Moderar mensajes (${item.pending_count})`
+    : "Moderar mensajes"}
 </button>
 
                           <button
@@ -2455,6 +2535,99 @@ onChange={async (e) => {
     <div style={{ fontWeight: 800, marginBottom: 10 }}>
       Moderación de mensajes
     </div>
+
+<div style={{ fontWeight: 800, marginBottom: 10 }}>
+  Pendientes de revisión
+</div>
+
+<div style={{ fontWeight: 800, marginBottom: 10 }}>
+  Mensajes publicados
+</div>
+
+{loadingPendingForPage === item.id ? (
+  <div style={{ color: "#666", marginBottom: 14 }}>Cargando pendientes...</div>
+) : !pendingMessagesByPage[item.id] || pendingMessagesByPage[item.id].length === 0 ? (
+  <div style={{ color: "#666", marginBottom: 14 }}>
+    No hay mensajes pendientes en esta página.
+  </div>
+) : (
+  <div style={{ display: "grid", gap: 10, marginBottom: 18 }}>
+    {pendingMessagesByPage[item.id].map((msg) => (
+      <div
+        key={msg.id}
+        style={{
+          background: "#fffaf0",
+          border: "1px solid rgba(234,179,8,0.22)",
+          borderRadius: 12,
+          padding: 12,
+        }}
+      >
+        <div style={{ fontWeight: 700 }}>
+          {msg.author_name || "Anónimo"}
+        </div>
+
+        <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+          {new Date(msg.created_at).toLocaleString()}
+        </div>
+
+        <div style={{ marginTop: 8, lineHeight: 1.5 }}>
+          {msg.message}
+        </div>
+
+        {msg.moderation_reason ? (
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 12,
+              color: "#92400e",
+              fontWeight: 600,
+            }}
+          >
+            Motivo IA: {msg.moderation_reason}
+          </div>
+        ) : null}
+
+        <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+          <button
+            type="button"
+            onClick={() => handleApproveMessage(msg.id, item.id)}
+            disabled={deletingMessageId === msg.id}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(16,185,129,0.18)",
+              background: deletingMessageId === msg.id ? "#f3f4f6" : "white",
+              color: "#047857",
+              fontWeight: 700,
+              cursor: deletingMessageId === msg.id ? "not-allowed" : "pointer",
+              opacity: deletingMessageId === msg.id ? 0.7 : 1,
+            }}
+          >
+            Aprobar
+          </button>
+
+          <button
+            type="button"
+            onClick={() => handleDeleteMessage(msg.id, item.id)}
+            disabled={deletingMessageId === msg.id}
+            style={{
+              padding: "8px 12px",
+              borderRadius: 10,
+              border: "1px solid rgba(220,38,38,0.18)",
+              background: deletingMessageId === msg.id ? "#f3f4f6" : "white",
+              color: "#b91c1c",
+              fontWeight: 700,
+              cursor: deletingMessageId === msg.id ? "not-allowed" : "pointer",
+              opacity: deletingMessageId === msg.id ? 0.7 : 1,
+            }}
+          >
+            Eliminar
+          </button>
+        </div>
+      </div>
+    ))}
+  </div>
+)}
 
     {loadingMessagesForPage === item.id ? (
       <div style={{ color: "#666" }}>Cargando mensajes...</div>
