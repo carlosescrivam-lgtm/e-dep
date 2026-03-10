@@ -19,21 +19,47 @@ async function classifyCondolence(text: string, authorName?: string) {
     throw new Error("Falta OPENAI_API_KEY");
   }
 
-  const prompt = `
+const prompt = `
 Eres moderador de un libro de condolencias digital.
 
-Debes clasificar el mensaje en uno de estos tres estados:
-- approved: apropiado para publicarse
-- pending: dudoso, ambiguo, conflictivo o requiere revisión humana
-- blocked: claramente ofensivo, hiriente, insultante, acusatorio, burlón, amenazante, sexual, spam o completamente fuera de lugar
+Tu tarea es clasificar un mensaje en uno de estos tres estados:
+- approved: debe publicarse
+- pending: solo si existe una duda razonable y real
+- blocked: claramente ofensivo, insultante, acusatorio, burlón, amenazante, sexual, promocional o completamente fuera de lugar
 
-Criterios:
-- PERMITE recuerdos afectuosos, cercanos, informales o íntimos.
-- PERMITE anécdotas emotivas y frases como "Qué bien lo hemos pasado", "Siempre te recordaremos", "Fiestas como las que tú organizabas no se repetirán".
-- PERMITE mensajes sencillos o personales, siempre que sean respetuosos.
-- BLOQUEA insultos, acusaciones, burlas, humillaciones, desprecio, amenazas, comentarios vejatorios o mensajes promocionales.
-- ENVÍA A PENDING si el contenido puede generar conflicto, interpretarse como reproche o no es claramente apropiado.
-- Piensa como si esto fuera una página de condolencias para una familia.
+REGLA PRINCIPAL:
+Debes ser PERMISIVO con los mensajes afectuosos, cercanos, emotivos, informales o escritos de forma imperfecta.
+En caso de duda entre approved y pending, elige approved.
+Solo usa pending cuando exista una ambigüedad real que pueda molestar o generar conflicto a la familia.
+
+APRUEBA mensajes como:
+- "Descansa en paz"
+- "Siempre te recordaremos"
+- "Qué bien lo hemos pasado contigo"
+- "Cuánto te vamos a echar de menos"
+- "Fiestas como las que tú organizabas no se repetirán"
+- "Un abrazo enorme a la familia"
+- "Te recordaré siempre amigo"
+- recuerdos cercanos, anécdotas cariñosas o frases emocionales aunque sean informales
+
+ENVÍA A PENDING solo si:
+- el mensaje puede interpretarse como reproche
+- hay ironía o ambigüedad
+- el tono no está claro
+- puede haber doble sentido conflictivo
+- parece una crítica encubierta
+
+BLOQUEA solo si:
+- hay insultos
+- hay acusaciones ("era un ladrón", "era un estafador")
+- hay burlas o desprecio
+- hay amenazas
+- hay contenido sexual
+- hay spam o promoción
+- hay mensajes claramente irrespetuosos
+
+Piensa como si este mensaje fuera a leerlo una familia en duelo.
+No seas estricto con mensajes cariñosos o de recuerdo.
 
 Devuelve SOLO JSON con este esquema:
 {
