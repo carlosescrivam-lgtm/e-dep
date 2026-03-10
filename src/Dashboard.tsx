@@ -91,7 +91,9 @@ const [pendingMessagesByPage, setPendingMessagesByPage] = useState<Record<string
 const [loadingPendingForPage, setLoadingPendingForPage] = useState<string | null>(null);
 const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
-
+const [isMobile, setIsMobile] = useState(
+  typeof window !== "undefined" ? window.innerWidth < 900 : false
+);
 
 
   useEffect(() => {
@@ -114,6 +116,18 @@ const siteBase =
   }
 
   init();
+}, []);
+
+
+useEffect(() => {
+  function handleResize() {
+    setIsMobile(window.innerWidth < 900);
+  }
+
+  handleResize();
+  window.addEventListener("resize", handleResize);
+
+  return () => window.removeEventListener("resize", handleResize);
 }, []);
 
   async function loadCurrentUserProfile() {
@@ -1538,11 +1552,12 @@ if (currentRole === "admin" && !isAdminSupportView) {
           {logoUrl ? (
   <div
     style={{
-      position: "absolute",
-      right: 260,
-      top: 58,
-      width: 150,
-      height: 150,
+      position: isMobile ? "relative" : "absolute",
+      right: isMobile ? "auto" : 260,
+      top: isMobile ? "auto" : 58,
+      width: isMobile ? 110 : 150,
+      height: isMobile ? 110 : 150,
+      margin: isMobile ? "0 auto 16px auto" : undefined,
       background: "#ffffff",
       borderRadius: 24,
       boxShadow: "0 18px 40px rgba(15,23,42,0.22)",
@@ -1572,7 +1587,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
   style={{
     position: "relative",
     zIndex: 2,
-    paddingRight: logoUrl ? 220 : 0,
+    paddingRight: isMobile ? 0 : logoUrl ? 220 : 0,
   }}
 >
 
@@ -1756,25 +1771,30 @@ if (currentRole === "admin" && !isAdminSupportView) {
 
 
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "380px 1fr",
-            gap: 24,
-            alignItems: "start",
-          }}
-        >
-          <div
-            style={{
-              background: "rgba(255,255,255,0.84)",
-              backdropFilter: "blur(14px)",
-              border: "1px solid rgba(255,255,255,0.75)",
-              borderRadius: 24,
-              boxShadow: "0 18px 50px rgba(15,23,42,0.08)",
-              padding: 22,
-              position: "sticky",
-              top: 20,
-            }}
-          >
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "380px 1fr",
+    gridTemplateAreas: isMobile
+      ? `"main"
+         "sidebar"`
+      : `"sidebar main"`,
+    gap: isMobile ? 16 : 24,
+    alignItems: "start",
+  }}
+>
+         <div
+  style={{
+    gridArea: "sidebar",
+    background: "rgba(255,255,255,0.84)",
+    backdropFilter: "blur(14px)",
+    border: "1px solid rgba(255,255,255,0.75)",
+    borderRadius: 24,
+    boxShadow: "0 18px 50px rgba(15,23,42,0.08)",
+    padding: 22,
+    position: isMobile ? "static" : "sticky",
+    top: isMobile ? undefined : 20,
+  }}
+>
 
 <div style={{ marginBottom: 28 }}>
   <h2
@@ -1961,12 +1981,13 @@ if (currentRole === "admin" && !isAdminSupportView) {
             
           </div>
           <div
-            style={{
-              display: "grid",
-              gap: 18,
-              alignContent: "start",
-            }}
-          >
+  style={{
+    gridArea: "main",
+    display: "grid",
+    gap: 18,
+    alignContent: "start",
+  }}
+>
             {/* Crear nueva página */}
             <div
               style={{
@@ -2226,17 +2247,20 @@ onChange={async (e) => {
             <div
               style={{
                 display: "grid",
-                gridTemplateColumns: "1fr auto auto auto",
+                gridTemplateColumns: isMobile ? "1fr 1fr" : "1fr auto auto auto",
                 gap: 12,
-                alignItems: "center",
+                alignItems: "stretch",
               }}
             >
-              <input
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                placeholder="Buscar por nombre"
-                style={inputStyle}
-              />
+             <input
+  value={search}
+  onChange={(e) => setSearch(e.target.value)}
+  placeholder="Buscar difunto..."
+  style={{
+    ...inputStyle,
+    gridColumn: isMobile ? "1 / -1" : undefined,
+  }}
+/>
 
               <button
                 onClick={() => setFilter("all")}
