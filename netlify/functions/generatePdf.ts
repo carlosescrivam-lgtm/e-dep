@@ -211,8 +211,6 @@ function drawCoverTextBlock(
   page: PDFPage,
   regularFont: PDFFont,
   boldFont: PDFFont,
-  coverNameFont: PDFFont,
-  coverTextFont: PDFFont,
   fullName: string,
   customText: string,
   funeralHomeName: string
@@ -233,7 +231,7 @@ page.drawText(fullName, {
   x: PAGE_MARGIN,
   y: 690,
   size: 34,
-  font: coverNameFont,
+  font: boldFont,
   color: rgb(0.08, 0.12, 0.2),
 });
 
@@ -253,7 +251,7 @@ page.drawLine({
       x: PAGE_MARGIN,
       y,
       size: 13,
-      font: coverTextFont,
+      font: regularFont,
       color: rgb(0.30, 0.34, 0.40),
     });
     y -= 20;
@@ -274,12 +272,12 @@ page.drawLine({
   );
  }
  
+
+ 
 async function drawCoverPage(
   pdfDoc: PDFDocument,
   regularFont: PDFFont,
   boldFont: PDFFont,
-  coverNameFont: PDFFont,
-  coverTextFont: PDFFont,
   pageData: {
     full_name: string | null;
     custom_text: string | null;
@@ -308,12 +306,10 @@ async function drawCoverPage(
     color: rgb(0.93, 0.95, 0.97),
   });
 
-  drawCoverTextBlock(
+drawCoverTextBlock(
   page,
   regularFont,
   boldFont,
-  coverNameFont,
-  coverTextFont,
   safeText(pageData.full_name) || "Sin nombre",
   safeText(pageData.custom_text),
   funeralHomeName
@@ -619,8 +615,6 @@ const coverTextFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
   pdfDoc,
   regularFont,
   boldFont,
-  coverNameFont,
-  coverTextFont,
   {
     full_name: page.full_name,
     custom_text: page.custom_text,

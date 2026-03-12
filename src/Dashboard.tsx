@@ -99,10 +99,13 @@ const [currentSubscriptionPlan, setCurrentSubscriptionPlan] = useState("");
 const [currentTrialUntil, setCurrentTrialUntil] = useState<string | null>(null);
 const [currentSubscriptionStart, setCurrentSubscriptionStart] = useState<string | null>(null);
 const [currentSubscriptionUntil, setCurrentSubscriptionUntil] = useState<string | null>(null);
-const [showFuneralHomePanel, setShowFuneralHomePanel] = useState(true);
+const [showFuneralHomePanel, setShowFuneralHomePanel] = useState(false);
 const [showSubscriptionPanel, setShowSubscriptionPanel] = useState(false);
 const [showStripePanel, setShowStripePanel] = useState(false);
-
+const [showSecurityPanel, setShowSecurityPanel] = useState(false);
+const [accountEmail, setAccountEmail] = useState("");
+const [newPassword, setNewPassword] = useState("");
+const [updatingPassword, setUpdatingPassword] = useState(false);
 
   useEffect(() => {
   async function init() {
@@ -128,6 +131,22 @@ const [showStripePanel, setShowStripePanel] = useState(false);
 
 
 useEffect(() => {
+  async function loadAccountEmail() {
+    const {
+      data: { user },
+      error,
+    } = await supabase.auth.getUser();
+
+    if (!error && user?.email) {
+      setAccountEmail(user.email);
+    }
+  }
+
+  loadAccountEmail();
+}, []);
+
+
+useEffect(() => {
   function handleResize() {
     setIsMobile(window.innerWidth < 900);
   }
@@ -137,6 +156,8 @@ useEffect(() => {
 
   return () => window.removeEventListener("resize", handleResize);
 }, []);
+
+
 
   async function loadCurrentUserProfile() {
   const {
@@ -221,6 +242,38 @@ setCurrentSubscriptionPlan(data.subscription_plan || "");
 setCurrentTrialUntil(data.trial_until || null);
 setCurrentSubscriptionStart(data.subscription_start || null);
 setCurrentSubscriptionUntil(data.subscription_until || null);
+}
+
+async function updatePassword() {
+  if (!newPassword || newPassword.length < 6) {
+    alert("La contraseña debe tener al menos 6 caracteres");
+    return;
+  }
+
+  try {
+    setUpdatingPassword(true);
+
+    const { error } = await supabase.auth.updateUser({
+      password: newPassword,
+    });
+
+    if (error) {
+      alert("Error cambiando contraseña");
+      return;
+    }
+
+    setNewPassword("");
+    alert("Contraseña actualizada correctamente");
+  } catch {
+    alert("Error cambiando contraseña");
+  } finally {
+    setUpdatingPassword(false);
+  }
+}
+
+async function logout() {
+  await supabase.auth.signOut();
+  window.location.reload();
 }
 
   async function loadData(funeralHomeIdOverride?: string) {
@@ -1880,6 +1933,34 @@ if (currentRole === "admin" && !isAdminSupportView) {
     : "Panel de funeraria · viendo solo tu cuenta"}
 </div>
 
+{website && !isAdminSupportView ? (
+  <div
+    style={{
+      marginTop: 6,
+      marginBottom: 10,
+      fontSize: 14,
+      color: "rgba(255,255,255,0.92)",
+      lineHeight: 1.5,
+      wordBreak: "break-word",
+    }}
+  >
+    Web:
+    <a
+      href={website.startsWith("http") ? website : `https://${website}`}
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        marginLeft: 6,
+        color: "#ffffff",
+        textDecoration: "underline",
+        fontWeight: 600,
+      }}
+    >
+      {website}
+    </a>
+  </div>
+) : null}
+
             <p
               style={{
                 marginTop: 12,
@@ -2421,6 +2502,93 @@ if (currentRole === "admin" && !isAdminSupportView) {
 </button>
 
 
+    </div>
+  )}
+</div>
+
+<div style={{ marginBottom: 18 }}>
+  <button
+    type="button"
+    onClick={() => setShowSecurityPanel((prev) => !prev)}
+    style={{
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "14px 16px",
+      borderRadius: 16,
+      border: "1px solid #e2e8f0",
+      background: "white",
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 16,
+      color: "#0f172a",
+      marginBottom: showSecurityPanel ? 14 : 0,
+    }}
+  >
+    <span>Acceso y seguridad</span>
+    <span>{showSecurityPanel ? "−" : "+"}</span>
+  </button>
+
+  {showSecurityPanel && (
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #e2e8f0",
+        borderRadius: 18,
+        padding: 16,
+      }}
+    >
+      <div style={{ marginBottom: 14 }}>
+        <div style={{ fontSize: 13, fontWeight: 700, color: "#64748b" }}>
+          Email de acceso
+        </div>
+
+        <div style={{ fontSize: 14, fontWeight: 600 }}>
+          {accountEmail}
+        </div>
+      </div>
+
+      <input
+        type="password"
+        placeholder="Nueva contraseña"
+        value={newPassword}
+        onChange={(e) => setNewPassword(e.target.value)}
+        style={inputStyle}
+      />
+
+      <button
+        onClick={updatePassword}
+        style={{
+          width: "100%",
+          marginTop: 10,
+          border: "none",
+          borderRadius: 16,
+          padding: "14px 16px",
+          background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+          color: "white",
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        Cambiar contraseña
+      </button>
+
+      <button
+        onClick={logout}
+        style={{
+          width: "100%",
+          marginTop: 10,
+          border: "1px solid #e2e8f0",
+          borderRadius: 16,
+          padding: "14px 16px",
+          background: "#f8fafc",
+          fontWeight: 700,
+          cursor: "pointer",
+        }}
+      >
+        Cerrar sesión
+      </button>
     </div>
   )}
 </div>
