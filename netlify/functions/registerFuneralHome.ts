@@ -56,7 +56,10 @@ export const handler: Handler = async (event) => {
       .insert({
         name,
         owner_user_id: user.id,
-        subscription_status: "inactive",
+        subscription_status: "trial",
+        trial_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+        subscription_plan: null,
+        subscription_until: null,
       })
       .select("id")
       .single();

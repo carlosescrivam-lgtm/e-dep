@@ -95,6 +95,14 @@ const [isMobile, setIsMobile] = useState(
   typeof window !== "undefined" ? window.innerWidth < 900 : false
 );
 
+const [currentSubscriptionPlan, setCurrentSubscriptionPlan] = useState("");
+const [currentTrialUntil, setCurrentTrialUntil] = useState<string | null>(null);
+const [currentSubscriptionStart, setCurrentSubscriptionStart] = useState<string | null>(null);
+const [currentSubscriptionUntil, setCurrentSubscriptionUntil] = useState<string | null>(null);
+const [showFuneralHomePanel, setShowFuneralHomePanel] = useState(true);
+const [showSubscriptionPanel, setShowSubscriptionPanel] = useState(false);
+const [showStripePanel, setShowStripePanel] = useState(false);
+
 
   useEffect(() => {
   async function init() {
@@ -194,10 +202,9 @@ async function loadFuneralHomeData(funeralHomeIdOverride?: string) {
 
   const { data, error } = await supabase
   .from("funeral_homes")
-  .select("name, address, city, postal_code, phone, contact_email, website, logo_url, subscription_status")
+  .select("name, address, city, postal_code, phone, contact_email, website, logo_url, subscription_status, subscription_plan, trial_until, subscription_start, subscription_until")
   .eq("id", funeralHomeId)
   .maybeSingle();
-
   if (error) throw error;
   if (!data) return;
 
@@ -210,6 +217,10 @@ async function loadFuneralHomeData(funeralHomeIdOverride?: string) {
   setWebsite(data.website || "");
   setLogoUrl(data.logo_url || "");
   setCurrentSubscriptionStatus(data.subscription_status || "inactive");
+setCurrentSubscriptionPlan(data.subscription_plan || "");
+setCurrentTrialUntil(data.trial_until || null);
+setCurrentSubscriptionStart(data.subscription_start || null);
+setCurrentSubscriptionUntil(data.subscription_until || null);
 }
 
   async function loadData(funeralHomeIdOverride?: string) {
@@ -353,6 +364,9 @@ async function loadAdminSupportData(funeralHomeId: string) {
   setCurrentFuneralHomeId(home.id);
 setCurrentFuneralHomeName(home.name || "");
 setCurrentSubscriptionStatus(home.subscription_status || "inactive");
+setCurrentSubscriptionPlan(home.subscription_plan || "");
+setCurrentTrialUntil(home.trial_until || null);
+setCurrentSubscriptionUntil(home.subscription_until || null);
 setFuneralHomeNameEdit(home.name || "");
 setAddress(home.address || "");
 setCity(home.city || "");
@@ -409,6 +423,11 @@ async function toggleFuneralHomeSubscription(
 
   async function handleCreate(e: React.FormEvent) {
   e.preventDefault();
+ 
+  if (!canCreatePage) {
+  alert("Tu plan actual no permite crear más páginas este mes.");
+  return;
+}
 
   if (!fullName.trim()) {
     alert("Debes escribir el nombre del difunto.");
@@ -467,6 +486,7 @@ closesAt.setDate(closesAt.getDate() + Number(closeDays));
       photo_url: photoUrl,
       is_searchable: isSearchable,
     };
+
 
     const { error } = await supabase.from("deceased_pages").insert(payload);
 
@@ -947,7 +967,30 @@ async function generatePdfNow(pageId: string, pageName: string) {
   }
 }
 
+async function startCheckout(plan: "basic" | "pro" | "unlimited") {
+  try {
+    const res = await fetch("/.netlify/functions/createCheckoutSession", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        plan,
+        funeralHomeId: currentFuneralHomeId,
+      }),
+    });
 
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "No se pudo iniciar el pago.");
+    }
+
+    window.location.href = data.url;
+  } catch (err: any) {
+    alert(err?.message || "No se pudo iniciar el pago.");
+  }
+}
 
 async function handleLogout() {
   await supabase.auth.signOut();
@@ -991,6 +1034,111 @@ const totalCondolences = items.reduce(
   (acc, item) => acc + item.condolences_count,
   0
 );
+ 
+const nowDate = new Date();
+
+const billingCycleStart = currentSubscriptionStart
+  ? new Date(currentSubscriptionStart)
+  : new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
+
+const billingCycleEnd = currentSubscriptionUntil
+  ? new Date(currentSubscriptionUntil)
+  : null;
+
+const pagesThisMonth = items.filter((item) => {
+  if (!item.created_at) return false;
+
+  const createdAt = new Date(item.created_at);
+
+  if (billingCycleEnd) {
+    return createdAt >= billingCycleStart && createdAt < billingCycleEnd;
+  }
+
+  return createdAt >= billingCycleStart;
+}).length;
+
+const isTrialActive =
+  currentSubscriptionStatus === "trial" &&
+  !!currentTrialUntil &&
+  new Date(currentTrialUntil).getTime() > Date.now();
+
+const isPaidActive =
+  currentSubscriptionStatus === "active" &&
+  (!currentSubscriptionUntil ||
+    new Date(currentSubscriptionUntil).getTime() > Date.now());
+
+const normalizedPlan = (currentSubscriptionPlan || "").trim().toLowerCase();
+
+const currentPlanLimit =
+  normalizedPlan === "unlimited"
+    ? null
+    : normalizedPlan === "pro"
+    ? 20
+    : normalizedPlan === "basic"
+    ? 10
+    : 10;
+
+    const isCurrentBasicPlan = normalizedPlan === "basic" && isPaidActive;
+const isCurrentProPlan = normalizedPlan === "pro" && isPaidActive;
+const isCurrentUnlimitedPlan = normalizedPlan === "unlimited" && isPaidActive;
+
+const getRenewalDaysText = (dateString: string | null) => {
+  if (!dateString) return "";
+
+  const today = new Date();
+  const renewalDate = new Date(dateString);
+
+  const todayOnly = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const renewalOnly = new Date(
+    renewalDate.getFullYear(),
+    renewalDate.getMonth(),
+    renewalDate.getDate()
+  );
+
+  const diffMs = renewalOnly.getTime() - todayOnly.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return "Suscripción vencida";
+  if (diffDays === 0) return "Renueva hoy";
+  if (diffDays === 1) return "Renueva en 1 día";
+
+  return `Renueva en ${diffDays} días`;
+};
+
+const renewalDaysText = isTrialActive
+  ? getRenewalDaysText(currentTrialUntil)
+  : getRenewalDaysText(currentSubscriptionUntil);
+
+const pagesRemainingThisMonth =
+  currentPlanLimit === null
+    ? null
+    : Math.max(currentPlanLimit - pagesThisMonth, 0);
+
+const monthlyUsageText =
+  currentPlanLimit === null
+    ? `Páginas creadas en tu ciclo actual: ${pagesThisMonth} (ilimitado)`
+    : `Páginas creadas en tu ciclo actual: ${pagesThisMonth} / ${currentPlanLimit}`;
+
+const planLimitWarningText =
+  currentPlanLimit === null
+    ? "Tu plan no tiene límite mensual"
+    : pagesRemainingThisMonth === 0
+    ? "Has alcanzado el límite mensual de tu plan"
+    : pagesRemainingThisMonth === 1
+    ? "⚠️ Te queda 1 página disponible este mes"
+    : pagesRemainingThisMonth !== null && pagesRemainingThisMonth <= 3
+    ? `⚠️ Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`
+    : `Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`;
+
+const canCreatePage =
+  isTrialActive ||
+  (isPaidActive &&
+    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
 
  const isAdminSupportView =
   currentRole === "admin" && !!adminViewingFuneralHomeId;
@@ -1168,7 +1316,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
   src={logoEdep}
   alt="E-Dep"
   style={{
-    position: "absolute",
+    position: "relative",
     right: 180,
     top: 18,
     width: 170,
@@ -1209,7 +1357,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
                 marginBottom: 16,
               }}
             >
-              E-Dep · Libro de condolencias digital
+              E-Dep.org · Libro de condolencias digital
             </div>
 
             <h1
@@ -1600,6 +1748,14 @@ if (currentRole === "admin" && !isAdminSupportView) {
     right: 24,
   }}
 >
+  
+<div
+  style={{
+    position: "absolute",
+    top: 16,
+    right: 16,
+  }}
+>
   <button
     onClick={handleLogout}
     style={{
@@ -1616,6 +1772,8 @@ if (currentRole === "admin" && !isAdminSupportView) {
   >
     Salir
   </button>
+</div>
+
 {isAdminSupportView && (
   <button
     onClick={() => {
@@ -1796,188 +1954,476 @@ if (currentRole === "admin" && !isAdminSupportView) {
   }}
 >
 
-<div style={{ marginBottom: 28 }}>
-  <h2
+<div style={{ marginBottom: 18 }}>
+  <button
+    type="button"
+    onClick={() => setShowFuneralHomePanel((prev) => !prev)}
     style={{
-      marginTop: 0,
-      marginBottom: 8,
-      fontSize: 22,
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "14px 16px",
+      borderRadius: 16,
+      border: "1px solid #e2e8f0",
+      background: "white",
+      cursor: "pointer",
       fontWeight: 800,
-      letterSpacing: "-0.02em",
+      fontSize: 16,
+      color: "#0f172a",
+      marginBottom: showFuneralHomePanel ? 14 : 0,
     }}
   >
-    Datos de la funeraria
-  </h2>
+    <span>Datos de la funeraria</span>
+    <span>{showFuneralHomePanel ? "−" : "+"}</span>
+  </button>
 
-  <p
+  {showFuneralHomePanel && (
+    <div>
+      <p
+        style={{
+          marginTop: 0,
+          marginBottom: 20,
+          color: "#475569",
+          fontSize: 14,
+          lineHeight: 1.6,
+        }}
+      >
+        Edita la información pública y de contacto de tu funeraria.
+      </p>
+
+      <FieldLabel>Nombre</FieldLabel>
+      <input
+        value={funeralHomeNameEdit}
+        onChange={(e) => setFuneralHomeNameEdit(e.target.value)}
+        placeholder="Nombre de la funeraria"
+        style={inputStyle}
+      />
+
+      <FieldLabel>Dirección</FieldLabel>
+      <input
+        value={address}
+        onChange={(e) => setAddress(e.target.value)}
+        placeholder="Dirección"
+        style={inputStyle}
+      />
+
+      <FieldLabel>Ciudad</FieldLabel>
+      <input
+        value={city}
+        onChange={(e) => setCity(e.target.value)}
+        placeholder="Ciudad"
+        style={inputStyle}
+      />
+
+      <FieldLabel>Código postal</FieldLabel>
+      <input
+        value={postalCode}
+        onChange={(e) => setPostalCode(e.target.value)}
+        placeholder="Código postal"
+        style={inputStyle}
+      />
+
+      <FieldLabel>Teléfono</FieldLabel>
+      <input
+        value={phone}
+        onChange={(e) => setPhone(e.target.value)}
+        placeholder="Teléfono"
+        style={inputStyle}
+      />
+
+      <FieldLabel>Email de contacto</FieldLabel>
+      <input
+        value={contactEmail}
+        onChange={(e) => setContactEmail(e.target.value)}
+        placeholder="Email de contacto"
+        type="email"
+        style={inputStyle}
+      />
+
+      <FieldLabel>Web</FieldLabel>
+      <input
+        value={website}
+        onChange={(e) => setWebsite(e.target.value)}
+        placeholder="https://..."
+        style={inputStyle}
+      />
+
+      <FieldLabel>Logo de la funeraria</FieldLabel>
+
+      <input
+        type="file"
+        accept="image/*"
+        onChange={(e) => {
+          const file = e.target.files?.[0];
+          if (file) {
+            handleLogoUpload(file);
+          }
+        }}
+        style={{
+          ...inputStyle,
+          padding: 12,
+          background: "white",
+        }}
+      />
+
+      {uploadingLogo ? (
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 13,
+            color: "#475569",
+          }}
+        >
+          Subiendo logo...
+        </div>
+      ) : null}
+
+      {logoFileError ? (
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 13,
+            color: "#b91c1c",
+            fontWeight: 600,
+          }}
+        >
+          {logoFileError}
+        </div>
+      ) : null}
+
+      {logoUrl ? (
+        <div
+          style={{
+            marginTop: 12,
+            background: "#fff",
+            border: "1px solid #e2e8f0",
+            borderRadius: 16,
+            padding: 12,
+            display: "flex",
+            alignItems: "center",
+            justifyContent: "center",
+            minHeight: 120,
+          }}
+        >
+          <img
+            src={logoUrl}
+            alt="Logo funeraria"
+            style={{
+              maxWidth: "100%",
+              maxHeight: 90,
+              objectFit: "contain",
+            }}
+          />
+        </div>
+      ) : null}
+
+      <button
+        type="button"
+        onClick={saveFuneralHomeData}
+        disabled={savingFuneralHome}
+        style={{
+          width: "100%",
+          marginTop: 16,
+          border: "none",
+          borderRadius: 16,
+          padding: "15px 18px",
+          background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+          color: "white",
+          fontWeight: 700,
+          fontSize: 15,
+          cursor: savingFuneralHome ? "not-allowed" : "pointer",
+          opacity: savingFuneralHome ? 0.7 : 1,
+        }}
+      >
+        {savingFuneralHome ? "Guardando..." : "Guardar datos funeraria"}
+      </button>
+
+      <div
+        style={{
+          height: 1,
+          background: "#e2e8f0",
+          marginTop: 24,
+          marginBottom: 24,
+        }}
+      />
+    </div>
+  )}
+</div>
+
+<div style={{ marginBottom: 18 }}>
+  <button
+    type="button"
+    onClick={() => setShowSubscriptionPanel((prev) => !prev)}
     style={{
-      marginTop: 0,
-      marginBottom: 20,
-      color: "#475569",
-      fontSize: 14,
-      lineHeight: 1.6,
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "14px 16px",
+      borderRadius: 16,
+      border: "1px solid #e2e8f0",
+      background: "white",
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 16,
+      color: "#0f172a",
+      marginBottom: showSubscriptionPanel ? 14 : 0,
     }}
   >
-    Edita la información pública y de contacto de tu funeraria.
-  </p>
+    <span>Plan y suscripción</span>
+    <span>{showSubscriptionPanel ? "−" : "+"}</span>
+  </button>
 
-  <FieldLabel>Nombre</FieldLabel>
-  <input
-    value={funeralHomeNameEdit}
-    onChange={(e) => setFuneralHomeNameEdit(e.target.value)}
-    placeholder="Nombre de la funeraria"
-    style={inputStyle}
-  />
+  {showSubscriptionPanel && (
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #e2e8f0",
+        borderRadius: 18,
+        padding: 16,
+      }}
+    >
+      <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>
+        {isTrialActive
+          ? "Prueba gratuita activa"
+          : currentSubscriptionStatus === "active"
+          ? currentSubscriptionPlan === "basic"
+            ? "Plan Básico activo"
+            : currentSubscriptionPlan === "pro"
+            ? "Plan Profesional activo"
+            : currentSubscriptionPlan === "unlimited"
+            ? "Plan Ilimitado activo"
+            : "Plan activo"
+          : "Sin suscripción activa"}
+      </div>
 
-  <FieldLabel>Dirección</FieldLabel>
-  <input
-    value={address}
-    onChange={(e) => setAddress(e.target.value)}
-    placeholder="Dirección"
-    style={inputStyle}
-  />
+      <div style={{ fontSize: 13, color: "#64748b", marginBottom: 6 }}>
+        {isTrialActive
+          ? currentTrialUntil
+            ? `Prueba hasta ${new Date(currentTrialUntil).toLocaleDateString("es-ES")}`
+            : "Prueba gratuita en curso"
+          : currentSubscriptionUntil
+          ? `Activo hasta ${new Date(currentSubscriptionUntil).toLocaleDateString("es-ES")}`
+          : ""}
+      </div>
 
-  <FieldLabel>Ciudad</FieldLabel>
-  <input
-    value={city}
-    onChange={(e) => setCity(e.target.value)}
-    placeholder="Ciudad"
-    style={inputStyle}
-  />
+      {renewalDaysText ? (
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color:
+              renewalDaysText === "Suscripción vencida"
+                ? "#b91c1c"
+                : renewalDaysText === "Renueva hoy"
+                ? "#b45309"
+                : "#0f172a",
+            marginBottom: 12,
+          }}
+        >
+          {renewalDaysText}
+        </div>
+      ) : null}
 
-  <FieldLabel>Código postal</FieldLabel>
-  <input
-    value={postalCode}
-    onChange={(e) => setPostalCode(e.target.value)}
-    placeholder="Código postal"
-    style={inputStyle}
-  />
+      <div
+        style={{
+          background: "#f8fafc",
+          border: "1px solid #e2e8f0",
+          borderRadius: 14,
+          padding: 12,
+          marginBottom: 12,
+        }}
+      >
+        <div
+          style={{
+            fontSize: 12,
+            color: "#64748b",
+            fontWeight: 700,
+            marginBottom: 6,
+            textTransform: "uppercase",
+            letterSpacing: "0.04em",
+          }}
+        >
+          Uso mensual
+        </div>
 
-  <FieldLabel>Teléfono</FieldLabel>
-  <input
-    value={phone}
-    onChange={(e) => setPhone(e.target.value)}
-    placeholder="Teléfono"
-    style={inputStyle}
-  />
+        <div
+          style={{
+            fontSize: 14,
+            fontWeight: 700,
+            color: "#0f172a",
+            marginBottom: 6,
+          }}
+        >
+          {monthlyUsageText}
+        </div>
 
-  <FieldLabel>Email de contacto</FieldLabel>
-  <input
-    value={contactEmail}
-    onChange={(e) => setContactEmail(e.target.value)}
-    placeholder="Email de contacto"
-    type="email"
-    style={inputStyle}
-  />
+        <div
+          style={{
+            fontSize: 13,
+            fontWeight: 600,
+            color:
+              currentPlanLimit === null
+                ? "#475569"
+                : pagesRemainingThisMonth === 0
+                ? "#b91c1c"
+                : pagesRemainingThisMonth !== null && pagesRemainingThisMonth <= 3
+                ? "#b45309"
+                : "#475569",
+          }}
+        >
+          {planLimitWarningText}
+        </div>
+      </div>
 
-  <FieldLabel>Web</FieldLabel>
-  <input
-    value={website}
-    onChange={(e) => setWebsite(e.target.value)}
-    placeholder="https://..."
-    style={inputStyle}
-  />
+      <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
+        <button
+          onClick={() => startCheckout("basic")}
+          disabled={isCurrentBasicPlan}
+          style={{
+            ...planButtonStyle,
+            opacity: isCurrentBasicPlan ? 0.55 : 1,
+            cursor: isCurrentBasicPlan ? "not-allowed" : "pointer",
+          }}
+        >
+          {isCurrentBasicPlan ? "Plan actual" : "Plan Básico"}
+        </button>
 
-  <FieldLabel>Logo de la funeraria</FieldLabel>
+        <button
+          onClick={() => startCheckout("pro")}
+          disabled={isCurrentProPlan}
+          style={{
+            ...planButtonStyle,
+            opacity: isCurrentProPlan ? 0.55 : 1,
+            cursor: isCurrentProPlan ? "not-allowed" : "pointer",
+          }}
+        >
+          {isCurrentProPlan ? "Plan actual" : "Plan Profesional"}
+        </button>
 
-<input
-  type="file"
-  accept="image/*"
-  onChange={(e) => {
-    const file = e.target.files?.[0];
-    if (file) {
-      handleLogoUpload(file);
+        <button
+          onClick={() => startCheckout("unlimited")}
+          disabled={isCurrentUnlimitedPlan}
+          style={{
+            ...planButtonStyle,
+            opacity: isCurrentUnlimitedPlan ? 0.55 : 1,
+            cursor: isCurrentUnlimitedPlan ? "not-allowed" : "pointer",
+          }}
+        >
+          {isCurrentUnlimitedPlan ? "Plan actual" : "Plan Ilimitado"}
+        </button>
+      </div>
+    </div>
+  )}
+</div>
+
+<div style={{ marginBottom: 18 }}>
+  <button
+    type="button"
+    onClick={() => setShowStripePanel((prev) => !prev)}
+    style={{
+      width: "100%",
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "space-between",
+      padding: "14px 16px",
+      borderRadius: 16,
+      border: "1px solid #e2e8f0",
+      background: "white",
+      cursor: "pointer",
+      fontWeight: 800,
+      fontSize: 16,
+      color: "#0f172a",
+      marginBottom: showStripePanel ? 14 : 0,
+    }}
+  >
+    <span>Portal de cliente Stripe</span>
+    <span>{showStripePanel ? "−" : "+"}</span>
+  </button>
+
+  {showStripePanel && (
+    <div
+      style={{
+        background: "white",
+        border: "1px solid #e2e8f0",
+        borderRadius: 18,
+        padding: 16,
+      }}
+    >
+      <div
+        style={{
+          fontSize: 14,
+          color: "#475569",
+          lineHeight: 1.6,
+          marginBottom: 12,
+        }}
+      >
+        Desde aquí podrás cambiar tarjeta, descargar facturas, cambiar de plan o cancelar tu suscripción.
+      </div>
+
+    <button
+  type="button"
+  onClick={async () => {
+    try {
+      const response = await fetch(
+        "/.netlify/functions/createCustomerPortalSession",
+        {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+          },
+          body: JSON.stringify({
+            funeralHomeId: currentFuneralHomeId,
+          }),
+        }
+      );
+
+      const rawText = await response.text();
+
+      let data: any = {};
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = { error: rawText || "Respuesta no válida del servidor" };
+      }
+
+      if (!response.ok) {
+        console.error("Error portal Stripe:", data);
+        alert(data.error || "No se pudo abrir el portal de cliente");
+        return;
+      }
+
+      if (!data.url) {
+        alert("Stripe no devolvió una URL válida");
+        return;
+      }
+
+      window.location.href = data.url;
+    } catch (error: any) {
+      console.error("Error conectando con Stripe:", error);
+      alert(error?.message || "Error conectando con Stripe");
     }
   }}
   style={{
-    ...inputStyle,
-    padding: 12,
-    background: "white",
+    width: "100%",
+    border: "none",
+    borderRadius: 16,
+    padding: "15px 18px",
+    background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+    color: "white",
+    fontWeight: 700,
+    fontSize: 15,
+    cursor: "pointer",
   }}
-/>
+>
+  Abrir portal de cliente
+</button>
 
-{uploadingLogo ? (
-  <div
-    style={{
-      marginTop: 8,
-      fontSize: 13,
-      color: "#475569",
-    }}
-  >
-    Subiendo logo...
-  </div>
-) : null}
 
-{logoFileError ? (
-  <div
-    style={{
-      marginTop: 8,
-      fontSize: 13,
-      color: "#b91c1c",
-      fontWeight: 600,
-    }}
-  >
-    {logoFileError}
-  </div>
-) : null}
-
-{logoUrl ? (
-  <div
-    style={{
-      marginTop: 12,
-      background: "#fff",
-      border: "1px solid #e2e8f0",
-      borderRadius: 16,
-      padding: 12,
-      display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      minHeight: 120,
-    }}
-  >
-    <img
-      src={logoUrl}
-      alt="Logo funeraria"
-      style={{
-        maxWidth: "100%",
-        maxHeight: 90,
-        objectFit: "contain",
-      }}
-    />
-  </div>
-) : null}
-
-  <button
-    type="button"
-    onClick={saveFuneralHomeData}
-    disabled={savingFuneralHome}
-    style={{
-      width: "100%",
-      marginTop: 16,
-      border: "none",
-      borderRadius: 16,
-      padding: "15px 18px",
-      background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
-      color: "white",
-      fontWeight: 700,
-      fontSize: 15,
-      cursor: savingFuneralHome ? "not-allowed" : "pointer",
-      opacity: savingFuneralHome ? 0.7 : 1,
-    }}
-  >
-    {savingFuneralHome ? "Guardando..." : "Guardar datos funeraria"}
-  </button>
-
-  <div
-    style={{
-      height: 1,
-      background: "#e2e8f0",
-      marginTop: 24,
-      marginBottom: 24,
-    }}
-  />
+    </div>
+  )}
 </div>
-
             
           </div>
           <div
@@ -1988,6 +2434,11 @@ if (currentRole === "admin" && !isAdminSupportView) {
     alignContent: "start",
   }}
 >
+
+
+  
+
+
             {/* Crear nueva página */}
             <div
               style={{
@@ -1999,6 +2450,9 @@ if (currentRole === "admin" && !isAdminSupportView) {
                 marginBottom: 0,
               }}
             >
+
+
+
               <div
                 style={{
                   display: "flex",
@@ -2051,6 +2505,30 @@ if (currentRole === "admin" && !isAdminSupportView) {
 
               {showCreateForm && (
                 <div style={{ padding: 18 }}>
+                {!canCreatePage && (
+  <div
+    style={{
+      background: "#fff7ed",
+      border: "1px solid #fdba74",
+      color: "#9a3412",
+      borderRadius: 14,
+      padding: 12,
+      marginBottom: 16,
+      fontSize: 13,
+      lineHeight: 1.5,
+      fontWeight: 600,
+    }}
+  >
+    No puedes crear más páginas en este momento.
+    {isTrialActive
+      ? " Tu periodo gratuito sigue activo, pero revisa este aviso si algo no cuadra."
+      : currentSubscriptionStatus === "trial"
+      ? " Tu prueba gratuita ha terminado."
+      : currentSubscriptionStatus === "active"
+      ? " Has alcanzado el límite mensual de tu plan."
+      : " Tu suscripción no está activa."}
+  </div>
+)}
                   <form onSubmit={handleCreate}>
                     <FieldLabel>Nombre del difunto</FieldLabel>
                     <input
@@ -2220,8 +2698,8 @@ onChange={async (e) => {
 </div>
 
                     <button
-                      type="submit"
-                      disabled={saving}
+  type="submit"
+  disabled={saving || !canCreatePage}
                       style={{
                         width: "100%",
                         marginTop: 16,
@@ -2232,9 +2710,9 @@ onChange={async (e) => {
                         color: "white",
                         fontWeight: 700,
                         fontSize: 15,
-                        cursor: saving ? "not-allowed" : "pointer",
+                       cursor: saving || !canCreatePage ? "not-allowed" : "pointer",
                         boxShadow: "0 14px 30px rgba(15,23,42,0.18)",
-                        opacity: saving ? 0.7 : 1,
+                        opacity: saving || !canCreatePage ? 0.7 : 1,
                       }}
                     >
                       {saving ? "Creando..." : "Crear página"}
@@ -2320,7 +2798,7 @@ onChange={async (e) => {
         fontWeight: 800,
         letterSpacing: "0.08em",
         color: "#475569",
-        marginBottom: 6,
+        marginBottom: 3,
       }}
     >
       PÁGINAS ACTIVAS
@@ -2854,7 +3332,22 @@ onChange={async (e) => {
   );
 }
 
+const PLAN_LIMITS: Record<string, number | null> = {
+  basic: 10,
+  pro: 20,
+  unlimited: null,
+};
 
+const planButtonStyle: React.CSSProperties = {
+  border: "1px solid rgba(0,0,0,0.12)",
+  background: "white",
+  borderRadius: 12,
+  padding: "10px 14px",
+  fontWeight: 700,
+  fontSize: 13,
+  cursor: "pointer",
+  boxShadow: "0 4px 10px rgba(0,0,0,0.05)",
+};
 
 function slugify(value: string) {
   return value

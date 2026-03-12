@@ -32,6 +32,7 @@
         "npm:react-router-dom@^7.13.1",
         "npm:react@^19.2.0",
         "npm:resend@^6.9.3",
+        "npm:stripe@^20.4.1",
         "npm:typescript-eslint@^8.48.0",
         "npm:typescript@~5.9.3",
         "npm:vite@^7.3.1"
