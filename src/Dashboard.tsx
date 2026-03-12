@@ -3332,11 +3332,7 @@ onChange={async (e) => {
   );
 }
 
-const PLAN_LIMITS: Record<string, number | null> = {
-  basic: 10,
-  pro: 20,
-  unlimited: null,
-};
+
 
 const planButtonStyle: React.CSSProperties = {
   border: "1px solid rgba(0,0,0,0.12)",
