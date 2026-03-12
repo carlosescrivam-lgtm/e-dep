@@ -105,7 +105,7 @@ const [showStripePanel, setShowStripePanel] = useState(false);
 const [showSecurityPanel, setShowSecurityPanel] = useState(false);
 const [accountEmail, setAccountEmail] = useState("");
 const [newPassword, setNewPassword] = useState("");
-const [updatingPassword, setUpdatingPassword] = useState(false);
+
 
   useEffect(() => {
   async function init() {
