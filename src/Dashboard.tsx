@@ -251,8 +251,6 @@ async function updatePassword() {
   }
 
   try {
-    setUpdatingPassword(true);
-
     const { error } = await supabase.auth.updateUser({
       password: newPassword,
     });
@@ -266,8 +264,6 @@ async function updatePassword() {
     alert("Contraseña actualizada correctamente");
   } catch {
     alert("Error cambiando contraseña");
-  } finally {
-    setUpdatingPassword(false);
   }
 }
 
