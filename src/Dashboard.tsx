@@ -61,7 +61,7 @@ export default function Dashboard() {
   const [currentFuneralHomeName, setCurrentFuneralHomeName] = useState("");
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState("");
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState<"all" | "open" | "closed">("all");
+  const [filter, setFilter] = useState<"all" | "open" | "closed">("open");
   const [fullName, setFullName] = useState("");
   const [customText, setCustomText] = useState("");
   const [theme, setTheme] = useState("classic");
