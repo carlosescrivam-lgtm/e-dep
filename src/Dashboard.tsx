@@ -2141,10 +2141,7 @@ const adminRenewalText = isTrial
       display: "inline-block",
     }}
   >
-    Estás usando <strong>E-Dep en modo prueba gratuita</strong>
-    {currentTrialUntil
-      ? ` · Finaliza el ${new Date(currentTrialUntil).toLocaleDateString("es-ES")}`
-      : ""}
+    {getTrialDaysText(currentTrialUntil)}
   </div>
 )}
 
