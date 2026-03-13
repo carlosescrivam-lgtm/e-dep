@@ -105,29 +105,97 @@ const [showStripePanel, setShowStripePanel] = useState(false);
 const [showSecurityPanel, setShowSecurityPanel] = useState(false);
 const [accountEmail, setAccountEmail] = useState("");
 const [newPassword, setNewPassword] = useState("");
-
+const [trialPopupText, setTrialPopupText] = useState("");
 
   useEffect(() => {
   async function init() {
     try {
       setLoading(true);
 
-      const profile = await loadCurrentUserProfile();
+      await loadCurrentUserProfile();
       await loadFuneralHomeData();
       await loadData();
-
-      if (profile?.role === "admin") {
-        await loadAdminData();
-      }
     } catch (err: any) {
       console.error(err);
       setError(err?.message || "No se pudo iniciar el dashboard.");
+    } finally {
       setLoading(false);
     }
   }
 
   init();
 }, []);
+
+useEffect(() => {
+  async function syncAdminList() {
+    if (currentRole !== "admin") return;
+
+    try {
+      await loadAdminData();
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "No se pudieron cargar las funerarias.");
+    }
+  }
+
+  syncAdminList();
+}, [currentRole]);
+
+useEffect(() => {
+  async function syncAdminSupportView() {
+    if (currentRole !== "admin" || !adminViewingFuneralHomeId) return;
+
+    try {
+      setLoading(true);
+      setError("");
+
+      await loadAdminSupportData(adminViewingFuneralHomeId);
+    } catch (err: any) {
+      console.error(err);
+      setError(err?.message || "No se pudo abrir el panel de la funeraria.");
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  syncAdminSupportView();
+}, [currentRole, adminViewingFuneralHomeId]);
+
+
+
+
+  const getTrialDaysText = (dateString: string | null) => {
+    if (!dateString) return "Está usando una versión trial gratuita.";
+
+    const today = new Date();
+    const endDate = new Date(dateString);
+
+    const todayOnly = new Date(
+      today.getFullYear(),
+      today.getMonth(),
+      today.getDate()
+    );
+
+    const endOnly = new Date(
+      endDate.getFullYear(),
+      endDate.getMonth(),
+      endDate.getDate()
+    );
+
+    const diffMs = endOnly.getTime() - todayOnly.getTime();
+    const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+    if (diffDays <= 0) {
+      return "Su periodo trial gratuito finaliza hoy.";
+    }
+
+    if (diffDays === 1) {
+      return "Está Vd en modo trial gratuito. Le queda 1 día.";
+    }
+
+    return `Está Vd en modo trial gratuito. Le quedan ${diffDays} días.`;
+  };
+
 
 
 useEffect(() => {
@@ -522,19 +590,19 @@ closesAt.setDate(closesAt.getDate() + Number(closeDays));
       photoUrl = publicUrlData.publicUrl;
     }
 
-    const payload = {
-      full_name: fullName.trim(),
-      custom_text: customText.trim() || null,
-      slug,
-      access_token: accessToken,
-      status: "open",
-      closes_at: closesAt.toISOString(),
-      theme,
-      family_email: familyEmail.trim() || null,
-      funeral_home_id: currentFuneralHomeId,
-      photo_url: photoUrl,
-      is_searchable: isSearchable,
-    };
+  const payload = {
+  full_name: fullName.trim(),
+  custom_text: customText.trim() || null,
+  slug,
+  access_token: accessToken,
+  status: "open",
+  closes_at: closesAt.toISOString(),
+  theme,
+  family_email: familyEmail.trim() || null,
+  funeral_home_id: effectiveFuneralHomeId,
+  photo_url: photoUrl,
+  is_searchable: isSearchable,
+};
 
 
     const { error } = await supabase.from("deceased_pages").insert(payload);
@@ -559,7 +627,7 @@ closesAt.setDate(closesAt.getDate() + Number(closeDays));
 
     setShowCreateForm(false);
 
-    await loadData();
+    await loadData(effectiveFuneralHomeId || undefined);
     alert("Página creada correctamente.");
   } catch (err: any) {
     console.error(err);
@@ -1000,20 +1068,9 @@ async function generatePdfNow(pageId: string, pageName: string) {
     window.open(qrUrl, "_blank");
   }
 
-  async function openFuneralHomeSupportView(homeId: string, homeName: string) {
-  try {
-    setLoading(true);
-
-    setAdminViewingFuneralHomeId(homeId);
-    setAdminViewingFuneralHomeName(homeName);
-
-    await loadAdminSupportData(homeId);
-  } catch (err: any) {
-    console.error(err);
-    alert(err?.message || "No se pudo abrir el panel de la funeraria.");
-  } finally {
-    setLoading(false);
-  }
+function openFuneralHomeSupportView(homeId: string, homeName: string) {
+  setAdminViewingFuneralHomeId(homeId);
+  setAdminViewingFuneralHomeName(homeName);
 }
 
 async function startCheckout(plan: "basic" | "pro" | "unlimited") {
@@ -1192,8 +1249,12 @@ const canCreatePage =
  const isAdminSupportView =
   currentRole === "admin" && !!adminViewingFuneralHomeId;
 
+const effectiveFuneralHomeId =
+  isAdminSupportView ? adminViewingFuneralHomeId : currentFuneralHomeId;
+
 const isSubscriptionBlocked =
-  currentRole === "funeral_home" && currentSubscriptionStatus !== "active";
+  currentRole === "funeral_home" && !isTrialActive && !isPaidActive;
+
 
 if (isSubscriptionBlocked) {
   return (
@@ -1527,7 +1588,68 @@ if (currentRole === "admin" && !isAdminSupportView) {
               }}
             >
               {adminFuneralHomes.map((home) => {
-                const isActive = home.subscription_status === "active";
+               const homeStatus = (home.subscription_status || "").toLowerCase();
+
+const isActive = homeStatus === "active";
+const isTrial = homeStatus === "trial";
+
+const statusLabel = isActive
+  ? "Activa"
+  : isTrial
+  ? "En prueba"
+  : "Inactiva";
+
+const statusBg = isActive
+  ? "rgba(16,185,129,0.15)"
+  : isTrial
+  ? "rgba(245,158,11,0.15)"
+  : "rgba(239,68,68,0.12)";
+
+const statusColor = isActive
+  ? "#065f46"
+  : isTrial
+  ? "#92400e"
+  : "#991b1b";
+
+const statusDot = isActive
+  ? "#10b981"
+  : isTrial
+  ? "#f59e0b"
+  : "#ef4444";
+
+  const getRenewalDaysText = (dateString?: string | null) => {
+  if (!dateString) return "";
+
+  const today = new Date();
+  const renewalDate = new Date(dateString);
+
+  const todayOnly = new Date(
+    today.getFullYear(),
+    today.getMonth(),
+    today.getDate()
+  );
+
+  const renewalOnly = new Date(
+    renewalDate.getFullYear(),
+    renewalDate.getMonth(),
+    renewalDate.getDate()
+  );
+
+  const diffMs = renewalOnly.getTime() - todayOnly.getTime();
+  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+
+  if (diffDays < 0) return "Prueba vencida";
+  if (diffDays === 0) return "Renueva hoy";
+  if (diffDays === 1) return "Renueva en 1 día";
+
+  return `Renueva en ${diffDays} días`;
+};
+
+const adminRenewalText = isTrial
+  ? getRenewalDaysText(home.trial_until)
+  : isActive
+  ? getRenewalDaysText(home.subscription_until)
+  : "";
 
                 return (
                   <div
@@ -1552,7 +1674,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
     width: 6,
     borderTopLeftRadius: 24,
     borderBottomLeftRadius: 24,
-    background: isActive ? "#10b981" : "#ef4444",
+    background: isActive ? "#10b981" : isTrial ? "#f59e0b" : "#ef4444",
   }}
 />
 
@@ -1565,12 +1687,16 @@ if (currentRole === "admin" && !isAdminSupportView) {
                         height: 120,
                         borderRadius: "50%",
                         background: isActive
-                          ? "rgba(16,185,129,0.12)"
-                          : "rgba(239,68,68,0.10)",
+  ? "rgba(16,185,129,0.12)"
+  : isTrial
+  ? "rgba(245,158,11,0.12)"
+  : "rgba(239,68,68,0.10)",
                       }}
                     />
 
                     <div style={{ position: "relative", zIndex: 1 }}>
+                     
+
                      <div
   style={{
     display: "inline-flex",
@@ -1580,10 +1706,8 @@ if (currentRole === "admin" && !isAdminSupportView) {
     padding: "6px 12px",
     fontSize: 12,
     fontWeight: 700,
-    background: isActive
-      ? "rgba(16,185,129,0.15)"
-      : "rgba(239,68,68,0.12)",
-    color: isActive ? "#065f46" : "#991b1b",
+    background: statusBg,
+    color: statusColor,
     marginBottom: 12,
   }}
 >
@@ -1592,11 +1716,11 @@ if (currentRole === "admin" && !isAdminSupportView) {
       width: 8,
       height: 8,
       borderRadius: "50%",
-      background: isActive ? "#10b981" : "#ef4444",
+      background: statusDot,
       display: "inline-block",
     }}
   />
-  {isActive ? "Activa" : "Inactiva"}
+  {statusLabel}
 </div>
 
 
@@ -1621,6 +1745,77 @@ if (currentRole === "admin" && !isAdminSupportView) {
                       >
                         Alta: {formatDate(home.created_at)}
                       </p>
+
+{isTrial ? (
+  <div
+    style={{
+      marginTop: 10,
+      padding: 12,
+      borderRadius: 16,
+      background: "rgba(245,158,11,0.08)",
+      border: "1px solid rgba(245,158,11,0.20)",
+      color: "#92400e",
+    }}
+  >
+    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+      Prueba gratuita activa
+    </div>
+
+    <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+      {home.trial_until
+        ? `Finaliza el ${new Date(home.trial_until).toLocaleDateString("es-ES")}`
+        : "Periodo de prueba en curso"}
+    </div>
+
+    {adminRenewalText ? (
+      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+        {adminRenewalText}
+      </div>
+    ) : null}
+  </div>
+) : isActive ? (
+  <div
+    style={{
+      marginTop: 10,
+      padding: 12,
+      borderRadius: 16,
+      background: "rgba(16,185,129,0.08)",
+      border: "1px solid rgba(16,185,129,0.18)",
+      color: "#065f46",
+    }}
+  >
+    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+      Suscripción activa
+    </div>
+
+    <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+      {home.subscription_until
+        ? `Renueva el ${new Date(home.subscription_until).toLocaleDateString("es-ES")}`
+        : "Plan activo"}
+    </div>
+
+    {adminRenewalText ? (
+      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+        {adminRenewalText}
+      </div>
+    ) : null}
+  </div>
+) : (
+  <div
+    style={{
+      marginTop: 10,
+      padding: 12,
+      borderRadius: 16,
+      background: "rgba(239,68,68,0.06)",
+      border: "1px solid rgba(239,68,68,0.14)",
+      color: "#991b1b",
+      fontSize: 13,
+      fontWeight: 700,
+    }}
+  >
+    Sin suscripción activa
+  </div>
+)}
 
                       <div
                         style={{
@@ -1665,23 +1860,21 @@ if (currentRole === "admin" && !isAdminSupportView) {
     Ver panel
   </button>
 
+  {homeStatus === "active" ? (
   <button
-    onClick={() =>
-      toggleFuneralHomeSubscription(
-        home.id,
-        home.subscription_status === "active" ? "inactive" : "active"
-      )
-    }
-    style={
-      home.subscription_status === "active"
-        ? dangerButtonStyle
-        : ghostButtonStyle
-    }
+    onClick={() => toggleFuneralHomeSubscription(home.id, "inactive")}
+    style={dangerButtonStyle}
   >
-    {home.subscription_status === "active"
-      ? "Desactivar"
-      : "Activar"}
+    Desactivar
   </button>
+) : homeStatus === "inactive" ? (
+  <button
+    onClick={() => toggleFuneralHomeSubscription(home.id, "active")}
+    style={ghostButtonStyle}
+  >
+    Activar
+  </button>
+) : null}
 </div>
 
                       </div>
@@ -1697,6 +1890,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
   );
 }
   
+
   return (
     <div
       style={{
@@ -1709,6 +1903,9 @@ if (currentRole === "admin" && !isAdminSupportView) {
         color: "#0f172a",
       }}
     >
+
+
+
       <div style={{ maxWidth: 1320, margin: "0 auto" }}>
         <div
           style={{
@@ -1928,6 +2125,29 @@ if (currentRole === "admin" && !isAdminSupportView) {
     ? `Panel Empresa · ${currentFuneralHomeName}`
     : "Panel de funeraria · viendo solo tu cuenta"}
 </div>
+
+{isTrialActive && !isAdminSupportView && (
+  <div
+    style={{
+      marginTop: 10,
+      marginBottom: 10,
+      padding: "10px 14px",
+      borderRadius: 14,
+      background: "rgba(245,158,11,0.12)",
+      border: "1px solid rgba(245,158,11,0.25)",
+      color: "#92400e",
+      fontSize: 14,
+      fontWeight: 600,
+      display: "inline-block",
+    }}
+  >
+    Estás usando <strong>E-Dep en modo prueba gratuita</strong>
+    {currentTrialUntil
+      ? ` · Finaliza el ${new Date(currentTrialUntil).toLocaleDateString("es-ES")}`
+      : ""}
+  </div>
+)}
+
 
 {website && !isAdminSupportView ? (
   <div

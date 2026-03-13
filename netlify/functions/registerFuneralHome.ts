@@ -18,15 +18,21 @@ export const handler: Handler = async (event) => {
     const body = event.body ? JSON.parse(event.body) : null;
 
     const name = body?.name?.trim();
-    const email = body?.email?.trim().toLowerCase();
-    const password = body?.password;
+const email = body?.email?.trim().toLowerCase();
+const password = body?.password;
 
-    if (!name || !email || !password) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Faltan datos obligatorios" }),
-      };
-    }
+const address = body?.address?.trim() || null;
+const city = body?.city?.trim() || null;
+const postal_code = body?.postal_code?.trim() || null;
+const phone = body?.phone?.trim() || null;
+const contact_email = body?.contact_email?.trim().toLowerCase() || null;
+
+    if (!name || !email || !password || !address || !city || !postal_code || !phone || !contact_email) {
+  return {
+    statusCode: 400,
+    body: JSON.stringify({ error: "Faltan datos obligatorios" }),
+  };
+}
 
    const { data: authData, error: authError } =
   await supabase.auth.admin.createUser({
@@ -34,7 +40,7 @@ export const handler: Handler = async (event) => {
     password,
     email_confirm: true,
   });
-
+console.log("Usuario auth creado:", authData?.user?.id, email);
     if (authError) {
       return {
         statusCode: 500,
@@ -54,16 +60,24 @@ export const handler: Handler = async (event) => {
     const { data: funeralHome, error: funeralHomeError } = await supabase
       .from("funeral_homes")
       .insert({
-        name,
-        owner_user_id: user.id,
-        subscription_status: "trial",
-        trial_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
-        subscription_plan: null,
-        subscription_until: null,
-      })
+  name,
+  address,
+  city,
+  postal_code,
+  phone,
+  contact_email,
+  owner_user_id: user.id,
+  subscription_status: "trial",
+  trial_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
+  subscription_plan: null,
+  subscription_until: null,
+})
       .select("id")
       .single();
-
+console.log("Resultado insert funeral_homes:", {
+  funeralHome,
+  funeralHomeError,
+});
     if (funeralHomeError) {
       return {
         statusCode: 500,
@@ -78,7 +92,11 @@ export const handler: Handler = async (event) => {
         funeral_home_id: funeralHome.id,
         role: "funeral_home",
       });
-
+console.log("Resultado insert funeral_home_users:", {
+  relationError,
+  userId: user.id,
+  funeralHomeId: funeralHome?.id,
+});
     if (relationError) {
       return {
         statusCode: 500,

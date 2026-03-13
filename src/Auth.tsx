@@ -4,10 +4,15 @@ import { supabase } from "./lib/supabaseClient";
 export default function Auth() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [funeralHomeName, setFuneralHomeName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [msg, setMsg] = useState<string>("");
-  const [loading, setLoading] = useState(false);
+const [address, setAddress] = useState("");
+const [city, setCity] = useState("");
+const [postalCode, setPostalCode] = useState("");
+const [phone, setPhone] = useState("");
+const [contactEmail, setContactEmail] = useState("");
+const [email, setEmail] = useState("");
+const [password, setPassword] = useState("");
+const [msg, setMsg] = useState<string>("");
+const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<any[]>([]);
 const [searching, setSearching] = useState(false);
@@ -30,6 +35,33 @@ const [searching, setSearching] = useState(false);
       setLoading(false);
     }
   }
+
+  async function forgotPassword() {
+  try {
+    if (!email.trim()) {
+      setMsg("❌ Introduce tu email para recuperar la contraseña.");
+      return;
+    }
+
+    setLoading(true);
+    setMsg("Enviando email de recuperación...");
+
+    const { error } = await supabase.auth.resetPasswordForEmail(email.trim(), {
+      redirectTo: `${window.location.origin}`,
+    });
+
+    if (error) {
+      setMsg("❌ " + error.message);
+      return;
+    }
+
+    setMsg("✅ Te hemos enviado un email para restablecer tu contraseña.");
+  } catch (err: any) {
+    setMsg("❌ " + (err?.message || "No se pudo enviar el email de recuperación."));
+  } finally {
+    setLoading(false);
+  }
+}
 
 async function handlePublicSearch() {
   if (!searchQuery.trim()) {
@@ -83,10 +115,15 @@ useEffect(() => {
           "Content-Type": "application/json",
         },
         body: JSON.stringify({
-          name: funeralHomeName,
-          email,
-          password,
-        }),
+  name: funeralHomeName,
+  address,
+  city,
+  postal_code: postalCode,
+  phone,
+  contact_email: contactEmail,
+  email,
+  password,
+}),
       });
 
       const data = await res.json();
@@ -97,10 +134,16 @@ useEffect(() => {
       }
 
       setMsg(
-        "✅ Cuenta creada. Ahora puedes iniciar sesión con tu email y contraseña."
-      );
-      setMode("login");
-      setPassword("");
+  "✅ Cuenta creada. Ahora puedes iniciar sesión con tu email y contraseña."
+);
+setMode("login");
+setFuneralHomeName("");
+setAddress("");
+setCity("");
+setPostalCode("");
+setPhone("");
+setContactEmail("");
+setPassword("");
     } catch (err: any) {
       setMsg("❌ " + (err?.message || "No se pudo crear la cuenta"));
     } finally {
@@ -176,16 +219,57 @@ useEffect(() => {
         </p>
 
         {mode === "register" ? (
-          <>
-            <label style={labelStyle}>Nombre de la funeraria</label>
-            <input
-              style={inputStyle}
-              value={funeralHomeName}
-              onChange={(e) => setFuneralHomeName(e.target.value)}
-              placeholder="Ejemplo: Funeraria García"
-            />
-          </>
-        ) : null}
+  <>
+    <label style={labelStyle}>Nombre de la funeraria</label>
+    <input
+      style={inputStyle}
+      value={funeralHomeName}
+      onChange={(e) => setFuneralHomeName(e.target.value)}
+      placeholder="Ejemplo: Funeraria García"
+    />
+
+    <label style={labelStyle}>Dirección</label>
+    <input
+      style={inputStyle}
+      value={address}
+      onChange={(e) => setAddress(e.target.value)}
+      placeholder="Calle, número..."
+    />
+
+    <label style={labelStyle}>Ciudad</label>
+    <input
+      style={inputStyle}
+      value={city}
+      onChange={(e) => setCity(e.target.value)}
+      placeholder="Ciudad"
+    />
+
+    <label style={labelStyle}>Código postal</label>
+    <input
+      style={inputStyle}
+      value={postalCode}
+      onChange={(e) => setPostalCode(e.target.value)}
+      placeholder="Código postal"
+    />
+
+    <label style={labelStyle}>Teléfono</label>
+    <input
+      style={inputStyle}
+      value={phone}
+      onChange={(e) => setPhone(e.target.value)}
+      placeholder="Teléfono"
+    />
+
+    <label style={labelStyle}>Email de contacto</label>
+    <input
+      style={inputStyle}
+      value={contactEmail}
+      onChange={(e) => setContactEmail(e.target.value)}
+      placeholder="contacto@funeraria.com"
+      type="email"
+    />
+  </>
+) : null}
 
         <label style={labelStyle}>Email</label>
         <input
@@ -204,6 +288,26 @@ useEffect(() => {
           onChange={(e) => setPassword(e.target.value)}
           placeholder="********"
         />
+
+        {mode === "login" ? (
+  <button
+    type="button"
+    onClick={forgotPassword}
+    style={{
+      marginTop: 10,
+      background: "none",
+      border: "none",
+      padding: 0,
+      color: "#334155",
+      textDecoration: "underline",
+      cursor: "pointer",
+      fontSize: 14,
+      fontWeight: 600,
+    }}
+  >
+    ¿Olvidaste la contraseña?
+  </button>
+) : null}
 
         <button
           onClick={mode === "login" ? signIn : signUp}
