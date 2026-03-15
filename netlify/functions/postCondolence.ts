@@ -212,25 +212,29 @@ const photo_path = body?.photo_path ?? null;
 
     const decision = await moderateCondolence(trimmedMessage, trimmedAuthor);
 
-    if (decision.status === "blocked") {
-      return {
-        statusCode: 403,
-        body: JSON.stringify({
-          error:
-            "No se ha podido publicar el mensaje porque no cumple las normas de respeto de este espacio.",
-          moderation_status: "blocked",
-        }),
-      };
-    }
+    const dbModerationStatus =
+  decision.status === "blocked" ? "rejected" : decision.status;
 
-    const { error: insError } = await supabase.from("condolences").insert({
-      page_id: page.id,
-      author_name: trimmedAuthor,
-      message: trimmedMessage,
-      photo_path: photo_path || null,
-      moderation_status: decision.status,
-      moderation_reason: decision.reason || null,
-    });
+   const { error: insError } = await supabase.from("condolences").insert({
+  page_id: page.id,
+  author_name: trimmedAuthor,
+  message: trimmedMessage,
+  photo_path: photo_path || null,
+  moderation_status: dbModerationStatus,
+  moderation_reason: decision.reason || null,
+});
+
+if (decision.status === "blocked") {
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      ok: true,
+      moderation_status: "rejected",
+      message:
+        "Tu mensaje no ha podido publicarse porque no cumple las normas de respeto de este espacio.",
+    }),
+  };
+}
 
     if (insError) {
       return {

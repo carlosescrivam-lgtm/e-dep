@@ -29,14 +29,19 @@ export default function PublicPage() {
   const token = searchParams.get("token");
   const [page, setPage] = useState<Page | null>(null);
   const [messages, setMessages] = useState<Condolence[]>([]);
+  const [isAnalyzing, setIsAnalyzing] = useState(false);
   const [author, setAuthor] = useState("");
   const [message, setMessage] = useState("");
+  const [submissionNotice, setSubmissionNotice] = useState<string | null>(null);
   const [hoveredMessage, setHoveredMessage] = useState<string | null>(null);
   const [loading, setLoading] = useState(true);
 const [photoFile, setPhotoFile] = useState<File | null>(null);
 const [photoPreview, setPhotoPreview] = useState<string>("");
 const [showForm, setShowForm] = useState(false);
 const fileInputRef = useRef<HTMLInputElement | null>(null);
+const noticeRef = useRef<HTMLDivElement | null>(null);
+
+
   async function loadPage() {
     if (!slug || !token) {
       setLoading(false);
@@ -66,6 +71,9 @@ setLoading(false);
 
 
 async function submitMessage() {
+
+  setIsAnalyzing(true);
+
   try {
     if (!slug || !token) {
       alert("Enlace inválido (falta token).");
@@ -143,21 +151,48 @@ async function submitMessage() {
       fileInputRef.current.value = "";
     }
 
-    if (data?.moderation_status === "pending") {
-      alert(
-        data?.message ||
-          "Tu mensaje ha quedado pendiente de revisión antes de publicarse."
-      );
-      setShowForm(false);
-      return;
-    }
+if (data?.moderation_status === "pending") {
+  setSubmissionNotice(
+    "✔ Gracias por tu mensaje. Ha sido enviado correctamente y está pendiente de revisión antes de publicarse."
+  );
+
+  setAuthor("");
+  setMessage("");
+  setPhotoFile(null);
+  setPhotoPreview("");
+  if (fileInputRef.current) {
+    fileInputRef.current.value = "";
+  }
+
+  setShowForm(false);
+  return;
+}
+
+if (data?.moderation_status === "rejected") {
+  setSubmissionNotice(
+    "Tu mensaje no ha podido publicarse porque incumple las normas de respeto de esta página."
+  );
+
+  setAuthor("");
+  setMessage("");
+  setPhotoFile(null);
+  setPhotoPreview("");
+  if (fileInputRef.current) {
+    fileInputRef.current.value = "";
+  }
+
+  setShowForm(false);
+  return;
+}
 
     await loadPage();
     setShowForm(false);
   } catch (err: any) {
-    console.error(err);
-    alert(err?.message || "No se pudo enviar el mensaje.");
-  }
+  console.error(err);
+  alert(err?.message || "No se pudo enviar el mensaje.");
+} finally {
+  setIsAnalyzing(false);
+}
 }
  
 
@@ -201,11 +236,16 @@ return (
   }}
 >
     <style>{`
-      @keyframes msgIn {
-        from { opacity: 0; transform: translateY(12px); filter: blur(2px); }
-        to   { opacity: 1; transform: translateY(0);    filter: blur(0px); }
-      }
-    `}</style>
+  @keyframes msgIn {
+    from { opacity: 0; transform: translateY(12px); filter: blur(2px); }
+    to   { opacity: 1; transform: translateY(0);    filter: blur(0px); }
+  }
+
+  @keyframes spin {
+    from { transform: rotate(0deg); }
+    to   { transform: rotate(360deg); }
+  }
+`}</style>
 
    
   
@@ -354,6 +394,28 @@ return (
   </div>
 </div>
 
+
+{submissionNotice && (
+  <div
+    ref={noticeRef}
+    style={{
+      maxWidth: 620,
+      margin: "12px auto",
+      padding: 14,
+      background: "rgba(16,185,129,0.08)",
+      border: "1px solid rgba(16,185,129,0.25)",
+      borderRadius: 12,
+      color: "#065f46",
+      fontWeight: 600,
+      fontSize: 14,
+      textAlign: "center",
+    }}
+  >
+    {submissionNotice}
+  </div>
+)}
+
+
 {showForm && (
   <div
   style={{
@@ -480,9 +542,10 @@ onChange={async (e) => {
   </div>
 )}
         
-        <button
+       <button
   type="button"
   onClick={submitMessage}
+  disabled={isAnalyzing}
   style={{
     marginTop: 12,
     width: "100%",
@@ -492,11 +555,43 @@ onChange={async (e) => {
     background: "#111827",
     color: "white",
     fontWeight: 800,
-    cursor: "pointer",
+    cursor: isAnalyzing ? "not-allowed" : "pointer",
+    opacity: isAnalyzing ? 0.7 : 1,
   }}
 >
-  Publicar mensaje
+  {isAnalyzing ? "Analizando mensaje..." : "Publicar mensaje"}
 </button>
+
+{isAnalyzing && (
+  <div
+    style={{
+      marginTop: 10,
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      fontSize: 14,
+      color: "#92400e",
+      fontWeight: 600,
+      background: "rgba(245,158,11,0.1)",
+      border: "1px solid rgba(245,158,11,0.25)",
+      padding: "10px 12px",
+      borderRadius: 10,
+    }}
+  >
+    <div
+      style={{
+        width: 16,
+        height: 16,
+        borderRadius: "50%",
+        border: "2px solid rgba(146,64,14,0.25)",
+        borderTopColor: "#92400e",
+        animation: "spin 0.8s linear infinite",
+        flexShrink: 0,
+      }}
+    />
+   <span>Tu mensaje está siendo revisado antes de publicarse. Gracias por tu paciencia.</span>
+  </div>
+)}
         </div>
 )}
       <div style={{ maxWidth: 980, margin: "0 auto", position: "relative", zIndex: 1 }}>

@@ -39,6 +39,7 @@ type PageCard = {
   condolences_count: number;
   is_searchable: boolean;
   pending_count: number;
+  rejected_count: number;
 };
 
 export default function Dashboard() {
@@ -88,6 +89,7 @@ const [pageMessages, setPageMessages] = useState<Record<string, any[]>>({});
 const [loadingMessagesForPage, setLoadingMessagesForPage] = useState<string | null>(null);
 const [deletingMessageId, setDeletingMessageId] = useState<string | null>(null);
 const [pendingMessagesByPage, setPendingMessagesByPage] = useState<Record<string, any[]>>({});
+const [rejectedMessagesByPage, setRejectedMessagesByPage] = useState<Record<string, any[]>>({});
 const [loadingPendingForPage, setLoadingPendingForPage] = useState<string | null>(null);
 const siteBase =
     typeof window !== "undefined" ? window.location.origin : "";
@@ -390,17 +392,17 @@ const { data: pagesData, error: pagesError } = await pagesQuery;
 
 if (pagesError) throw pagesError;
 
-     const { data: condolencesData, error: condolencesError } = await supabase
+    const { data: condolencesData, error: condolencesError } = await supabase
   .from("condolences")
-  .select("id, page_id, created_at, deleted_at, moderation_status")
-  .is("deleted_at", null);
+  .select("id, page_id, created_at, deleted_at, moderation_status");
 
       if (condolencesError) throw condolencesError;
 
-      const pages = (pagesData ?? []) as DbPage[];
-      const condolences = (condolencesData ?? []) as Condolence[];
-      const countByPageId: Record<string, number> = {};
+ const pages = (pagesData ?? []) as DbPage[];
+const condolences = (condolencesData ?? []) as Condolence[];
+const countByPageId: Record<string, number> = {};
 const pendingCountByPageId: Record<string, number> = {};
+const rejectedCountByPageId: Record<string, number> = {};
 
 for (const condolence of condolences) {
   if (!condolence.page_id) continue;
@@ -412,6 +414,14 @@ for (const condolence of condolences) {
     pendingCountByPageId[condolence.page_id] =
       (pendingCountByPageId[condolence.page_id] || 0) + 1;
   }
+
+  if (
+    condolence.moderation_status === "rejected" ||
+    condolence.deleted_at
+  ) {
+    rejectedCountByPageId[condolence.page_id] =
+      (rejectedCountByPageId[condolence.page_id] || 0) + 1;
+  }
 }
 
 
@@ -420,7 +430,7 @@ for (const condolence of condolences) {
           ? page.funeral_homes[0]
           : page.funeral_homes;
 
-        return {
+   return {
   id: String(page.id),
   full_name: page.full_name || "Sin nombre",
   custom_text: page.custom_text || "",
@@ -432,8 +442,9 @@ for (const condolence of condolences) {
   created_at: page.created_at || null,
   funeral_home_name: funeralHomeSource?.name || "",
   condolences_count: countByPageId[String(page.id)] || 0,
-pending_count: pendingCountByPageId[String(page.id)] || 0,
-is_searchable: !!page.is_searchable,
+  pending_count: pendingCountByPageId[String(page.id)] || 0,
+  rejected_count: rejectedCountByPageId[String(page.id)] || 0,
+  is_searchable: !!page.is_searchable,
 };
       });
 
@@ -537,6 +548,49 @@ async function toggleFuneralHomeSubscription(
     alert(err?.message || "No se pudo actualizar la suscripción.");
   }
 }
+
+async function handleDeleteFuneralHome(
+  funeralHomeId: string,
+  funeralHomeName: string
+) {
+  const ok = window.confirm(
+    `Si continúas eliminarás todos los datos relacionados con esta funeraria.\n\n¿Estás seguro?\n\nFuneraria: "${funeralHomeName}"`
+  );
+
+  if (!ok) return;
+
+  try {
+    const res = await fetch("/.netlify/functions/deleteFuneralHome", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        funeral_home_id: funeralHomeId,
+      }),
+    });
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "No se pudo eliminar la funeraria.");
+    }
+
+    if (isAdminSupportView) {
+      setAdminViewingFuneralHomeId(null);
+      setAdminViewingFuneralHomeName("");
+      await loadAdminData();
+      return;
+    }
+
+    await loadAdminData();
+    alert("Funeraria eliminada correctamente.");
+  } catch (err: any) {
+    console.error(err);
+    alert(err?.message || "No se pudo eliminar la funeraria.");
+  }
+}
+
 
   async function handleCreate(e: React.FormEvent) {
   e.preventDefault();
@@ -681,23 +735,61 @@ async function handleDeletePage(pageId: string, fullName: string) {
   }
 }
 
-
 async function loadMessagesForPage(pageId: string) {
   try {
     setLoadingMessagesForPage(pageId);
 
+    if (isAdminSupportView) {
+      const res = await fetch(
+        `/.netlify/functions/getSupportPageMessages?page_id=${encodeURIComponent(pageId)}`
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudieron cargar los mensajes.");
+      }
+
+      setPageMessages((prev) => ({
+        ...prev,
+        [pageId]: data.published || [],
+      }));
+
+      setPendingMessagesByPage((prev) => ({
+        ...prev,
+        [pageId]: data.pending || [],
+      }));
+
+      setRejectedMessagesByPage((prev) => ({
+        ...prev,
+        [pageId]: data.rejected || [],
+      }));
+
+      return;
+    }
+
     const { data, error } = await supabase
       .from("condolences")
-      .select("id, author_name, message, created_at, deleted_at")
+      .select("id, author_name, message, created_at, deleted_at, moderation_status, moderation_reason")
       .eq("page_id", pageId)
-      .is("deleted_at", null)
       .order("created_at", { ascending: false });
 
     if (error) throw error;
 
+    const allMessages = data || [];
+
     setPageMessages((prev) => ({
       ...prev,
-      [pageId]: data || [],
+      [pageId]: allMessages.filter(
+        (msg) => !msg.deleted_at && msg.moderation_status === "approved"
+      ),
+    }));
+
+    setRejectedMessagesByPage((prev) => ({
+      ...prev,
+      [pageId]: allMessages.filter(
+        (msg) => !!msg.deleted_at || msg.moderation_status === "rejected"
+      ),
     }));
   } catch (err: any) {
     console.error("Error cargando mensajes:", err);
@@ -711,9 +803,42 @@ async function loadPendingMessagesForPage(pageId: string) {
   try {
     setLoadingPendingForPage(pageId);
 
+    if (isAdminSupportView) {
+      const res = await fetch(
+        `/.netlify/functions/getSupportPageMessages?page_id=${encodeURIComponent(pageId)}`
+      );
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(
+          data?.error || "No se pudieron cargar los mensajes pendientes."
+        );
+      }
+
+      setPendingMessagesByPage((prev) => ({
+        ...prev,
+        [pageId]: data.pending || [],
+      }));
+
+      setRejectedMessagesByPage((prev) => ({
+        ...prev,
+        [pageId]: data.rejected || [],
+      }));
+
+      if (!pageMessages[pageId]) {
+        setPageMessages((prev) => ({
+          ...prev,
+          [pageId]: data.published || [],
+        }));
+      }
+
+      return;
+    }
+
     const { data, error } = await supabase
       .from("condolences")
-      .select("id, author_name, message, created_at, moderation_status, moderation_reason")
+      .select("id, author_name, message, created_at, moderation_status, moderation_reason, deleted_at")
       .eq("page_id", pageId)
       .is("deleted_at", null)
       .eq("moderation_status", "pending")
@@ -743,7 +868,7 @@ async function toggleModerationPanel(pageId: string) {
 
   await Promise.all([
     !pageMessages[pageId] ? loadMessagesForPage(pageId) : Promise.resolve(),
-    !pendingMessagesByPage[pageId] ? loadPendingMessagesForPage(pageId) : Promise.resolve(),
+    loadPendingMessagesForPage(pageId),
   ]);
 }
 
@@ -757,41 +882,79 @@ async function handleDeleteMessage(messageId: string, pageId: string) {
   try {
     setDeletingMessageId(messageId);
 
-    const { error } = await supabase
-      .from("condolences")
-      .update({ deleted_at: new Date().toISOString() })
-      .eq("id", messageId);
+    if (isAdminSupportView) {
+      const res = await fetch("/.netlify/functions/moderateSupportCondolence", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messageId,
+          action: "delete",
+        }),
+      });
 
-    if (error) throw error;
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo eliminar el mensaje.");
+      }
+    } else {
+      const { error } = await supabase
+        .from("condolences")
+        .update({ deleted_at: new Date().toISOString() })
+        .eq("id", messageId);
+
+      if (error) throw error;
+    }
+
+    const wasPending = (pendingMessagesByPage[pageId] || []).some(
+      (msg) => msg.id === messageId
+    );
 
     setPageMessages((prev) => ({
+      ...prev,
+      [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
+    }));
+
+    setPendingMessagesByPage((prev) => ({
+      ...prev,
+      [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
+    }));
+
+    setRejectedMessagesByPage((prev) => ({
   ...prev,
   [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
 }));
 
-setPendingMessagesByPage((prev) => ({
-  ...prev,
-  [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
-}));
+    setItems((prev) =>
+      prev.map((item) =>
+        item.id === pageId
+          ? {
+              ...item,
+              condolences_count: Math.max(0, item.condolences_count - 1),
+              pending_count: Math.max(
+                0,
+                wasPending ? item.pending_count - 1 : item.pending_count
+              ),
+            }
+          : item
+      )
+    );
 
-setItems((prev) =>
-  prev.map((item) =>
-    item.id === pageId
-      ? {
-          ...item,
-          condolences_count: Math.max(0, item.condolences_count - 1),
-          pending_count: Math.max(
-            0,
-            (pendingMessagesByPage[pageId] || []).some((msg) => msg.id === messageId)
-              ? item.pending_count - 1
-              : item.pending_count
-          ),
-        }
-      : item
-  )
-);
-
-    await loadData();
+   if (isAdminSupportView && adminViewingFuneralHomeId) {
+  await loadAdminSupportData(adminViewingFuneralHomeId);
+  await Promise.all([
+    loadMessagesForPage(pageId),
+    loadPendingMessagesForPage(pageId),
+  ]);
+} else {
+  await Promise.all([
+    loadMessagesForPage(pageId),
+    loadPendingMessagesForPage(pageId),
+    loadData(effectiveFuneralHomeId || undefined),
+  ]);
+}
   } catch (err: any) {
     console.error("Error eliminando mensaje:", err);
     alert(err?.message || "No se pudo eliminar el mensaje.");
@@ -800,48 +963,92 @@ setItems((prev) =>
   }
 }
 
+
 async function handleApproveMessage(messageId: string, pageId: string) {
   try {
     setDeletingMessageId(messageId);
 
+    if (isAdminSupportView) {
+      const res = await fetch("/.netlify/functions/moderateSupportCondolence", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          messageId,
+          action: "approve",
+        }),
+      });
+
+      const data = await res.json();
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo aprobar el mensaje.");
+      }
+    } else {
     const { error } = await supabase
-      .from("condolences")
-      .update({
-        moderation_status: "approved",
-        moderation_reason: null,
-      })
-      .eq("id", messageId);
+  .from("condolences")
+  .update({
+    moderation_status: "approved",
+    moderation_reason: null,
+    deleted_at: null,
+  })
+  .eq("id", messageId);
 
-    if (error) throw error;
-
-    const approvedMsg = (pendingMessagesByPage[pageId] || []).find(
-      (msg) => msg.id === messageId
-    );
+      if (error) throw error;
+    }
+const approvedMsg =
+  (pendingMessagesByPage[pageId] || []).find((msg) => msg.id === messageId) ||
+  (rejectedMessagesByPage[pageId] || []).find((msg) => msg.id === messageId);
 
     setPendingMessagesByPage((prev) => ({
       ...prev,
       [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
     }));
+    setRejectedMessagesByPage((prev) => ({
+  ...prev,
+  [pageId]: (prev[pageId] || []).filter((msg) => msg.id !== messageId),
+}));
 
     if (approvedMsg) {
-      setPageMessages((prev) => ({
-        ...prev,
-        [pageId]: [approvedMsg, ...(prev[pageId] || [])],
-      }));
+   setPageMessages((prev) => ({
+  ...prev,
+  [pageId]: [
+    {
+      ...approvedMsg,
+      moderation_status: "approved",
+      moderation_reason: null,
+      deleted_at: null,
+    },
+    ...(prev[pageId] || []),
+  ],
+}));
     }
 
     setItems((prev) =>
-  prev.map((item) =>
-    item.id === pageId
-      ? {
-          ...item,
-          pending_count: Math.max(0, item.pending_count - 1),
-        }
-      : item
-  )
-);
+      prev.map((item) =>
+        item.id === pageId
+          ? {
+              ...item,
+              pending_count: Math.max(0, item.pending_count - 1),
+            }
+          : item
+      )
+    );
 
-    await loadData();
+  if (isAdminSupportView && adminViewingFuneralHomeId) {
+  await loadAdminSupportData(adminViewingFuneralHomeId);
+  await Promise.all([
+    loadMessagesForPage(pageId),
+    loadPendingMessagesForPage(pageId),
+  ]);
+} else {
+  await Promise.all([
+    loadMessagesForPage(pageId),
+    loadPendingMessagesForPage(pageId),
+    loadData(effectiveFuneralHomeId || undefined),
+  ]);
+}
   } catch (err: any) {
     console.error("Error aprobando mensaje:", err);
     alert(err?.message || "No se pudo aprobar el mensaje.");
@@ -1382,7 +1589,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
             borderRadius: 30,
             background:
   currentRole === "admin"
-    ? "linear-gradient(135deg, #020524 0%, #dbd0f0 100%)"
+    ? "linear-gradient(135deg, #ff0000 0%, #02ffff 100%)"
     : "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
             color: "#fff",
             boxShadow: "0 30px 80px rgba(15,23,42,0.22)",
@@ -1695,6 +1902,34 @@ const adminRenewalText = isTrial
                     />
 
                     <div style={{ position: "relative", zIndex: 1 }}>
+
+                    <div
+  style={{
+    position: "absolute",
+    top: 18,
+    right: 18,
+    zIndex: 2,
+  }}
+>
+  <button
+    type="button"
+    onClick={() =>
+      handleDeleteFuneralHome(home.id, home.name || "Funeraria")
+    }
+    style={{
+      border: "1px solid rgba(239,68,68,0.18)",
+      background: "rgba(254,242,242,0.95)",
+      color: "#b91c1c",
+      borderRadius: 10,
+      padding: "8px 12px",
+      fontWeight: 700,
+      fontSize: 13,
+      cursor: "pointer",
+    }}
+  >
+    Eliminar funeraria
+  </button>
+</div>
                      
 
                      <div
@@ -1842,6 +2077,14 @@ const adminRenewalText = isTrial
                           label="Estado"
                           value={home.subscription_status || "inactive"}
                         />
+
+                        <MiniInfo label="Mensajes" value={String(home.total_condolences || 0)} />
+                        <MiniInfo label="Publicados" value={String(home.approved_condolences || 0)} />
+                        <MiniInfo label="Pendientes" value={String(home.pending_condolences || 0)} />
+                        <MiniInfo label="Rechazados" value={String(home.rejected_condolences || 0)} />
+                        <MiniInfo label="Hoy" value={String(home.condolences_today || 0)}/>
+                        <MiniInfo label="Últimos 7 días" value={String(home.condolences_last_7_days || 0)}
+/>
 
 <div
   style={{
@@ -2027,7 +2270,7 @@ const adminRenewalText = isTrial
       setAdminViewingFuneralHomeName("");
     }}
     style={{
-      marginTop: 8,
+      marginTop:55,
       border: "1px solid rgba(255,255,255,0.3)",
       background: "rgba(255,255,255,0.15)",
       color: "#fff",
@@ -2097,6 +2340,9 @@ const adminRenewalText = isTrial
   </div>
 ) : null}
 
+
+
+
 <div
   style={{
     display: "inline-flex",
@@ -2108,17 +2354,20 @@ const adminRenewalText = isTrial
     borderRadius: 999,
     background:
       isAdminSupportView
-        ? "rgba(59,130,246,0.18)"
-        : "rgba(33, 155, 230, 0.18)",
+        ? "rgba(99, 99, 105, 0.18)"
+        : "rgba(255,255,255,0.3)",
     border:
       isAdminSupportView
-        ? "1px solid rgba(96,165,250,0.35)"
-        : "1px solid rgba(255, 255, 255, 0.63)",
-    color: "#fff",
+        ? "3px solid rgba(247, 247, 247, 0.35)"
+        : "1px solid rgb(62, 56, 56)",
+    color: "#f9f9f9",
     fontSize: 13,
     fontWeight: 700,
   }}
 >
+
+
+
   {isAdminSupportView
     ? `Modo soporte · ${adminViewingFuneralHomeName || "funeraria"}`
     : currentFuneralHomeName
@@ -2133,9 +2382,9 @@ const adminRenewalText = isTrial
       marginBottom: 10,
       padding: "10px 14px",
       borderRadius: 14,
-      background: "rgba(245,158,11,0.12)",
-      border: "1px solid rgba(245,158,11,0.25)",
-      color: "#92400e",
+      background: "rgb(182, 25, 25)",
+      border: "1px solid rgb(255, 255, 255)",
+      color: "#ffffff",
       fontSize: 14,
       fontWeight: 600,
       display: "inline-block",
@@ -2432,6 +2681,32 @@ const adminRenewalText = isTrial
       >
         {savingFuneralHome ? "Guardando..." : "Guardar datos funeraria"}
       </button>
+
+      {isAdminSupportView && currentFuneralHomeId ? (
+  <button
+    type="button"
+    onClick={() =>
+      handleDeleteFuneralHome(
+        currentFuneralHomeId,
+        currentFuneralHomeName || "Funeraria"
+      )
+    }
+    style={{
+      width: "100%",
+      marginTop: 10,
+      border: "1px solid rgba(239,68,68,0.18)",
+      borderRadius: 16,
+      padding: "15px 18px",
+      background: "rgba(254,242,242,0.95)",
+      color: "#b91c1c",
+      fontWeight: 700,
+      fontSize: 15,
+      cursor: "pointer",
+    }}
+  >
+    Eliminar funeraria
+  </button>
+) : null}
 
       <div
         style={{
@@ -3165,6 +3440,11 @@ onChange={async (e) => {
 
 
                {filteredItems.map((item, index) => {
+   const moderationTotalCount =
+  (item.condolences_count || 0) + (item.rejected_count || 0);
+  (pendingMessagesByPage[item.id]?.length || 0) +
+  (pageMessages[item.id]?.length || 0);   
+   (rejectedMessagesByPage[item.id]?.length || 0);        
   const isOpen = item.status === "open";
   const showOpenHeader = index === 0 && openItemsCount > 0;
   const showClosedHeader = index === openItemsCount && closedItemsCount > 0;
@@ -3412,17 +3692,14 @@ onChange={async (e) => {
                           >
                             QR
                           </button>
-
-                         <button
+<button
   type="button"
   onClick={() => toggleModerationPanel(item.id)}
   style={ghostButtonStyle}
 >
   {moderationPageId === item.id
-    ? "Ocultar mensajes"
-    : item.pending_count > 0
-    ? `Moderar mensajes (${item.pending_count})`
-    : "Moderar mensajes"}
+  ? `Ocultar mensajes (${moderationTotalCount})`
+  : `Moderar mensajes (${moderationTotalCount})`}
 </button>
 
                           <button
@@ -3491,8 +3768,12 @@ onChange={async (e) => {
       borderRadius: 12,
     }}
   >
-   <div
+<div
   style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    gap: 10,
     fontSize: 18,
     fontWeight: 900,
     color: "#0f172a",
@@ -3502,7 +3783,21 @@ onChange={async (e) => {
     letterSpacing: "-0.01em",
   }}
 >
-  Moderación de mensajes
+  <span>Moderación de mensajes</span>
+
+  <span
+    style={{
+      background: "#e2e8f0",
+      color: "#0f172a",
+      padding: "4px 10px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 800,
+      lineHeight: 1,
+    }}
+  >
+    {moderationTotalCount} total
+  </span>
 </div>
 
 <div
@@ -3575,6 +3870,8 @@ onChange={async (e) => {
             Motivo IA: {msg.moderation_reason}
           </div>
         ) : null}
+
+      
 
         <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
           <button
@@ -3696,8 +3993,120 @@ onChange={async (e) => {
         ))}
       </div>
     )}
+
+    <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "space-between",
+    marginBottom: 10,
+    fontWeight: 800,
+    color: "#991b1b",
+    marginTop: 24,
+  }}
+>
+  <span>Mensajes bloqueados por IA</span>
+
+  <span
+    style={{
+      background: "#fee2e2",
+      color: "#991b1b",
+      padding: "3px 10px",
+      borderRadius: 999,
+      fontSize: 12,
+      fontWeight: 800,
+    }}
+  >
+    {rejectedMessagesByPage[item.id]?.length || 0}
+  </span>
+</div>
+
+{!rejectedMessagesByPage[item.id] || rejectedMessagesByPage[item.id].length === 0 ? (
+  <div style={{ color: "#666" }}>No hay mensajes bloqueados.</div>
+) : (
+  <div style={{ display: "grid", gap: 10 }}>
+    {rejectedMessagesByPage[item.id].map((msg) => (
+      <div
+        key={msg.id}
+        style={{
+          background: "#fef2f2",
+          border: "1px solid rgba(220,38,38,0.25)",
+          borderRadius: 12,
+          padding: 12,
+        }}
+      >
+        <div style={{ fontWeight: 700 }}>
+          {msg.author_name || "Anónimo"}
+        </div>
+
+        <div style={{ fontSize: 12, color: "#666", marginTop: 2 }}>
+          {new Date(msg.created_at).toLocaleString()}
+        </div>
+
+        <div style={{ marginTop: 8, lineHeight: 1.5 }}>
+          {msg.message}
+        </div>
+
+        {msg.moderation_reason && (
+          <div
+            style={{
+              marginTop: 8,
+              fontSize: 12,
+              color: "#991b1b",
+              fontWeight: 600,
+            }}
+          >
+            Motivo IA: {msg.moderation_reason}
+          </div>
+        )}
+
+<div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginTop: 10 }}>
+  <button
+    type="button"
+    onClick={() => handleApproveMessage(msg.id, item.id)}
+    disabled={deletingMessageId === msg.id}
+    style={{
+      padding: "8px 12px",
+      borderRadius: 10,
+      border: "1px solid rgba(16,185,129,0.18)",
+      background: deletingMessageId === msg.id ? "#f3f4f6" : "white",
+      color: "#047857",
+      fontWeight: 700,
+      cursor: deletingMessageId === msg.id ? "not-allowed" : "pointer",
+      opacity: deletingMessageId === msg.id ? 0.7 : 1,
+    }}
+  >
+    Aprobar igualmente
+  </button>
+
+  <button
+    type="button"
+    onClick={() => handleDeleteMessage(msg.id, item.id)}
+    disabled={deletingMessageId === msg.id}
+    style={{
+      padding: "8px 12px",
+      borderRadius: 10,
+      border: "1px solid rgba(220,38,38,0.18)",
+      background: deletingMessageId === msg.id ? "#f3f4f6" : "white",
+      color: "#b91c1c",
+      fontWeight: 700,
+      cursor: deletingMessageId === msg.id ? "not-allowed" : "pointer",
+      opacity: deletingMessageId === msg.id ? 0.7 : 1,
+    }}
+  >
+    Eliminar
+  </button>
+</div>
+
+      </div>
+    ))}
   </div>
 )}
+  </div>
+)}
+
+
+
 
                       </div>
                        </div>

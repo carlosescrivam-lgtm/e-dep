@@ -271,7 +271,7 @@ setPassword("");
   </>
 ) : null}
 
-        <label style={labelStyle}>Email</label>
+        <label style={labelStyle}>Email de acceso</label>
         <input
           style={inputStyle}
           value={email}

@@ -20,8 +20,8 @@ export const handler: Handler = async (event) => {
     const { data: funeralHome, error: homeError } = await supabase
       .from("funeral_homes")
       .select(
-        "id, name, address, city, postal_code, phone, contact_email, website, logo_url, subscription_status, created_at"
-      )
+"id, name, address, city, postal_code, phone, contact_email, website, logo_url, subscription_status, subscription_plan, subscription_until, trial_until, created_at"
+)
       .eq("id", funeralHomeId)
       .maybeSingle();
 
