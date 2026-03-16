@@ -301,12 +301,13 @@ return (
     maxWidth: 620,
     width: "100%",
     margin: "0 auto 18px auto",
-    padding: 16,
+    padding: window.innerWidth < 640 ? 14 : 16,
     background: "linear-gradient(180deg, rgba(17,24,39,0.06), white)",
     borderRadius: 14,
     border: "1px solid rgba(0,0,0,0.06)",
     boxShadow: "0 12px 35px rgba(0,0,0,0.12)",
     textAlign: "center",
+    boxSizing: "border-box",
   }}
 >
 <div
@@ -321,26 +322,27 @@ return (
 
 {page.photo_url && !isMinimalTheme && (
   <div style={{ marginBottom: 12 }}>
-    <img
-      src={page.photo_url}
-      alt={page.full_name}
-      style={{
-  width: isPhotoTheme ? "100%" : 160,
-  height: isPhotoTheme ? "auto" : 160,
-  objectFit: "cover",
-  borderRadius: isPhotoTheme ? 12 : "50%",
-  border: isPhotoTheme ? "none" : "4px solid white",
-  boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-  display: "block",
-  margin: "0 auto",
-}}
-    />
+
+  <img
+  src={page.photo_url}
+  alt={page.full_name}
+  style={{
+    width: isPhotoTheme ? "100%" : (window.innerWidth < 640 ? 120 : 160),
+    height: isPhotoTheme ? "auto" : (window.innerWidth < 640 ? 120 : 160),
+    objectFit: "cover",
+    borderRadius: isPhotoTheme ? 12 : "50%",
+    border: isPhotoTheme ? "none" : "4px solid white",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+    display: "block",
+    margin: "0 auto",
+  }}
+/>
   </div>
 )}
 
   <div
     style={{
-      fontSize: 26,
+      fontSize: window.innerWidth < 640 ? 22 : 26,
       fontWeight: 900,
       letterSpacing: -0.3,
       marginBottom: 6,
@@ -417,16 +419,17 @@ return (
 
 
 {showForm && (
-  <div
+<div
   style={{
     maxWidth: 620,
     width: "100%",
     margin: "16px auto",
-    padding: 16,
+    padding: window.innerWidth < 640 ? 14 : 16,
     background: "white",
     borderRadius: 14,
     border: "1px solid rgba(0,0,0,0.06)",
     boxShadow: "0 10px 28px rgba(0,0,0,0.10)",
+    boxSizing: "border-box",
   }}
 >
 

@@ -1620,62 +1620,117 @@ if (currentRole === "admin" && !isAdminSupportView) {
             }}
           />
 
+          
+
+          {isMobile && (
+  <div
+    style={{
+      position: "relative",
+      zIndex: 4,
+      display: "flex",
+      justifyContent: "flex-start",
+      marginBottom: 14,
+    }}
+  >
+    <button
+      onClick={handleLogout}
+      style={{
+        border: "1px solid rgba(255,255,255,0.3)",
+        background: "rgba(255,255,255,0.15)",
+        color: "#fff",
+        borderRadius: 10,
+        padding: "8px 14px",
+        fontWeight: 600,
+        fontSize: 13,
+        cursor: "pointer",
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      Salir
+    </button>
+  </div>
+)}
+
           <div style={{ position: "relative", zIndex: 1 }}>
-            <div
-              style={{
-                position: "absolute",
-                top: 0,
-                right: 0,
-              }}
-            >
 
-<img
-  src={logoEdep}
-  alt="E-Dep"
+{!isMobile && (
+  <img
+    src={logoEdep}
+    alt="E-Dep"
+    style={{
+      position: "absolute",
+      right: 150,
+      top: 24,
+      width: 160,
+      opacity: 0.24,
+      pointerEvents: "none",
+    }}
+  />
+)}
+
+  {!isMobile && (
+    <div
+      style={{
+        position: "absolute",
+        top: 0,
+        right: 25
+,
+      }}
+    >
+      <button
+        onClick={handleLogout}
+        style={{
+          border: "1px solid rgba(255,255,255,0.3)",
+          background: "rgba(255,255,255,0.15)",
+          color: "#fff",
+          borderRadius: 10,
+          padding: "8px 14px",
+          fontWeight: 600,
+          fontSize: 13,
+          cursor: "pointer",
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        Salir
+      </button>
+    </div>
+  )}
+
+
+<div
   style={{
-    position: "relative",
-    right: 180,
-    top: 18,
-    width: 170,
-    opacity: 0.38,
-    pointerEvents: "none",
+    display: "block",
+    textAlign: "center",
+    marginBottom: 14,
   }}
-/>
+>
+  <div
+    style={{
+      display: "inline-block",
+      padding: isMobile ? "10px 18px" : "14px 30px",
+      borderRadius: 14,
+      background: "rgba(255,255,255,0.18)",
+      border: "1px solid rgba(255,255,255,0.25)",
+      fontSize: isMobile ? 15 : 28,
+      fontWeight: 800,
+      letterSpacing: "0.02em",
+      backdropFilter: "blur(6px)",
+    }}
+  >
+    E-Dep.org
+  </div>
 
-              <button
-                onClick={handleLogout}
-                style={{
-                  border: "1px solid rgba(255,255,255,0.3)",
-                  background: "rgba(255,255,255,0.15)",
-                  color: "#fff",
-                  borderRadius: 10,
-                  padding: "8px 14px",
-                  fontWeight: 600,
-                  fontSize: 13,
-                  cursor: "pointer",
-                  backdropFilter: "blur(4px)",
-                }}
-              >
-                Salir
-              </button>
-            </div>
-
-            <div
-              style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                background: "rgba(255,255,255,0.12)",
-                border: "1px solid rgba(255,255,255,0.16)",
-                borderRadius: 999,
-                padding: "8px 14px",
-                fontSize: 13,
-                fontWeight: 700,
-                marginBottom: 16,
-              }}
-            >
-              E-Dep.org · Libro de condolencias digital
-            </div>
+  <div
+    style={{
+      fontSize: isMobile ? 13 : 20,
+      marginTop: 6,
+      opacity: 0.85,
+      fontWeight: 900,
+    }}
+  >
+    Libro de condolencias digital
+  </div>
+</div>
 
             <h1
               style={{
@@ -1707,33 +1762,39 @@ if (currentRole === "admin" && !isAdminSupportView) {
           </div>
         </div>
 
-        <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            marginBottom: 24,
-          }}
-        >
+      <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile
+      ? "repeat(2, 1fr)"
+      : "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: isMobile ? 10 : 16,
+    marginBottom: 24,
+  }}
+>
           <StatCard
             title="Funerarias"
             value={String(adminStats.totalFuneralHomes)}
             subtitle="Cuentas registradas"
+            isMobile={isMobile}
           />
           <StatCard
             title="Páginas totales"
             value={String(adminStats.totalPages)}
             subtitle="Difuntos creados"
+            isMobile={isMobile}
           />
           <StatCard
             title="Abiertas"
             value={String(adminStats.openPages)}
             subtitle="Páginas activas"
+            isMobile={isMobile}
           />
           <StatCard
             title="Cerradas"
             value={String(adminStats.closedPages)}
             subtitle="Páginas finalizadas"
+            isMobile={isMobile}
           />
         </div>
 
@@ -1787,13 +1848,17 @@ if (currentRole === "admin" && !isAdminSupportView) {
           {adminFuneralHomes.length === 0 ? (
             <div style={panelStyle}>No hay funerarias registradas.</div>
           ) : (
-            <div
-              style={{
-                display: "grid",
-                gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                gap: 18,
-              }}
-            >
+
+
+           <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile
+      ? "1fr"
+      : "repeat(auto-fit, minmax(320px, 1fr))",
+    gap: isMobile ? 14 : 18,
+  }}
+>
               {adminFuneralHomes.map((home) => {
                const homeStatus = (home.subscription_status || "").toLowerCase();
 
@@ -1903,59 +1968,92 @@ const adminRenewalText = isTrial
 
                     <div style={{ position: "relative", zIndex: 1 }}>
 
-                    <div
-  style={{
-    position: "absolute",
-    top: 18,
-    right: 18,
-    zIndex: 2,
-  }}
->
-  <button
-    type="button"
-    onClick={() =>
-      handleDeleteFuneralHome(home.id, home.name || "Funeraria")
-    }
+          {!isMobile && (
+  <div
     style={{
-      border: "1px solid rgba(239,68,68,0.18)",
-      background: "rgba(254,242,242,0.95)",
-      color: "#b91c1c",
-      borderRadius: 10,
-      padding: "8px 12px",
-      fontWeight: 700,
-      fontSize: 13,
-      cursor: "pointer",
+      position: "absolute",
+      top: 18,
+      right: 18,
+      zIndex: 2,
     }}
   >
-    Eliminar funeraria
-  </button>
-</div>
+    <button
+      type="button"
+      onClick={() =>
+        handleDeleteFuneralHome(home.id, home.name || "Funeraria")
+      }
+      style={{
+        border: "1px solid rgba(239,68,68,0.18)",
+        background: "rgba(254,242,242,0.95)",
+        color: "#b91c1c",
+        borderRadius: 10,
+        padding: "8px 12px",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      Eliminar funeraria
+    </button>
+  </div>
+)}
                      
 
-                     <div
+ <div
   style={{
-    display: "inline-flex",
+    display: "flex",
     alignItems: "center",
-    gap: 6,
-    borderRadius: 999,
-    padding: "6px 12px",
-    fontSize: 12,
-    fontWeight: 700,
-    background: statusBg,
-    color: statusColor,
+    justifyContent: "space-between",
+    gap: 10,
     marginBottom: 12,
+    flexWrap: "wrap",
   }}
 >
-  <span
+  <div
     style={{
-      width: 8,
-      height: 8,
-      borderRadius: "50%",
-      background: statusDot,
-      display: "inline-block",
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      borderRadius: 999,
+      padding: "6px 12px",
+      fontSize: 12,
+      fontWeight: 700,
+      background: statusBg,
+      color: statusColor,
     }}
-  />
-  {statusLabel}
+  >
+    <span
+      style={{
+        width: 8,
+        height: 8,
+        borderRadius: "50%",
+        background: statusDot,
+        display: "inline-block",
+      }}
+    />
+    {statusLabel}
+  </div>
+
+  {isMobile && (
+    <button
+      type="button"
+      onClick={() =>
+        handleDeleteFuneralHome(home.id, home.name || "Funeraria")
+      }
+      style={{
+        border: "1px solid rgba(239,68,68,0.18)",
+        background: "rgba(254,242,242,0.95)",
+        color: "#b91c1c",
+        borderRadius: 10,
+        padding: "8px 12px",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      Eliminar funeraria
+    </button>
+  )}
 </div>
 
 
@@ -2052,15 +2150,15 @@ const adminRenewalText = isTrial
   </div>
 )}
 
-                      <div
-                        style={{
-                          display: "grid",
-                          gridTemplateColumns: "1fr 1fr",
-                          gap: 12,
-                          marginTop: 18,
-                          marginBottom: 16,
-                        }}
-                      >
+                 <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: isMobile ? 8 : 12,
+    marginTop: isMobile ? 14 : 18,
+    marginBottom: isMobile ? 12 : 16,
+  }}
+>
                         <MiniInfo
                           label="Páginas"
                           value={String(home.total_pages || 0)}
@@ -2186,213 +2284,416 @@ const adminRenewalText = isTrial
             }}
           />
 
-          {logoUrl ? (
+        <div
+  style={{
+    position: "relative",
+    zIndex: 4,
+    display: "flex",
+    justifyContent: "space-between",
+    alignItems: "center",
+    gap: 8,
+    marginBottom: 14,
+    flexWrap: "wrap",
+  }}
+>
+  <div style={{ display: "flex", gap: 8, flexWrap: "wrap" }}>
+    {isAdminSupportView && (
+      <button
+        onClick={() => {
+          setAdminViewingFuneralHomeId(null);
+          setAdminViewingFuneralHomeName("");
+        }}
+        style={{
+          border: "1px solid rgba(255,255,255,0.3)",
+          background: "rgba(255,255,255,0.15)",
+          color: "#fff",
+          borderRadius: 10,
+          padding: "8px 14px",
+          fontWeight: 600,
+          fontSize: 13,
+          cursor: "pointer",
+          backdropFilter: "blur(4px)",
+        }}
+      >
+        Volver al panel admin
+      </button>
+    )}
+  </div>
+
+  {!isMobile && (
+    <button
+      onClick={handleLogout}
+      style={{
+        border: "1px solid rgba(255,255,255,0.3)",
+        background: "rgba(255,255,255,0.15)",
+        color: "#fff",
+        borderRadius: 10,
+        padding: "8px 14px",
+        fontWeight: 600,
+        fontSize: 13,
+        cursor: "pointer",
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      Salir
+    </button>
+  )}
+</div>
+
+{isMobile && (
   <div
     style={{
-      position: isMobile ? "relative" : "absolute",
-      right: isMobile ? "auto" : 260,
-      top: isMobile ? "auto" : 58,
-      width: isMobile ? 110 : 150,
-      height: isMobile ? 110 : 150,
-      margin: isMobile ? "0 auto 16px auto" : undefined,
-      background: "#ffffff",
-      borderRadius: 24,
-      boxShadow: "0 18px 40px rgba(15,23,42,0.22)",
-      border: "1px solid rgba(255,255,255,0.85)",
+      position: "relative",
+      zIndex: 4,
       display: "flex",
-      alignItems: "center",
-      justifyContent: "center",
-      overflow: "hidden",
-      zIndex: 3,
+      justifyContent: "flex-start",
+      marginBottom: 14,
     }}
   >
-    <img
-      src={logoUrl}
-      alt={currentFuneralHomeName || "Logo funeraria"}
+    <button
+      onClick={handleLogout}
       style={{
-        width: "100%",
-        height: "100%",
-        objectFit: "contain",
-        padding: 16,
-        boxSizing: "border-box",
+        border: "1px solid rgba(255,255,255,0.3)",
+        background: "rgba(255,255,255,0.15)",
+        color: "#fff",
+        borderRadius: 10,
+        padding: "8px 14px",
+        fontWeight: 600,
+        fontSize: 13,
+        cursor: "pointer",
+        backdropFilter: "blur(4px)",
       }}
-    />
+    >
+      Salir
+    </button>
   </div>
-) : null}
+)}
 
-          <div
+
+        
+<div
   style={{
     position: "relative",
     zIndex: 2,
-    paddingRight: isMobile ? 0 : logoUrl ? 220 : 0,
   }}
 >
+  {isMobile ? (
+    <>
+      <div
+        style={{
+          display: "block",
+          textAlign: "center",
+          marginBottom: 14,
+        }}
+      >
+        <div
+          style={{
+            display: "inline-block",
+            padding: "10px 18px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.18)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            fontSize: 15,
+            fontWeight: 800,
+            letterSpacing: "0.02em",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          E-Dep.org
+        </div>
 
-   
+        <div
+          style={{
+            fontSize: 13,
+            marginTop: 6,
+            opacity: 0.85,
+            fontWeight: 500,
+          }}
+        >
+          Libro de condolencias digital
+        </div>
+      </div>
 
-<div
-  style={{
-    position: "absolute",
-    top: 24,
-    right: 24,
-  }}
->
-  
-<div
-  style={{
-    position: "absolute",
-    top: 16,
-    right: 16,
-  }}
->
-  <button
-    onClick={handleLogout}
-    style={{
-      border: "1px solid rgba(255,255,255,0.3)",
-      background: "rgba(255,255,255,0.15)",
-      color: "#fff",
-      borderRadius: 10,
-      padding: "8px 14px",
-      fontWeight: 600,
-      fontSize: 13,
-      cursor: "pointer",
-      backdropFilter: "blur(4px)",
-    }}
-  >
-    Salir
-  </button>
-</div>
+      <h1
+        style={{
+          margin: 0,
+          fontSize: 36,
+          lineHeight: 1.05,
+          fontWeight: 800,
+          letterSpacing: "-0.03em",
+          textAlign: "center",
+        }}
+      >
+        Dashboard
+      </h1>
 
-{isAdminSupportView && (
-  <button
-    onClick={() => {
-      setAdminViewingFuneralHomeId(null);
-      setAdminViewingFuneralHomeName("");
-    }}
-    style={{
-      marginTop:55,
-      border: "1px solid rgba(255,255,255,0.3)",
-      background: "rgba(255,255,255,0.15)",
-      color: "#fff",
-      borderRadius: 10,
-      padding: "8px 14px",
-      fontWeight: 600,
-      fontSize: 13,
-      cursor: "pointer",
-      backdropFilter: "blur(4px)",
-      display: "block",
-      width: "100%",
-    }}
-  >
-    Volver al panel admin
-  </button>
-)}
-  
-</div>
+      <div
+        style={{
+          width: "100%",
+          display: "flex",
+          justifyContent: "center",
+          marginTop: 6,
+          marginBottom: 10,
+        }}
+      >
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            padding: "8px 12px",
+            borderRadius: 999,
+            background: isAdminSupportView
+              ? "rgba(99, 99, 105, 0.18)"
+              : "rgba(255,255,255,0.3)",
+            border: isAdminSupportView
+              ? "3px solid rgba(247, 247, 247, 0.35)"
+              : "1px solid rgb(62, 56, 56)",
+            color: "#f9f9f9",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          {isAdminSupportView ? "Modo soporte" : "Panel de empresa"}
+        </div>
+      </div>
 
-            <div
+      {logoUrl ? (
+        <div
+          style={{
+            marginTop: 18,
+            textAlign: "center",
+          }}
+        >
+          <div
+            style={{
+              width: 110,
+              height: 110,
+              margin: "0 auto 14px auto",
+              background: "#ffffff",
+              borderRadius: 24,
+              boxShadow: "0 18px 40px rgba(15,23,42,0.22)",
+              border: "1px solid rgba(255,255,255,0.85)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+            }}
+          >
+            <img
+              src={logoUrl}
+              alt={currentFuneralHomeName || "Logo funeraria"}
               style={{
-                display: "inline-flex",
-                alignItems: "center",
-                gap: 8,
-                background: "rgba(255,255,255,0.12)",
-                border: "1px solid rgba(255,255,255,0.16)",
-                borderRadius: 999,
-                padding: "8px 14px",
-                fontSize: 13,
-                fontWeight: 700,
-                marginBottom: 16,
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                padding: 16,
+                boxSizing: "border-box",
               }}
-            >
-              E-Dep.org · Libro de condolencias digital
-            </div>
+            />
+          </div>
+        </div>
+      ) : null}
 
-            <h1
-              style={{
-                margin: 0,
-                fontSize: 36,
-                lineHeight: 1.05,
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
-              }}
-            >
-              Cuadro de mandos 
-            </h1>
+      <div
+        style={{
+          marginTop: 2,
+          marginBottom: 6,
+          fontSize: 18,
+          fontWeight: 800,
+          color: "#ffffff",
+          lineHeight: 1.2,
+          textAlign: "center",
+        }}
+      >
+        {isAdminSupportView
+          ? adminViewingFuneralHomeName || "Funeraria"
+          : currentFuneralHomeName || "Tu funeraria"}
+      </div>
 
-{isAdminSupportView ? (
+      {isTrialActive && (
+        <div
+          style={{
+            marginTop: 10,
+            marginBottom: 10,
+            padding: "10px 14px",
+            borderRadius: 14,
+            background: "rgb(182, 25, 25)",
+            border: "1px solid rgb(255, 255, 255)",
+            color: "#ffffff",
+            fontSize: 14,
+            fontWeight: 600,
+            display: "inline-block",
+          }}
+        >
+          {getTrialDaysText(currentTrialUntil)}
+        </div>
+      )}
+    </>
+  ) : (
+
   <div
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 8,
-      marginTop: 14,
-      marginBottom: 4,
-      padding: "8px 12px",
-      borderRadius: 999,
-      background: "rgba(59,130,246,0.18)",
-      border: "1px solid rgba(96,165,250,0.35)",
-      color: "#fff",
-      fontSize: 13,
-      fontWeight: 700,
-    }}
-  >
-    Modo soporte · viendo {adminViewingFuneralHomeName || "funeraria"}
-  </div>
-) : null}
-
-
-
-
-<div
   style={{
-    display: "inline-flex",
-    alignItems: "center",
-    gap: 8,
-    marginTop: 14,
-    marginBottom: 4,
-    padding: "8px 12px",
-    borderRadius: 999,
-    background:
-      isAdminSupportView
-        ? "rgba(99, 99, 105, 0.18)"
-        : "rgba(255,255,255,0.3)",
-    border:
-      isAdminSupportView
-        ? "3px solid rgba(247, 247, 247, 0.35)"
-        : "1px solid rgb(62, 56, 56)",
-    color: "#f9f9f9",
-    fontSize: 13,
-    fontWeight: 700,
+    display: "grid",
+    gridTemplateColumns: "220px minmax(0, 1fr)",
+    gap: 42,
+    alignItems: "start",
+    width: "100%",
+    paddingLeft: isMobile ? 0 : 68,
   }}
 >
+      <div>
+        {logoUrl ? (
+          <div
+            style={{
+              width: 150,
+              height: 150,
+              background: "#ffffff",
+              borderRadius: 24,
+              boxShadow: "0 18px 40px rgba(15,23,42,0.22)",
+              border: "1px solid rgba(255,255,255,0.85)",
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "center",
+              overflow: "hidden",
+              marginBottom: 16,
+            }}
+          >
+            <img
+              src={logoUrl}
+              alt={currentFuneralHomeName || "Logo funeraria"}
+              style={{
+                width: "100%",
+                height: "100%",
+                objectFit: "contain",
+                padding: 16,
+                boxSizing: "border-box",
+              }}
+            />
+          </div>
+        ) : null}
 
+        <div
+          style={{
+            fontSize: 24,
+            fontWeight: 800,
+            color: "#ffffff",
+            lineHeight: 1.2,
+            marginBottom: 12,
+          }}
+        >
+          {isAdminSupportView
+            ? adminViewingFuneralHomeName || "Funeraria"
+            : currentFuneralHomeName || "Tu funeraria"}
+        </div>
 
+        {isTrialActive && (
+          <div
+            style={{
+              padding: "10px 14px",
+              borderRadius: 14,
+              background: "rgb(182, 25, 25)",
+              border: "1px solid rgb(255, 255, 255)",
+              color: "#ffffff",
+              fontSize: 14,
+              fontWeight: 600,
+              display: "inline-block",
+            }}
+          >
+            {getTrialDaysText(currentTrialUntil)}
+          </div>
+        )}
+      </div>
 
-  {isAdminSupportView
-    ? `Modo soporte · ${adminViewingFuneralHomeName || "funeraria"}`
-    : currentFuneralHomeName
-    ? `Panel Empresa · ${currentFuneralHomeName}`
-    : "Panel de funeraria · viendo solo tu cuenta"}
-</div>
+      <div
+        style={{
+          maxWidth: 820,
+marginLeft: "auto",
+width: "100%",
+textAlign: "center",
+transform: "scale(1.35)",
+transformOrigin: "top right",
+        }}
+      >
+        <div
+          style={{
+            display: "inline-block",
+            padding: "10px 18px",
+            borderRadius: 14,
+            background: "rgba(255,255,255,0.18)",
+            border: "1px solid rgba(255,255,255,0.25)",
+            fontSize: 16,
+            fontWeight: 800,
+            letterSpacing: "0.02em",
+            backdropFilter: "blur(6px)",
+          }}
+        >
+          E-Dep.org
+        </div>
 
-{isTrialActive && !isAdminSupportView && (
-  <div
-    style={{
-      marginTop: 10,
-      marginBottom: 10,
-      padding: "10px 14px",
-      borderRadius: 14,
-      background: "rgb(182, 25, 25)",
-      border: "1px solid rgb(255, 255, 255)",
-      color: "#ffffff",
-      fontSize: 14,
-      fontWeight: 600,
-      display: "inline-block",
-    }}
-  >
-    {getTrialDaysText(currentTrialUntil)}
-  </div>
-)}
+        <div
+          style={{
+            fontSize: 14,
+            marginTop: 6,
+            marginBottom: 18,
+            opacity: 0.85,
+            fontWeight: 500,
+          }}
+        >
+          Libro de condolencias digital
+        </div>
+
+        <h1
+          style={{
+            margin: 0,
+            fontSize: 40,
+            lineHeight: 1.05,
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+          }}
+        >
+          Dashboard
+        </h1>
+
+        <div
+          style={{
+            display: "inline-flex",
+            alignItems: "center",
+            gap: 8,
+            marginTop: 14,
+            marginBottom: 10,
+            padding: "8px 12px",
+            borderRadius: 999,
+            background: isAdminSupportView
+              ? "rgba(99, 99, 105, 0.18)"
+              : "rgba(255,255,255,0.3)",
+            border: isAdminSupportView
+              ? "3px solid rgba(247, 247, 247, 0.35)"
+              : "1px solid rgb(62, 56, 56)",
+            color: "#f9f9f9",
+            fontSize: 13,
+            fontWeight: 700,
+          }}
+        >
+          {isAdminSupportView ? "Modo soporte" : "Panel de empresa"}
+        </div>
+
+        <p
+          style={{
+            marginTop: 10,
+            marginBottom: 0,
+            maxWidth: 640,
+            color: "rgba(255,255,255,0.82)",
+            fontSize: 16,
+            lineHeight: 1.6,
+          }}
+        >
+         
+        </p>
+      </div>
+    </div>
+  )}
+
 
 
 {website && !isAdminSupportView ? (
@@ -2440,32 +2741,38 @@ const adminRenewalText = isTrial
         </div>
 
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
-            gap: 16,
-            marginBottom: 24,
-          }}
-        >
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile
+      ? "repeat(2, 1fr)"
+      : "repeat(auto-fit, minmax(220px, 1fr))",
+    gap: isMobile ? 10 : 16,
+    marginBottom: 24,
+  }}
+>
           <StatCard
             title="Total páginas"
             value={String(totalPages)}
             subtitle="Páginas registradas"
+            isMobile={isMobile}
           />
           <StatCard
             title="Activas"
             value={String(openPages)}
             subtitle="Estado abierto"
+            isMobile={isMobile}
           />
           <StatCard
             title="Cerradas"
             value={String(closedPages)}
             subtitle="Estado cerrado"
+            isMobile={isMobile}
           />
           <StatCard
             title="Mensajes"
             value={String(totalCondolences)}
             subtitle="Condolencias recibidas"
+            isMobile={isMobile}
           />
         </div>
 
@@ -2649,15 +2956,7 @@ const adminRenewalText = isTrial
             minHeight: 120,
           }}
         >
-          <img
-            src={logoUrl}
-            alt="Logo funeraria"
-            style={{
-              maxWidth: "100%",
-              maxHeight: 90,
-              objectFit: "contain",
-            }}
-          />
+     
         </div>
       ) : null}
 
@@ -3429,13 +3728,15 @@ onChange={async (e) => {
             ) : filteredItems.length === 0 ? (
               <div style={panelStyle}>No hay páginas para mostrar.</div>
             ) : (
-              <div
-                style={{
-                  display: "grid",
-                  gridTemplateColumns: "repeat(auto-fit, minmax(320px, 1fr))",
-                  gap: 18,
-                }}
-              >
+           <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile
+      ? "1fr"
+      : "repeat(auto-fit, minmax(320px, 1fr))",
+    gap: isMobile ? 14 : 18,
+  }}
+>
 
 
 
@@ -3485,18 +3786,18 @@ onChange={async (e) => {
   
 
                     <div
-                      key={item.id}
-                      style={{
-                        background: "rgba(255,255,255,0.88)",
-                        backdropFilter: "blur(12px)",
-                        border: "1px solid rgba(255,255,255,0.75)",
-                        borderRadius: 24,
-                        padding: 20,
-                        boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
-                        position: "relative",
-                        overflow: "hidden",
-                      }}
-                    >
+  key={item.id}
+  style={{
+    background: "rgba(255,255,255,0.88)",
+    backdropFilter: "blur(12px)",
+    border: "1px solid rgba(255,255,255,0.75)",
+    borderRadius: isMobile ? 18 : 24,
+    padding: isMobile ? 14 : 20,
+    boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
+    position: "relative",
+    overflow: "hidden",
+  }}
+>
                       <div
                         style={{
                           position: "absolute",
@@ -3585,14 +3886,14 @@ onChange={async (e) => {
                         ) : null}
 
                         <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 12,
-                            marginTop: 18,
-                            marginBottom: 16,
-                          }}
-                        >
+  style={{
+    display: "grid",
+    gridTemplateColumns: "1fr 1fr",
+    gap: isMobile ? 8 : 12,
+    marginTop: isMobile ? 14 : 18,
+    marginBottom: isMobile ? 12 : 16,
+  }}
+>
                           <MiniInfo
                             label="Creada"
                             value={formatDate(item.created_at)}
@@ -3613,9 +3914,9 @@ onChange={async (e) => {
 
 <div
   style={{
-    marginBottom: 16,
-    padding: "12px 14px",
-    borderRadius: 16,
+    marginBottom: isMobile ? 12 : 16,
+    padding: isMobile ? "10px 12px" : "12px 14px",
+    borderRadius: isMobile ? 12 : 16,
     background:
       item.status === "closed"
         ? "rgba(239,68,68,0.08)"
@@ -3632,15 +3933,15 @@ onChange={async (e) => {
  ⏳ {getRemainingTimeLabel(item.closes_at, item.status)}
 </div>
 
-                        <div
-                          style={{
-                            background: "#f8fafc",
-                            border: "1px solid #e2e8f0",
-                            borderRadius: 16,
-                            padding: 12,
-                            marginBottom: 16,
-                          }}
-                        >
+                      <div
+  style={{
+    background: "#f8fafc",
+    border: "1px solid #e2e8f0",
+    borderRadius: isMobile ? 12 : 16,
+    padding: isMobile ? 10 : 12,
+    marginBottom: isMobile ? 12 : 16,
+  }}
+>
                           <div
                             style={{
                               fontSize: 12,
@@ -3655,7 +3956,7 @@ onChange={async (e) => {
                           </div>
                           <div
                             style={{
-                              fontSize: 13,
+                              fontSize: isMobile ? 12 : 13,
                               color: "#0f172a",
                               lineHeight: 1.5,
                               wordBreak: "break-all",
@@ -3665,33 +3966,35 @@ onChange={async (e) => {
                           </div>
                         </div>
 
-                        <div
-                          style={{
-                            display: "grid",
-                            gridTemplateColumns: "1fr 1fr",
-                            gap: 10,
-                          }}
-                        >
-                          <button
-                            onClick={() => openPage(item)}
-                            style={primarySmallButtonStyle}
-                          >
-                            Ver página
-                          </button>
+                    <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 1fr",
+    gap: isMobile ? 8 : 10,
+  }}
+>
+  <button
+    onClick={() => copyLink(item)}
+    style={ghostButtonStyle}
+  >
+    Copiar enlace
+  </button>
 
-                          <button
-                            onClick={() => copyLink(item)}
-                            style={ghostButtonStyle}
-                          >
-                            Copiar enlace
-                          </button>
-
-                          <button
+  <button
                             onClick={() => openQr(item)}
                             style={ghostButtonStyle}
                           >
                             QR
                           </button>
+
+  <button
+    onClick={() => openPage(item)}
+    style={primarySmallButtonStyle}
+  >
+    Ver página
+  </button>
+
+                        
 <button
   type="button"
   onClick={() => toggleModerationPanel(item.id)}
@@ -4192,10 +4495,12 @@ function StatCard({
   title,
   value,
   subtitle,
+  isMobile,
 }: {
   title: string;
   value: string;
   subtitle: string;
+  isMobile?: boolean;
 }) {
   return (
     <div
@@ -4203,18 +4508,17 @@ function StatCard({
         background: "rgba(255,255,255,0.84)",
         backdropFilter: "blur(12px)",
         border: "1px solid rgba(255,255,255,0.72)",
-        borderRadius: 22,
-        padding: 18,
+        borderRadius: isMobile ? 16 : 22,
+        padding: isMobile ? "10px 12px" : 18,
         boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
-    
       }}
     >
       <div
         style={{
-          fontSize: 13,
+          fontSize: isMobile ? 11 : 13,
           fontWeight: 700,
           color: "#64748b",
-          marginBottom: 8,
+          marginBottom: isMobile ? 4 : 8,
           textTransform: "uppercase",
           letterSpacing: "0.04em",
         }}
@@ -4224,17 +4528,19 @@ function StatCard({
 
       <div
         style={{
-          fontSize: 32,
+          fontSize: isMobile ? 22 : 32,
           fontWeight: 800,
           lineHeight: 1,
           letterSpacing: "-0.04em",
-          marginBottom: 8,
+          marginBottom: isMobile ? 4 : 8,
         }}
       >
         {value}
       </div>
 
-      <div style={{ fontSize: 14, color: "#475569" }}>{subtitle}</div>
+      <div style={{ fontSize: isMobile ? 12 : 14, color: "#475569" }}>
+        {subtitle}
+      </div>
     </div>
   );
 }
