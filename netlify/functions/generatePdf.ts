@@ -16,6 +16,21 @@ const supabase = createClient(supabaseUrl, serviceRoleKey);
 const PAGE_MARGIN = 48;
 const A4 = { width: 595.28, height: 841.89 };
 
+function sanitizePdfText(value: string | null | undefined) {
+  if (!value) return "";
+
+  return value
+    .normalize("NFKC")
+    // elimina emojis y símbolos no representables por WinAnsi
+    .replace(
+      /[\u{1F300}-\u{1FAFF}\u{2600}-\u{27BF}\u{FE0F}]/gu,
+      ""
+    )
+    // elimina caracteres de control raros excepto salto de línea y tab
+    .replace(/[^\x09\x0A\x0D\x20-\x7E\u00A0-\u00FF]/g, "")
+    .trim();
+}
+
 function isJpeg(bytes: Uint8Array) {
   return bytes.length > 3 && bytes[0] === 0xff && bytes[1] === 0xd8 && bytes[2] === 0xff;
 }
@@ -49,7 +64,7 @@ function splitTextByWidth(
   fontSize: number,
   maxWidth: number
 ) {
-  const words = safeText(text).split(/\s+/).filter(Boolean);
+  const words = sanitizePdfText(text).split(/\s+/).filter(Boolean);
   const lines: string[] = [];
   let line = "";
 
@@ -67,6 +82,11 @@ function splitTextByWidth(
 
   if (line) lines.push(line);
   return lines;
+}
+
+function clampLines(text: string, maxLines: number) {
+  const lines = text.split("\n");
+  return lines.slice(0, maxLines);
 }
 
 async function fetchImageBytesFromUrl(url: string) {
@@ -207,71 +227,106 @@ function drawEdepBadge(page: PDFPage, boldFont: PDFFont) {
   });
 }
 
-function drawCoverTextBlock(
+function drawSoftTopFade(page: PDFPage, height = 260) {
+  const steps = 18;
+
+  for (let i = 0; i < steps; i++) {
+    const y = A4.height - ((i + 1) * height) / steps;
+    const bandH = height / steps;
+    const t = i / (steps - 1);
+
+    const r = 0.93 + (0.97 - 0.93) * t;
+    const g = 0.95 + (0.98 - 0.95) * t;
+    const b = 0.97 + (0.99 - 0.97) * t;
+
+    page.drawRectangle({
+      x: 0,
+      y,
+      width: A4.width,
+      height: bandH + 1,
+      color: rgb(r, g, b),
+    });
+  }
+}
+
+
+ function drawCoverTextBlock(
   page: PDFPage,
   regularFont: PDFFont,
   boldFont: PDFFont,
   fullName: string,
   customText: string,
-  funeralHomeName: string
-)
-
-{
+  funeralHomeName: string,
+  options?: {
+    nameY?: number;
+    introY?: number;
+    lineY?: number;
+    textStartY?: number;
+    maxTextWidth?: number;
+    maxLines?: number;
+    nameSize?: number;
+  }
+) {
   const usableWidth = A4.width - PAGE_MARGIN * 2;
 
+  const introY = options?.introY ?? 734;
+  const nameY = options?.nameY ?? 690;
+  const lineY = options?.lineY ?? 675;
+  const textStartY = options?.textStartY ?? 625;
+  const maxTextWidth = options?.maxTextWidth ?? usableWidth - 40;
+  const maxLines = options?.maxLines ?? 7;
+  const nameSize = options?.nameSize ?? 34;
+
   page.drawText("En recuerdo de", {
-  x: PAGE_MARGIN,
-  y: 734,
-  size: 12,
-  font: regularFont,
-  color: rgb(0.42, 0.46, 0.52),
-});
+    x: PAGE_MARGIN,
+    y: introY,
+    size: 12,
+    font: regularFont,
+    color: rgb(0.42, 0.46, 0.52),
+  });
 
-page.drawText(fullName, {
-  x: PAGE_MARGIN,
-  y: 690,
-  size: 34,
-  font: boldFont,
-  color: rgb(0.08, 0.12, 0.2),
-});
+  page.drawText(fullName, {
+    x: PAGE_MARGIN,
+    y: nameY,
+    size: nameSize,
+    font: boldFont,
+    color: rgb(0.08, 0.12, 0.2),
+  });
 
-page.drawLine({
-  start: { x: PAGE_MARGIN, y: 675 },
-  end: { x: PAGE_MARGIN + 180, y: 675 },
-  thickness: 1,
-  color: rgb(0.85, 0.87, 0.90),
-});
+  page.drawLine({
+    start: { x: PAGE_MARGIN, y: lineY },
+    end: { x: PAGE_MARGIN + 180, y: lineY },
+    thickness: 1,
+    color: rgb(0.85, 0.87, 0.90),
+  });
 
- if (customText) {
-  let y = 625;
-  const lines = splitTextByWidth(customText, regularFont, 13, usableWidth - 40);
+  if (customText) {
+    let y = textStartY;
+    const rawLines = splitTextByWidth(customText, regularFont, 13, maxTextWidth);
+const lines = rawLines.slice(0, maxLines);
 
-  for (const line of lines.slice(0, 7)) {
-    page.drawText(line, {
-      x: PAGE_MARGIN,
-      y,
-      size: 13,
-      font: regularFont,
-      color: rgb(0.30, 0.34, 0.40),
-    });
-    y -= 20;
-  }
-}
-
-    drawEdepBadge(page, boldFont);
-
-  page.drawText(
-    `Gestionado por ${funeralHomeName || "la funeraria"}`,
-    {
-      x: PAGE_MARGIN + 68,
-      y: 45,
-      size: 8,
-      font: regularFont,
-      color: rgb(0.46, 0.49, 0.55),
+    for (const line of lines) {
+      page.drawText(line, {
+        x: PAGE_MARGIN,
+        y,
+        size: 13,
+        font: regularFont,
+        color: rgb(0.30, 0.34, 0.40),
+      });
+      y -= 20;
     }
-  );
- }
- 
+  }
+
+  drawEdepBadge(page, boldFont);
+
+  page.drawText(`Gestionado por ${funeralHomeName || "la funeraria"}`, {
+    x: PAGE_MARGIN + 68,
+    y: 45,
+    size: 8,
+    font: regularFont,
+    color: rgb(0.46, 0.49, 0.55),
+  });
+}
 
  
 async function drawCoverPage(
@@ -282,71 +337,81 @@ async function drawCoverPage(
     full_name: string | null;
     custom_text: string | null;
     photo_url?: string | null;
+    theme?: string | null;
   },
   funeralHomeName: string,
   funeralHomeLogoUrl?: string
-)
-
-{
+) {
   const page = pdfDoc.addPage([A4.width, A4.height]);
 
-  page.drawRectangle({
-    x: 0,
-    y: 0,
-    width: A4.width,
-    height: A4.height,
-    color: rgb(0.97, 0.98, 0.99),
-  });
+  const theme = sanitizePdfText(pageData.theme || "classic").toLowerCase();
+  const fullName = sanitizePdfText(pageData.full_name) || "Sin nombre";
+  const customText = sanitizePdfText(pageData.custom_text);
 
-  page.drawRectangle({
-    x: 0,
-    y: A4.height - 220,
-    width: A4.width,
-    height: 220,
-    color: rgb(0.93, 0.95, 0.97),
-  });
+page.drawRectangle({
+  x: 0,
+  y: 0,
+  width: A4.width,
+  height: A4.height,
+  color: rgb(0.985, 0.987, 0.99),
+});
 
-drawCoverTextBlock(
-  page,
-  regularFont,
-  boldFont,
-  safeText(pageData.full_name) || "Sin nombre",
-  safeText(pageData.custom_text),
-  funeralHomeName
-);
+drawSoftTopFade(page, 300);
 
   if (funeralHomeLogoUrl) {
-  try {
-    const logoBytes = await fetchImageBytesFromUrl(funeralHomeLogoUrl);
-    const embeddedLogo = await embedImageFromBytes(pdfDoc, logoBytes);
+    try {
+      const logoBytes = await fetchImageBytesFromUrl(funeralHomeLogoUrl);
+      const embeddedLogo = await embedImageFromBytes(pdfDoc, logoBytes);
 
-    if (embeddedLogo) {
-      const maxW = 70;
-      const maxH = 32;
-      const scale = Math.min(maxW / embeddedLogo.width, maxH / embeddedLogo.height, 1);
-      const drawW = embeddedLogo.width * scale;
-      const drawH = embeddedLogo.height * scale;
+      if (embeddedLogo) {
+        const maxW = 70;
+        const maxH = 32;
+        const scale = Math.min(maxW / embeddedLogo.width, maxH / embeddedLogo.height, 1);
+        const drawW = embeddedLogo.width * scale;
+        const drawH = embeddedLogo.height * scale;
 
-      page.drawImage(embeddedLogo, {
-        x: A4.width - PAGE_MARGIN - drawW,
-        y: 36,
-        width: drawW,
-        height: drawH,
-      });
+        page.drawImage(embeddedLogo, {
+          x: A4.width - PAGE_MARGIN - drawW,
+          y: 36,
+          width: drawW,
+          height: drawH,
+        });
+      }
+    } catch (e) {
+      console.error("No se pudo cargar el logo de funeraria para portada:", e);
     }
-  } catch (e) {
-    console.error("No se pudo cargar el logo de funeraria para portada:", e);
   }
-}
 
-  if (pageData.photo_url) {
+  if (theme === "minimal") {
+    drawCoverTextBlock(
+      page,
+      regularFont,
+      boldFont,
+      fullName,
+      customText,
+      funeralHomeName,
+      {
+  introY: 680,
+  nameY: 632,
+  lineY: 614,
+  textStartY: 568,
+  maxTextWidth: A4.width - PAGE_MARGIN * 2 - 30,
+  maxLines: 11,
+  nameSize: 34,
+}
+    );
+
+    return page;
+  }
+
+  if (theme === "photo" && pageData.photo_url) {
     try {
       const bytes = await fetchImageBytesFromUrl(pageData.photo_url);
       const embedded = await embedImageFromBytes(pdfDoc, bytes);
 
       if (embedded) {
-        const maxW = 300;
-        const maxH = 300;
+        const maxW = A4.width - PAGE_MARGIN * 2;
+        const maxH = 320;
         const scale = Math.min(maxW / embedded.width, maxH / embedded.height, 1);
         const drawW = embedded.width * scale;
         const drawH = embedded.height * scale;
@@ -358,14 +423,68 @@ drawCoverTextBlock(
           height: drawH,
         });
 
-        page.drawRectangle({
-          x: (A4.width - drawW) / 2 - 8,
-          y: 250 - 8,
-          width: drawW + 16,
-          height: drawH + 16,
-          borderWidth: 1,
-          borderColor: rgb(0.87, 0.89, 0.92),
+      
+      }
+    } catch (e) {
+      console.error("No se pudo cargar la foto de portada:", e);
+    }
+
+    drawCoverTextBlock(
+      page,
+      regularFont,
+      boldFont,
+      fullName,
+      customText,
+      funeralHomeName,
+    {
+  introY: 766,
+  nameY: 720,
+  lineY: 702,
+  textStartY: 652,
+  maxTextWidth: A4.width - PAGE_MARGIN * 2,
+  maxLines: 4,
+  nameSize: 28,
+}
+    );
+
+    return page;
+  }
+
+  // classic
+  drawCoverTextBlock(
+    page,
+    regularFont,
+    boldFont,
+    fullName,
+    customText,
+    funeralHomeName,
+    {
+  introY: 728,
+  nameY: 684,
+  lineY: 666,
+  textStartY: 610,
+  maxTextWidth: A4.width - PAGE_MARGIN * 2 - 220,
+  maxLines: 8,
+  nameSize: 30,
+}
+  );
+
+  if (pageData.photo_url) {
+    try {
+      const bytes = await fetchImageBytesFromUrl(pageData.photo_url);
+      const embedded = await embedImageFromBytes(pdfDoc, bytes);
+
+      if (embedded) {
+        const size = 180;
+
+        page.drawImage(embedded, {
+          x: A4.width - PAGE_MARGIN - size,
+          y: 430,
+          width: size,
+          height: size,
         });
+
+      
       }
     } catch (e) {
       console.error("No se pudo cargar la foto de portada:", e);
@@ -375,7 +494,12 @@ drawCoverTextBlock(
   return page;
 }
 
-function createMessagePage(pdfDoc: PDFDocument, regularFont: PDFFont, boldFont: PDFFont, fullName: string) {
+function createMessagePage(
+  pdfDoc: PDFDocument,
+  regularFont: PDFFont,
+  boldFont: PDFFont,
+  fullName: string
+) {
   const page = pdfDoc.addPage([A4.width, A4.height]);
 
   page.drawRectangle({
@@ -403,9 +527,9 @@ function createMessagePage(pdfDoc: PDFDocument, regularFont: PDFFont, boldFont: 
   });
 
   page.drawText("Mensajes de condolencia", {
-  x: PAGE_MARGIN,
-  y: A4.height - 98,
-  size: 12,
+    x: PAGE_MARGIN,
+    y: A4.height - 98,
+    size: 12,
     font: boldFont,
     color: rgb(0.2, 0.25, 0.32),
   });
@@ -420,7 +544,7 @@ function estimateMessageCardHeight(
   hasPhoto: boolean
 ) {
   const lines = splitTextByWidth(
-    safeText(text),
+    sanitizePdfText(text),
     regularFont,
     11,
     cardW - 32
@@ -443,16 +567,29 @@ async function drawMessageCard(params: {
   startY: number;
   cardX: number;
   cardW: number;
+    theme?: string;
 }) {
 
 
-  const { pdfDoc, page, regularFont, boldFont, message, startY, cardX, cardW } = params;
+  const {
+  pdfDoc,
+  page,
+  regularFont,
+  boldFont,
+  message,
+  startY,
+  cardX,
+  cardW,
+  theme,
+} = params;
+
+const normalizedTheme = sanitizePdfText(theme || "classic").toLowerCase();
   let cursorY = startY - 20;
 
-  const author = safeText(message.author_name) || "Anónimo";
+  const author = sanitizePdfText(message.author_name) || "Anónimo";
   const dateStr = formatDateTime(message.created_at);
   const messageLines = splitTextByWidth(
-    safeText(message.message),
+  sanitizePdfText(message.message),
     regularFont,
     11,
     cardW - 32
@@ -476,8 +613,17 @@ async function drawMessageCard(params: {
         embeddedPhoto = await embedImageFromBytes(pdfDoc, bytes);
 
         if (embeddedPhoto) {
-          const maxW = cardW - 32;
-          const maxH = 220;
+          const maxW =
+  normalizedTheme === "photo"
+    ? cardW - 24
+    : cardW - 32;
+
+const maxH =
+  normalizedTheme === "photo"
+    ? 260
+    : normalizedTheme === "minimal"
+    ? 160
+    : 220;
           const scale = Math.min(maxW / embeddedPhoto.width, maxH / embeddedPhoto.height, 1);
           drawW = embeddedPhoto.width * scale;
           drawH = embeddedPhoto.height * scale;
@@ -489,31 +635,55 @@ async function drawMessageCard(params: {
     }
   }
 
-  page.drawRectangle({
-    x: cardX,
-    y: startY - estimatedHeight,
-    width: cardW,
-    height: estimatedHeight,
-    color: rgb(0.99, 0.99, 0.985),
-    borderWidth: 1,
-    borderColor: rgb(0.89, 0.91, 0.94),
-  });
+ const cardBg =
+  normalizedTheme === "minimal"
+    ? rgb(1, 1, 1)
+    : normalizedTheme === "photo"
+    ? rgb(0.985, 0.988, 0.992)
+    : rgb(0.99, 0.99, 0.985);
 
-  page.drawRectangle({
-    x: cardX,
-    y: startY - estimatedHeight,
-    width: 5,
-    height: estimatedHeight,
-    color: rgb(0.36, 0.39, 0.45),
-  });
+const cardBorder =
+  normalizedTheme === "minimal"
+    ? rgb(0.90, 0.92, 0.95)
+    : normalizedTheme === "photo"
+    ? rgb(0.84, 0.88, 0.93)
+    : rgb(0.89, 0.91, 0.94);
+
+const sideBarColor =
+  normalizedTheme === "minimal"
+    ? rgb(0.78, 0.80, 0.84)
+    : normalizedTheme === "photo"
+    ? rgb(0.18, 0.22, 0.30)
+    : rgb(0.36, 0.39, 0.45);
+
+page.drawRectangle({
+  x: cardX,
+  y: startY - estimatedHeight,
+  width: cardW,
+  height: estimatedHeight,
+  color: cardBg,
+  borderWidth: 1,
+  borderColor: cardBorder,
+});
+
+page.drawRectangle({
+  x: cardX,
+  y: startY - estimatedHeight,
+  width: normalizedTheme === "minimal" ? 3 : 5,
+  height: estimatedHeight,
+  color: sideBarColor,
+});
 
   page.drawText(author, {
-    x: cardX + 18,
-    y: cursorY,
-    size: 12,
-    font: boldFont,
-    color: rgb(0.08, 0.12, 0.2),
-  });
+  x: cardX + 18,
+  y: cursorY,
+  size: normalizedTheme === "minimal" ? 11 : 12,
+  font: boldFont,
+  color:
+    normalizedTheme === "photo"
+      ? rgb(0.10, 0.14, 0.22)
+      : rgb(0.08, 0.12, 0.2),
+});
 
   cursorY -= 16;
 
@@ -530,12 +700,15 @@ async function drawMessageCard(params: {
 
   for (const line of messageLines) {
     page.drawText(line, {
-      x: cardX + 18,
-      y: cursorY,
-      size: 11,
-      font: regularFont,
-      color: rgb(0.2, 0.24, 0.29),
-    });
+  x: cardX + 18,
+  y: cursorY,
+  size: normalizedTheme === "minimal" ? 10.5 : 11,
+  font: regularFont,
+  color:
+    normalizedTheme === "minimal"
+      ? rgb(0.26, 0.29, 0.34)
+      : rgb(0.2, 0.24, 0.29),
+});
     cursorY -= 15;
   }
 
@@ -567,7 +740,7 @@ export const handler: Handler = async (event) => {
 
     const { data: page, error: pageError } = await supabase
       .from("deceased_pages")
-      .select("id, full_name, custom_text, photo_url, funeral_home_id")
+      .select("id, full_name, custom_text, photo_url, funeral_home_id, theme")
       .eq("id", pageId)
       .single();
 
@@ -589,8 +762,8 @@ if (page.funeral_home_id) {
     .maybeSingle();
 
   if (!fhError && funeralHome) {
-    funeralHomeName = safeText(funeralHome.name);
-    funeralHomeLogoUrl = safeText((funeralHome as any).logo_url);
+    funeralHomeName = sanitizePdfText(funeralHome.name);
+    funeralHomeLogoUrl = sanitizePdfText((funeralHome as any).logo_url);
   }
 }
 
@@ -611,7 +784,7 @@ const boldFont = await pdfDoc.embedFont(StandardFonts.HelveticaBold);
 const coverNameFont = await pdfDoc.embedFont(StandardFonts.TimesRomanBold);
 const coverTextFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
 
-    await drawCoverPage(
+await drawCoverPage(
   pdfDoc,
   regularFont,
   boldFont,
@@ -619,6 +792,7 @@ const coverTextFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
     full_name: page.full_name,
     custom_text: page.custom_text,
     photo_url: (page as any).photo_url,
+    theme: (page as any).theme,
   },
   funeralHomeName,
   funeralHomeLogoUrl
@@ -628,7 +802,7 @@ const coverTextFont = await pdfDoc.embedFont(StandardFonts.TimesRomanItalic);
   pdfDoc,
   regularFont,
   boldFont,
-  safeText(page.full_name) || "Sin nombre"
+  sanitizePdfText(page.full_name) || "Sin nombre"
 );
 
 const columnGap = 18;
@@ -650,7 +824,7 @@ if (!messages || messages.length === 0) {
 } else {
   for (const m of messages) {
     const estimatedHeight = estimateMessageCardHeight(
-      safeText(m.message),
+      sanitizePdfText(m.message),
       regularFont,
       columnW,
       !!m.photo_path
@@ -665,7 +839,7 @@ if (!messages || messages.length === 0) {
         pdfDoc,
         regularFont,
         boldFont,
-        safeText(page.full_name) || "Sin nombre"
+        sanitizePdfText(page.full_name) || "Sin nombre"
       );
       leftY = A4.height - 130;
       rightY = A4.height - 130;
@@ -675,16 +849,17 @@ if (!messages || messages.length === 0) {
     const finalX = finalUseLeft ? leftX : rightX;
     const finalY = finalUseLeft ? leftY : rightY;
 
-    const usedHeight = await drawMessageCard({
-      pdfDoc,
-      page: currentPage,
-      regularFont,
-      boldFont,
-      message: m,
-      startY: finalY,
-      cardX: finalX,
-      cardW: columnW,
-    });
+   const usedHeight = await drawMessageCard({
+  pdfDoc,
+  page: currentPage,
+  regularFont,
+  boldFont,
+  message: m,
+  startY: finalY,
+  cardX: finalX,
+  cardW: columnW,
+  theme: sanitizePdfText((page as any).theme || "classic"),
+});
 
     if (finalUseLeft) {
       leftY -= usedHeight;
@@ -698,7 +873,7 @@ drawClosingPage(
   pdfDoc,
   regularFont,
   boldFont,
-  safeText(page.full_name) || "Sin nombre",
+  sanitizePdfText(page.full_name)|| "Sin nombre",
   funeralHomeName
 );
 

@@ -61,6 +61,7 @@ export default function Dashboard() {
   const [currentFuneralHomeId, setCurrentFuneralHomeId] = useState<string | null>(null);
   const [currentFuneralHomeName, setCurrentFuneralHomeName] = useState("");
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState("");
+  const [currentAccessBlocked, setCurrentAccessBlocked] = useState(false);
   const [search, setSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "open" | "closed">("open");
   const [fullName, setFullName] = useState("");
@@ -81,6 +82,7 @@ export default function Dashboard() {
 const [logoFileError, setLogoFileError] = useState("");
 const [photoPreview, setPhotoPreview] = useState("");
 const createPhotoInputRef = useRef<HTMLInputElement | null>(null);
+const logoInputRef = useRef<HTMLInputElement | null>(null);
 const [photoFile, setPhotoFile] = useState<File | null>(null);
 const [showCreateForm, setShowCreateForm] = useState(false);
 const [deletingPageId, setDeletingPageId] = useState<string | null>(null);
@@ -293,7 +295,7 @@ async function loadFuneralHomeData(funeralHomeIdOverride?: string) {
 
   const { data, error } = await supabase
   .from("funeral_homes")
-  .select("name, address, city, postal_code, phone, contact_email, website, logo_url, subscription_status, subscription_plan, trial_until, subscription_start, subscription_until")
+  .select("name, address, city, postal_code, phone, contact_email, website, logo_url, subscription_status, subscription_plan, trial_until, subscription_start, subscription_until, access_blocked")
   .eq("id", funeralHomeId)
   .maybeSingle();
   if (error) throw error;
@@ -312,6 +314,7 @@ setCurrentSubscriptionPlan(data.subscription_plan || "");
 setCurrentTrialUntil(data.trial_until || null);
 setCurrentSubscriptionStart(data.subscription_start || null);
 setCurrentSubscriptionUntil(data.subscription_until || null);
+setCurrentAccessBlocked(!!data.access_blocked);
 }
 
 async function updatePassword() {
@@ -495,6 +498,7 @@ setCurrentSubscriptionStatus(home.subscription_status || "inactive");
 setCurrentSubscriptionPlan(home.subscription_plan || "");
 setCurrentTrialUntil(home.trial_until || null);
 setCurrentSubscriptionUntil(home.subscription_until || null);
+setCurrentAccessBlocked(!!home.access_blocked);
 setFuneralHomeNameEdit(home.name || "");
 setAddress(home.address || "");
 setCity(home.city || "");
@@ -546,6 +550,46 @@ async function toggleFuneralHomeSubscription(
   } catch (err: any) {
     console.error(err);
     alert(err?.message || "No se pudo actualizar la suscripción.");
+  }
+}
+
+async function toggleFuneralHomeAccess(
+  funeralHomeId: string,
+  nextBlocked: boolean
+) {
+  try {
+    const actionText = nextBlocked ? "desactivar el acceso a" : "activar el acceso a";
+
+    const ok = window.confirm(
+      `¿Seguro que quieres ${actionText} esta funeraria?`
+    );
+
+    if (!ok) return;
+
+    const res = await fetch(
+      "/.netlify/functions/toggleFuneralHomeAccess",
+      {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          funeral_home_id: funeralHomeId,
+          access_blocked: nextBlocked,
+        }),
+      }
+    );
+
+    const data = await res.json();
+
+    if (!res.ok) {
+      throw new Error(data?.error || "No se pudo cambiar el acceso.");
+    }
+
+    await loadAdminData();
+  } catch (err: any) {
+    console.error(err);
+    alert(err?.message || "No se pudo actualizar el acceso.");
   }
 }
 
@@ -1085,6 +1129,9 @@ async function saveFuneralHomeData() {
 
     setCurrentFuneralHomeName(funeralHomeNameEdit.trim());
     alert("Datos de la funeraria guardados.");
+    if (logoInputRef.current && !logoUrl.trim()) {
+  logoInputRef.current.value = "";
+}
   } catch (err: any) {
     console.error(err);
     alert(err?.message || "No se pudieron guardar los datos.");
@@ -1131,19 +1178,45 @@ async function handleLogoUpload(file: File) {
   }
 }
 
-  async function closePage(pageId: string, pageName: string) {
+ async function closePage(pageId: string, pageName: string) {
   const ok = window.confirm(
     `¿Seguro que quieres cerrar la página de "${pageName}" y generar el PDF ahora?`
   );
   if (!ok) return;
 
   try {
-    const { error: updateError } = await supabase
-      .from("deceased_pages")
-      .update({ status: "closed" })
-      .eq("id", pageId);
+    if (isAdminSupportView) {
+      const res = await fetch("/.netlify/functions/updateSupportPageStatus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pageId,
+          status: "closed",
+        }),
+      });
 
-    if (updateError) throw updateError;
+      const rawText = await res.text();
+
+      let data: any = {};
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = { error: rawText || "Respuesta no válida del servidor" };
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo cerrar la página.");
+      }
+    } else {
+      const { error: updateError } = await supabase
+        .from("deceased_pages")
+        .update({ status: "closed" })
+        .eq("id", pageId);
+
+      if (updateError) throw updateError;
+    }
 
     let pdfErrorMessage = "";
 
@@ -1166,7 +1239,11 @@ async function handleLogoUpload(file: File) {
         pdfErr?.message || "La página se cerró, pero no se pudo generar el PDF.";
     }
 
-    await loadData();
+    if (isAdminSupportView && adminViewingFuneralHomeId) {
+      await loadAdminSupportData(adminViewingFuneralHomeId);
+    } else {
+      await loadData();
+    }
 
     if (pdfErrorMessage) {
       alert(pdfErrorMessage);
@@ -1228,27 +1305,59 @@ async function generatePdfNow(pageId: string, pageName: string) {
     alert(err?.message || "No se pudo generar o abrir el PDF.");
   }
 }
-  async function reopenPage(pageId: string, pageName: string) {
-    const ok = window.confirm(
-      `¿Quieres reabrir la página de ${pageName}?`
-    );
-    if (!ok) return;
+ 
+async function reopenPage(pageId: string, pageName: string) {
+  const ok = window.confirm(
+    `¿Quieres reabrir la página de ${pageName}?`
+  );
+  if (!ok) return;
 
-    try {
+  try {
+    if (isAdminSupportView) {
+      const res = await fetch("/.netlify/functions/updateSupportPageStatus", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        body: JSON.stringify({
+          pageId,
+          status: "open",
+        }),
+      });
+
+      const rawText = await res.text();
+
+      let data: any = {};
+      try {
+        data = rawText ? JSON.parse(rawText) : {};
+      } catch {
+        data = { error: rawText || "Respuesta no válida del servidor" };
+      }
+
+      if (!res.ok) {
+        throw new Error(data?.error || "No se pudo reabrir la página.");
+      }
+    } else {
       const { error } = await supabase
         .from("deceased_pages")
         .update({ status: "open" })
         .eq("id", pageId);
 
       if (error) throw error;
-
-      await loadData();
-      alert("Página reabierta.");
-    } catch (err: any) {
-      console.error(err);
-      alert(err?.message || "No se pudo reabrir la página.");
     }
+
+    if (isAdminSupportView && adminViewingFuneralHomeId) {
+      await loadAdminSupportData(adminViewingFuneralHomeId);
+    } else {
+      await loadData();
+    }
+
+    alert("Página reabierta.");
+  } catch (err: any) {
+    console.error(err);
+    alert(err?.message || "No se pudo reabrir la página.");
   }
+}
 
   function getPublicUrl(item: PageCard) {
     return `${siteBase}/p/${item.slug}?token=${item.access_token}`;
@@ -1460,7 +1569,8 @@ const effectiveFuneralHomeId =
   isAdminSupportView ? adminViewingFuneralHomeId : currentFuneralHomeId;
 
 const isSubscriptionBlocked =
-  currentRole === "funeral_home" && !isTrialActive && !isPaidActive;
+  (currentRole === "funeral_home" || isAdminSupportView) &&
+  (currentAccessBlocked || (!isTrialActive && !isPaidActive));
 
 
 if (isSubscriptionBlocked) {
@@ -1871,6 +1981,12 @@ const statusLabel = isActive
   ? "En prueba"
   : "Inactiva";
 
+  const accessLabel = home.access_blocked ? "Acceso bloqueado" : "Acceso permitido";
+const accessColor = home.access_blocked ? "#991b1b" : "#065f46";
+const accessBg = home.access_blocked
+  ? "rgba(239,68,68,0.12)"
+  : "rgba(16,185,129,0.15)";
+
 const statusBg = isActive
   ? "rgba(16,185,129,0.15)"
   : isTrial
@@ -2009,6 +2125,14 @@ const adminRenewalText = isTrial
     flexWrap: "wrap",
   }}
 >
+<div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    flexWrap: "wrap",
+  }}
+>
   <div
     style={{
       display: "inline-flex",
@@ -2034,6 +2158,21 @@ const adminRenewalText = isTrial
     {statusLabel}
   </div>
 
+  <div
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      borderRadius: 999,
+      padding: "6px 12px",
+      fontSize: 12,
+      fontWeight: 700,
+      background: accessBg,
+      color: accessColor,
+    }}
+  >
+    {accessLabel}
+  </div>
+
   {isMobile && (
     <button
       type="button"
@@ -2054,6 +2193,7 @@ const adminRenewalText = isTrial
       Eliminar funeraria
     </button>
   )}
+</div>
 </div>
 
 
@@ -2201,21 +2341,21 @@ const adminRenewalText = isTrial
     Ver panel
   </button>
 
-  {homeStatus === "active" ? (
-  <button
-    onClick={() => toggleFuneralHomeSubscription(home.id, "inactive")}
-    style={dangerButtonStyle}
-  >
-    Desactivar
-  </button>
-) : homeStatus === "inactive" ? (
-  <button
-    onClick={() => toggleFuneralHomeSubscription(home.id, "active")}
-    style={ghostButtonStyle}
-  >
-    Activar
-  </button>
-) : null}
+  {home.access_blocked ? (
+    <button
+      onClick={() => toggleFuneralHomeAccess(home.id, false)}
+      style={ghostButtonStyle}
+    >
+      Activar acceso
+    </button>
+  ) : (
+    <button
+      onClick={() => toggleFuneralHomeAccess(home.id, true)}
+      style={dangerButtonStyle}
+    >
+      Desactivar acceso
+    </button>
+  )}
 </div>
 
                       </div>
@@ -2532,46 +2672,59 @@ const adminRenewalText = isTrial
     </>
   ) : (
 
-  <div
+<div
   style={{
     display: "grid",
-    gridTemplateColumns: "220px minmax(0, 1fr)",
-    gap: 42,
-    alignItems: "start",
+    gridTemplateColumns: logoUrl
+      ? "220px minmax(0, 1fr)"
+      : "minmax(0, 1fr)",
+    gap: logoUrl ? 42 : 0,
+    alignItems: "center",
     width: "100%",
     paddingLeft: isMobile ? 0 : 68,
   }}
 >
-      <div>
-        {logoUrl ? (
-          <div
-            style={{
-              width: 150,
-              height: 150,
-              background: "#ffffff",
-              borderRadius: 24,
-              boxShadow: "0 18px 40px rgba(15,23,42,0.22)",
-              border: "1px solid rgba(255,255,255,0.85)",
-              display: "flex",
-              alignItems: "center",
-              justifyContent: "center",
-              overflow: "hidden",
-              marginBottom: 16,
-            }}
-          >
-            <img
-              src={logoUrl}
-              alt={currentFuneralHomeName || "Logo funeraria"}
-              style={{
-                width: "100%",
-                height: "100%",
-                objectFit: "contain",
-                padding: 16,
-                boxSizing: "border-box",
-              }}
-            />
-          </div>
-        ) : null}
+  
+  
+  <div>
+      
+ <div
+  style={{
+    width: 150,
+    height: 150,
+    borderRadius: 18,
+    background: logoUrl ? "#ffffff" : "#f1f5f9",
+    border: "1px solid #e2e8f0",
+    display: "flex",
+    alignItems: "center",
+    justifyContent: "center",
+    overflow: "hidden",
+  }}
+>
+  {logoUrl ? (
+    <img
+      src={logoUrl}
+      alt="Logo funeraria"
+      style={{
+        width: "100%",
+        height: "100%",
+        objectFit: "contain",
+      }}
+    />
+  ) : (
+    <div
+      style={{
+        fontSize: 13,
+        fontWeight: 700,
+        color: "#64748b",
+        textTransform: "uppercase",
+        letterSpacing: "0.05em",
+      }}
+    >
+      Logo
+    </div>
+  )}
+</div>
 
         <div
           style={{
@@ -2605,16 +2758,25 @@ const adminRenewalText = isTrial
         )}
       </div>
 
-      <div
-        style={{
-          maxWidth: 820,
-marginLeft: "auto",
-width: "100%",
-textAlign: "center",
-transform: "scale(1.35)",
-transformOrigin: "top right",
-        }}
-      >
+<div
+  style={{
+    maxWidth: 820,
+    marginLeft: "auto",
+    width: "100%",
+    textAlign: "center",
+    transform: "scale(1.35)",
+    transformOrigin: "top right",
+    marginTop: -180,
+    
+  }}
+>
+
+<div
+  style={{
+    transform: logoUrl ? "translateY(30px)" : "translateY(-55px)",
+  }}
+>
+  
         <div
           style={{
             display: "inline-block",
@@ -2678,18 +2840,7 @@ transformOrigin: "top right",
           {isAdminSupportView ? "Modo soporte" : "Panel de empresa"}
         </div>
 
-        <p
-          style={{
-            marginTop: 10,
-            marginBottom: 0,
-            maxWidth: 640,
-            color: "rgba(255,255,255,0.82)",
-            fontSize: 16,
-            lineHeight: 1.6,
-          }}
-        >
-         
-        </p>
+      </div>
       </div>
     </div>
   )}
@@ -2901,15 +3052,16 @@ transformOrigin: "top right",
 
       <FieldLabel>Logo de la funeraria</FieldLabel>
 
-      <input
-        type="file"
-        accept="image/*"
-        onChange={(e) => {
-          const file = e.target.files?.[0];
-          if (file) {
-            handleLogoUpload(file);
-          }
-        }}
+    <input
+  ref={logoInputRef}
+  type="file"
+  accept="image/*"
+  onChange={(e) => {
+    const file = e.target.files?.[0];
+    if (file) {
+      handleLogoUpload(file);
+    }
+  }}
         style={{
           ...inputStyle,
           padding: 12,
@@ -2942,23 +3094,56 @@ transformOrigin: "top right",
         </div>
       ) : null}
 
-      {logoUrl ? (
-        <div
-          style={{
-            marginTop: 12,
-            background: "#fff",
-            border: "1px solid #e2e8f0",
-            borderRadius: 16,
-            padding: 12,
-            display: "flex",
-            alignItems: "center",
-            justifyContent: "center",
-            minHeight: 120,
-          }}
-        >
-     
-        </div>
-      ) : null}
+   {logoUrl ? (
+  <div
+    style={{
+      marginTop: 12,
+      background: "#fff",
+      border: "1px solid #e2e8f0",
+      borderRadius: 16,
+      padding: 12,
+      display: "flex",
+      alignItems: "center",
+      justifyContent: "center",
+      minHeight: 120,
+      flexDirection: "column",
+      gap: 12,
+    }}
+  >
+    <img
+      src={logoUrl}
+      alt="Vista previa del logo"
+      style={{
+        maxWidth: "100%",
+        maxHeight: 90,
+        objectFit: "contain",
+        display: "block",
+      }}
+    />
+
+    <button
+      type="button"
+      onClick={() => {
+  setLogoUrl("");
+  if (logoInputRef.current) {
+    logoInputRef.current.value = "";
+  }
+}}
+      style={{
+        border: "1px solid rgba(239,68,68,0.18)",
+        background: "rgba(254,242,242,0.95)",
+        color: "#b91c1c",
+        borderRadius: 10,
+        padding: "8px 12px",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      Quitar logo
+    </button>
+  </div>
+) : null}
 
       <button
         type="button"
@@ -3496,11 +3681,22 @@ transformOrigin: "top right",
                     <FieldLabel>Texto de la cabecera</FieldLabel>
                     <textarea
                       value={customText}
-                      onChange={(e) => setCustomText(e.target.value)}
+                      onChange={(e) => setCustomText(e.target.value.slice(0, 280))}
                       placeholder="Escribe una dedicatoria o mensaje inicial"
                       rows={5}
                       style={{ ...inputStyle, resize: "vertical", minHeight: 120 }}
+                      maxLength={280}
                     />
+                    <div
+  style={{
+    marginTop: 6,
+    fontSize: 12,
+    color: "#64748b",
+    textAlign: "right",
+  }}
+>
+  {(customText || "").length}/280
+</div>
 
                     <FieldLabel>Email de la familia</FieldLabel>
                     <input

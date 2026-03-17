@@ -10,7 +10,7 @@ export const handler: Handler = async () => {
   try {
     const { data: homes, error: homesError } = await supabase
       .from("funeral_homes")
-      .select("id, name, subscription_status, created_at")
+      .select("id, name, subscription_status, access_blocked, created_at")
       .order("created_at", { ascending: false });
 
     if (homesError) {
