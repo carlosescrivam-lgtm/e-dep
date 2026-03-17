@@ -510,48 +510,7 @@ setLogoUrl(home.logo_url || "");
 setItems(data.items || []);
 }
 
-async function toggleFuneralHomeSubscription(
-  funeralHomeId: string,
-  nextStatus: "active" | "inactive"
-) {
-  try {
-    const actionText =
-      nextStatus === "active" ? "activar" : "desactivar";
 
-    const ok = window.confirm(
-      `¿Seguro que quieres ${actionText} esta funeraria?`
-    );
-
-    if (!ok) return;
-
-    const res = await fetch(
-      "/.netlify/functions/toggleFuneralHomeSubscription",
-      {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          funeral_home_id: funeralHomeId,
-          subscription_status: nextStatus,
-        }),
-      }
-    );
-
-    const data = await res.json();
-
-    if (!res.ok) {
-      throw new Error(
-        data?.error || "No se pudo cambiar la suscripción."
-      );
-    }
-
-    await loadAdminData();
-  } catch (err: any) {
-    console.error(err);
-    alert(err?.message || "No se pudo actualizar la suscripción.");
-  }
-}
 
 async function toggleFuneralHomeAccess(
   funeralHomeId: string,
