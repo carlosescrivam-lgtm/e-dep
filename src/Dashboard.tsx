@@ -1564,7 +1564,27 @@ const effectiveFuneralHomeId =
 const isSubscriptionBlocked =
   (currentRole === "funeral_home" || isAdminSupportView) &&
   (currentAccessBlocked || (!isTrialActive && !isPaidActive));
+const adminTrialCount = adminFuneralHomes.filter(
+  (home) => (home.subscription_status || "").toLowerCase() === "trial"
+).length;
 
+const adminBasicCount = adminFuneralHomes.filter(
+  (home) =>
+    (home.subscription_status || "").toLowerCase() === "active" &&
+    (home.subscription_plan || "").toLowerCase() === "basic"
+).length;
+
+const adminProCount = adminFuneralHomes.filter(
+  (home) =>
+    (home.subscription_status || "").toLowerCase() === "active" &&
+    (home.subscription_plan || "").toLowerCase() === "pro"
+).length;
+
+const adminUnlimitedCount = adminFuneralHomes.filter(
+  (home) =>
+    (home.subscription_status || "").toLowerCase() === "active" &&
+    (home.subscription_plan || "").toLowerCase() === "unlimited"
+).length;
 
 if (isSubscriptionBlocked) {
   return (
@@ -1865,7 +1885,8 @@ if (currentRole === "admin" && !isAdminSupportView) {
           </div>
         </div>
 
-      <div
+  
+<div
   style={{
     display: "grid",
     gridTemplateColumns: isMobile
@@ -1875,31 +1896,57 @@ if (currentRole === "admin" && !isAdminSupportView) {
     marginBottom: 24,
   }}
 >
-          <StatCard
-            title="Funerarias"
-            value={String(adminStats.totalFuneralHomes)}
-            subtitle="Cuentas registradas"
-            isMobile={isMobile}
-          />
-          <StatCard
-            title="Páginas totales"
-            value={String(adminStats.totalPages)}
-            subtitle="Difuntos creados"
-            isMobile={isMobile}
-          />
-          <StatCard
-            title="Abiertas"
-            value={String(adminStats.openPages)}
-            subtitle="Páginas activas"
-            isMobile={isMobile}
-          />
-          <StatCard
-            title="Cerradas"
-            value={String(adminStats.closedPages)}
-            subtitle="Páginas finalizadas"
-            isMobile={isMobile}
-          />
-        </div>
+  {/* Funerarias */}
+  <StatCard
+    title="Funerarias"
+    value={String(adminStats.totalFuneralHomes)}
+    subtitle="Cuentas registradas"
+    isMobile={isMobile}
+  />
+
+  {/* Planes */}
+  <div
+    style={{
+      borderRadius: 18,
+      padding: 16,
+      background: "white",
+      boxShadow: "0 6px 20px rgba(0,0,0,0.05)",
+      border: "1px solid rgba(0,0,0,0.05)",
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+      fontSize: 14,
+    }}
+  >
+    <div style={{ fontWeight: 700, marginBottom: 6 }}>Planes</div>
+
+    <div>Trial: {adminTrialCount}</div>
+    <div>Basic: {adminBasicCount}</div>
+    <div>Pro: {adminProCount}</div>
+    <div>Ilimitado: {adminUnlimitedCount}</div>
+  </div>
+
+  {/* Resto stats */}
+  <StatCard
+    title="Páginas totales"
+    value={String(adminStats.totalPages)}
+    subtitle="Difuntos creados"
+    isMobile={isMobile}
+  />
+  <StatCard
+    title="Abiertas"
+    value={String(adminStats.openPages)}
+    subtitle="Páginas activas"
+    isMobile={isMobile}
+  />
+  <StatCard
+    title="Cerradas"
+    value={String(adminStats.closedPages)}
+    subtitle="Páginas finalizadas"
+    isMobile={isMobile}
+  />
+</div>
+
 
         <div
           style={{
@@ -2239,6 +2286,7 @@ const adminRenewalText = isTrial
       </div>
     ) : null}
   </div>
+
 ) : isActive ? (
   <div
     style={{
@@ -2250,15 +2298,12 @@ const adminRenewalText = isTrial
       color: "#065f46",
     }}
   >
-    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
-      Suscripción activa
-    </div>
-
-    <div style={{ fontSize: 13, lineHeight: 1.6 }}>
-      {home.subscription_until
-        ? `Renueva el ${new Date(home.subscription_until).toLocaleDateString("es-ES")}`
-        : "Plan activo"}
-    </div>
+   <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+  Plan {(home.subscription_plan || "sin plan").toString().toUpperCase()}
+  {home.subscription_until
+    ? ` · Renueva el ${new Date(home.subscription_until).toLocaleDateString("es-ES")}`
+    : ""}
+</div>
 
     {adminRenewalText ? (
       <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
@@ -2266,7 +2311,8 @@ const adminRenewalText = isTrial
       </div>
     ) : null}
   </div>
-) : (
+)
+ : (
   <div
     style={{
       marginTop: 10,
