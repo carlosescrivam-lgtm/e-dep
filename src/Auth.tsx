@@ -16,7 +16,9 @@ const [loading, setLoading] = useState(false);
   const [searchQuery, setSearchQuery] = useState("");
 const [searchResults, setSearchResults] = useState<any[]>([]);
 const [searching, setSearching] = useState(false);
-
+const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
+const [showInstall, setShowInstall] = useState(false);
+const [isIOS, setIsIOS] = useState(false);
 
   async function signIn() {
     try {
@@ -104,6 +106,21 @@ useEffect(() => {
   return () => clearTimeout(timeout);
 }, [searchQuery]);
 
+useEffect(() => {
+  const ua = window.navigator.userAgent.toLowerCase();
+
+  const isIosDevice =
+    /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream;
+
+  setIsIOS(isIosDevice);
+
+  window.addEventListener("beforeinstallprompt", (e: any) => {
+    e.preventDefault();
+    setDeferredPrompt(e);
+    setShowInstall(true);
+  });
+}, []);
+
   async function signUp() {
     try {
       setLoading(true);
@@ -151,6 +168,24 @@ setPassword("");
     }
   }
 
+  async function handleInstallClick() {
+  if (isIOS) {
+    alert(
+      "Para instalar la app:\n\n1. Pulsa el botón compartir\n2. 'Añadir a pantalla de inicio'"
+    );
+    return;
+  }
+
+  if (!deferredPrompt) return;
+
+  deferredPrompt.prompt();
+  const choice = await deferredPrompt.userChoice;
+
+  if (choice.outcome === "accepted") {
+    setShowInstall(false);
+  }
+}
+
   return (
     <div
       style={{
@@ -176,6 +211,43 @@ setPassword("");
           padding: 28,
         }}
       >
+
+{showInstall && (
+  <div
+    style={{
+      marginBottom: 16,
+      padding: "12px 14px",
+      borderRadius: 14,
+      background: "rgba(15,23,42,0.06)",
+      border: "1px solid rgba(15,23,42,0.15)",
+      display: "flex",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
+    }}
+  >
+    <div style={{ fontSize: 13, fontWeight: 600 }}>
+      Instala E-Dep para acceso rápido
+    </div>
+
+    <button
+      onClick={handleInstallClick}
+      style={{
+        padding: "8px 12px",
+        borderRadius: 10,
+        border: "none",
+        background: "#0f172a",
+        color: "white",
+        fontWeight: 700,
+        fontSize: 12,
+        cursor: "pointer",
+      }}
+    >
+      {isIOS ? "Cómo instalar" : "Instalar"}
+    </button>
+  </div>
+)}
+
         <div
           style={{
             display: "inline-flex",
