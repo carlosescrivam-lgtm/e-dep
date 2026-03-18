@@ -1137,7 +1137,7 @@ async function handleLogoUpload(file: File) {
   }
 }
 
- async function closePage(pageId: string, pageName: string) {
+async function closePage(pageId: string, pageName: string) {
   const ok = window.confirm(
     `¿Seguro que quieres cerrar la página de "${pageName}" y generar el PDF ahora?`
   );
@@ -1177,25 +1177,18 @@ async function handleLogoUpload(file: File) {
       if (updateError) throw updateError;
     }
 
-    let pdfErrorMessage = "";
+    const pdfRes = await fetch("/.netlify/functions/generatePdf", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ pageId }),
+    });
 
-    try {
-      const pdfRes = await fetch("/.netlify/functions/generatePdf", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ pageId }),
-      });
+    const pdfData = await pdfRes.json().catch(() => ({}));
 
-      const pdfData = await pdfRes.json().catch(() => ({}));
-
-      if (!pdfRes.ok) {
-        pdfErrorMessage =
-          pdfData?.error || "La página se cerró, pero no se pudo generar el PDF.";
-      }
-    } catch (pdfErr: any) {
-      console.error("Error generando PDF:", pdfErr);
-      pdfErrorMessage =
-        pdfErr?.message || "La página se cerró, pero no se pudo generar el PDF.";
+    if (!pdfRes.ok) {
+      throw new Error(
+        pdfData?.error || "La página se cerró, pero no se pudo generar el PDF."
+      );
     }
 
     if (isAdminSupportView && adminViewingFuneralHomeId) {
@@ -1204,10 +1197,20 @@ async function handleLogoUpload(file: File) {
       await loadData();
     }
 
-    if (pdfErrorMessage) {
-      alert(pdfErrorMessage);
+    const pdfUrl = await waitForPdfLink(pageId);
+
+    if (pdfUrl) {
+      const wantsOpen = window.confirm(
+        "Página cerrada y PDF generado correctamente.\n\n¿Quieres ver el PDF ahora?"
+      );
+
+      if (wantsOpen) {
+        window.open(pdfUrl, "_blank");
+      }
     } else {
-      alert("Página cerrada y PDF generado.");
+      alert(
+        "Página cerrada y PDF generado correctamente, pero todavía no se pudo abrir automáticamente.\n\nPuedes verlo después con el botón 'Generar PDF'."
+      );
     }
   } catch (err: any) {
     console.error(err);
@@ -1265,6 +1268,37 @@ async function generatePdfNow(pageId: string, pageName: string) {
   }
 }
  
+async function waitForPdfLink(pageId: string, attempts = 6, delayMs = 1200) {
+  for (let i = 0; i < attempts; i++) {
+    try {
+      const linkRes = await fetch(
+        `/.netlify/functions/getPdfLink?pageId=${encodeURIComponent(pageId)}`
+      );
+
+      const linkData = await linkRes.json().catch(() => ({}));
+
+      if (linkRes.ok) {
+        const pdfUrl =
+          linkData?.pdfUrl ||
+          linkData?.url ||
+          linkData?.link ||
+          linkData?.signedUrl ||
+          "";
+
+        if (pdfUrl) {
+          return pdfUrl;
+        }
+      }
+    } catch (err) {
+      console.error("Esperando enlace del PDF...", err);
+    }
+
+    await new Promise((resolve) => setTimeout(resolve, delayMs));
+  }
+
+  return "";
+}
+
 async function reopenPage(pageId: string, pageName: string) {
   const ok = window.confirm(
     `¿Quieres reabrir la página de ${pageName}?`
@@ -4188,7 +4222,7 @@ onChange={async (e) => {
     onClick={() => generatePdfNow(item.id, item.full_name)}
     style={ghostButtonStyle}
   >
-    Generar PDF
+    Ver PDF
   </button>
 ) : null}
 
