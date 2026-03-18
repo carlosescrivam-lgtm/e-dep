@@ -112,13 +112,36 @@ useEffect(() => {
   const isIosDevice =
     /iphone|ipad|ipod/.test(ua) && !(window as any).MSStream;
 
+  const isAndroidDevice = /android/.test(ua);
+  const isMobileDevice = isIosDevice || isAndroidDevice;
+
+  const isStandalone =
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true;
+
   setIsIOS(isIosDevice);
 
-  window.addEventListener("beforeinstallprompt", (e: any) => {
+  if (isIosDevice && !isStandalone) {
+    setShowInstall(true);
+  }
+
+  const handleBeforeInstallPrompt = (e: any) => {
     e.preventDefault();
+
+    if (!isMobileDevice || isIosDevice || isStandalone) return;
+
     setDeferredPrompt(e);
     setShowInstall(true);
-  });
+  };
+
+  window.addEventListener("beforeinstallprompt", handleBeforeInstallPrompt);
+
+  return () => {
+    window.removeEventListener(
+      "beforeinstallprompt",
+      handleBeforeInstallPrompt
+    );
+  };
 }, []);
 
   async function signUp() {
@@ -168,10 +191,18 @@ setPassword("");
     }
   }
 
-  async function handleInstallClick() {
+async function handleInstallClick() {
+  if (
+    window.matchMedia("(display-mode: standalone)").matches ||
+    (window.navigator as any).standalone === true
+  ) {
+    setShowInstall(false);
+    return;
+  }
+
   if (isIOS) {
     alert(
-      "Para instalar la app:\n\n1. Pulsa el botón compartir\n2. 'Añadir a pantalla de inicio'"
+      "Para instalar la app en iPhone:\n\n1. Pulsa el botón Compartir\n2. Pulsa 'Añadir a pantalla de inicio'"
     );
     return;
   }
