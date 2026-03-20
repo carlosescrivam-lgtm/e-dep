@@ -1452,13 +1452,22 @@ const totalCondolences = items.reduce(
  
 const nowDate = new Date();
 
-const billingCycleStart = currentSubscriptionStart
-  ? new Date(currentSubscriptionStart)
-  : new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
-
 const billingCycleEnd = currentSubscriptionUntil
   ? new Date(currentSubscriptionUntil)
   : null;
+
+const billingCycleStart = currentSubscriptionStart
+  ? new Date(currentSubscriptionStart)
+  : billingCycleEnd
+  ? new Date(
+      billingCycleEnd.getFullYear(),
+      billingCycleEnd.getMonth() - 1,
+      billingCycleEnd.getDate(),
+      billingCycleEnd.getHours(),
+      billingCycleEnd.getMinutes(),
+      billingCycleEnd.getSeconds()
+    )
+  : new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
 
 const pagesThisMonth = items.filter((item) => {
   if (!item.created_at) return false;
@@ -1484,14 +1493,15 @@ const isPaidActive =
 
 const normalizedPlan = (currentSubscriptionPlan || "").trim().toLowerCase();
 
-const currentPlanLimit =
-  normalizedPlan === "unlimited"
-    ? null
-    : normalizedPlan === "pro"
-    ? 20
-    : normalizedPlan === "basic"
-    ? 10
-    : 10;
+const currentPlanLimit = isTrialActive
+  ? 3
+  : normalizedPlan === "unlimited"
+  ? null
+  : normalizedPlan === "pro"
+  ? 20
+  : normalizedPlan === "basic"
+  ? 10
+  : 10;
 
     const isCurrentBasicPlan = normalizedPlan === "basic" && isPaidActive;
 const isCurrentProPlan = normalizedPlan === "pro" && isPaidActive;
