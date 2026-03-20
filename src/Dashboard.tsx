@@ -1452,22 +1452,13 @@ const totalCondolences = items.reduce(
  
 const nowDate = new Date();
 
+const billingCycleStart = currentSubscriptionStart
+  ? new Date(currentSubscriptionStart)
+  : new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
+
 const billingCycleEnd = currentSubscriptionUntil
   ? new Date(currentSubscriptionUntil)
   : null;
-
-const billingCycleStart = currentSubscriptionStart
-  ? new Date(currentSubscriptionStart)
-  : billingCycleEnd
-  ? new Date(
-      billingCycleEnd.getFullYear(),
-      billingCycleEnd.getMonth() - 1,
-      billingCycleEnd.getDate(),
-      billingCycleEnd.getHours(),
-      billingCycleEnd.getMinutes(),
-      billingCycleEnd.getSeconds()
-    )
-  : new Date(nowDate.getFullYear(), nowDate.getMonth(), 1);
 
 const pagesThisMonth = items.filter((item) => {
   if (!item.created_at) return false;
@@ -1493,15 +1484,14 @@ const isPaidActive =
 
 const normalizedPlan = (currentSubscriptionPlan || "").trim().toLowerCase();
 
-const currentPlanLimit = isTrialActive
-  ? 3
-  : normalizedPlan === "unlimited"
-  ? null
-  : normalizedPlan === "pro"
-  ? 20
-  : normalizedPlan === "basic"
-  ? 10
-  : 10;
+const currentPlanLimit =
+  normalizedPlan === "unlimited"
+    ? null
+    : normalizedPlan === "pro"
+    ? 20
+    : normalizedPlan === "basic"
+    ? 10
+    : 10;
 
     const isCurrentBasicPlan = normalizedPlan === "basic" && isPaidActive;
 const isCurrentProPlan = normalizedPlan === "pro" && isPaidActive;
@@ -1561,8 +1551,9 @@ const planLimitWarningText =
     : `Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`;
 
 const canCreatePage =
-  (isTrialActive && (currentPlanLimit === null || pagesThisMonth < currentPlanLimit)) ||
-  (isPaidActive && (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
+  isTrialActive ||
+  (isPaidActive &&
+    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
 
  const isAdminSupportView =
   currentRole === "admin" && !!adminViewingFuneralHomeId;
@@ -1905,6 +1896,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
     marginBottom: 24,
   }}
 >
+  {/* Funerarias */}
   <StatCard
     title="Funerarias"
     value={String(adminStats.totalFuneralHomes)}
@@ -1912,82 +1904,47 @@ if (currentRole === "admin" && !isAdminSupportView) {
     isMobile={isMobile}
   />
 
+  {/* Planes */}
   <div
     style={{
-      background: "rgba(255,255,255,0.84)",
-      backdropFilter: "blur(12px)",
-      border: "1px solid rgba(255,255,255,0.72)",
-      borderRadius: isMobile ? 16 : 22,
-      padding: isMobile ? "10px 12px" : 18,
-      boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
+      borderRadius: 18,
+      padding: 16,
+      background: "white",
+      boxShadow: "0 6px 20px rgba(0,0,0,0.05)",
+      border: "1px solid rgba(0,0,0,0.05)",
       display: "flex",
       flexDirection: "column",
       gap: 6,
+      fontSize: 14,
     }}
   >
-    <div
-      style={{
-        fontSize: isMobile ? 11 : 13,
-        fontWeight: 700,
-        color: "#64748b",
-        marginBottom: isMobile ? 4 : 8,
-        textTransform: "uppercase",
-        letterSpacing: "0.04em",
-      }}
-    >
-      Planes
-    </div>
+    <div style={{ fontWeight: 700, marginBottom: 6 }}>Planes</div>
 
-    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
-      Trial: {adminTrialCount}
-    </div>
-    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
-      Basic: {adminBasicCount}
-    </div>
-    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
-      Pro: {adminProCount}
-    </div>
-    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
-      Ilimitado: {adminUnlimitedCount}
-    </div>
+    <div>Trial: {adminTrialCount}</div>
+    <div>Basic: {adminBasicCount}</div>
+    <div>Pro: {adminProCount}</div>
+    <div>Ilimitado: {adminUnlimitedCount}</div>
   </div>
 
-  <div
-    style={{
-      background: "rgba(255,255,255,0.84)",
-      backdropFilter: "blur(12px)",
-      border: "1px solid rgba(255,255,255,0.72)",
-      borderRadius: isMobile ? 16 : 22,
-      padding: isMobile ? "10px 12px" : 18,
-      boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
-      display: "flex",
-      flexDirection: "column",
-      gap: 6,
-    }}
-  >
-    <div
-      style={{
-        fontSize: isMobile ? 11 : 13,
-        fontWeight: 700,
-        color: "#64748b",
-        marginBottom: isMobile ? 4 : 8,
-        textTransform: "uppercase",
-        letterSpacing: "0.04em",
-      }}
-    >
-      Páginas
-    </div>
-
-    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
-      Totales: {adminStats.totalPages}
-    </div>
-    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
-      Abiertas: {adminStats.openPages}
-    </div>
-    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
-      Cerradas: {adminStats.closedPages}
-    </div>
-  </div>
+  {/* Resto stats */}
+  <StatCard
+    title="Páginas totales"
+    value={String(adminStats.totalPages)}
+    subtitle="Difuntos creados"
+    isMobile={isMobile}
+  />
+  <StatCard
+    title="Abiertas"
+    value={String(adminStats.openPages)}
+    subtitle="Páginas activas"
+    isMobile={isMobile}
+  />
+  <StatCard
+    title="Cerradas"
+    value={String(adminStats.closedPages)}
+    subtitle="Páginas finalizadas"
+    isMobile={isMobile}
+  />
 </div>
 
 
@@ -2167,7 +2124,35 @@ const adminRenewalText = isTrial
 
                     <div style={{ position: "relative", zIndex: 1 }}>
 
- 
+          {!isMobile && (
+  <div
+    style={{
+      position: "absolute",
+      top: 18,
+      right: 18,
+      zIndex: 2,
+    }}
+  >
+    <button
+      type="button"
+      onClick={() =>
+        handleDeleteFuneralHome(home.id, home.name || "Funeraria")
+      }
+      style={{
+        border: "1px solid rgba(239,68,68,0.18)",
+        background: "rgba(254,242,242,0.95)",
+        color: "#b91c1c",
+        borderRadius: 10,
+        padding: "8px 12px",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      Eliminar funeraria
+    </button>
+  </div>
+)}
                      
 
  <div
@@ -2228,29 +2213,26 @@ const adminRenewalText = isTrial
     {accessLabel}
   </div>
 
-  <button
-  type="button"
-  onClick={() => {
-  if (!confirm("¿Seguro que quieres eliminar esta funeraria? Esta acción no se puede deshacer.")) return;
-  handleDeleteFuneralHome(home.id, home.name || "Funeraria");
-}}
-  style={{
-    marginTop: 10,
-    border: "1px solid rgba(239,68,68,0.18)",
-    background: "rgba(254,242,242,0.95)",
-    color: "#b91c1c",
-    borderRadius: 10,
-    padding: "8px 12px",
-    fontWeight: 700,
-    fontSize: 13,
-    cursor: "pointer",
-    width: "fit-content",
-  }}
->
-  Eliminar funeraria
-</button>
-
-
+  {isMobile && (
+    <button
+      type="button"
+      onClick={() =>
+        handleDeleteFuneralHome(home.id, home.name || "Funeraria")
+      }
+      style={{
+        border: "1px solid rgba(239,68,68,0.18)",
+        background: "rgba(254,242,242,0.95)",
+        color: "#b91c1c",
+        borderRadius: 10,
+        padding: "8px 12px",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      Eliminar funeraria
+    </button>
+  )}
 </div>
 </div>
 
@@ -2984,19 +2966,23 @@ const adminRenewalText = isTrial
           />
         </div>
 
-<div
+
+
+        <div
   style={{
     display: "grid",
     gridTemplateColumns: isMobile ? "1fr" : "380px 1fr",
+    gridTemplateAreas: isMobile
+      ? `"main"
+         "sidebar"`
+      : `"sidebar main"`,
     gap: isMobile ? 16 : 24,
     alignItems: "start",
   }}
 >
-
-
          <div
   style={{
-    order: isMobile ? 2 : 1,
+    gridArea: "sidebar",
     background: "rgba(255,255,255,0.84)",
     backdropFilter: "blur(14px)",
     border: "1px solid rgba(255,255,255,0.75)",
@@ -3619,16 +3605,16 @@ const adminRenewalText = isTrial
 </div>
             
           </div>
-
-
-<div
+          <div
   style={{
-    order: isMobile ? 1 : 2,
+    gridArea: "main",
     display: "grid",
     gap: 18,
     alignContent: "start",
   }}
 >
+
+
   
 
 
@@ -3644,60 +3630,16 @@ const adminRenewalText = isTrial
               }}
             >
 
-<div
-  style={{
-    display: "flex",
-    flexDirection: isMobile ? "column" : "row",
-    alignItems: isMobile ? "stretch" : "center",
-    justifyContent: "space-between",
-    gap: isMobile ? 12 : 0,
-    padding: 18,
-  }}
->
-  <div>
-    <div style={{ fontSize: 18, fontWeight: 900 }}>
-      Crear nueva página
-    </div>
 
-    <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
-      Crea una página memorial para una familia
-    </div>
-  </div>
 
-  <button
-    type="button"
-    onClick={() => {
-      if (showCreateForm) {
-        setFullName("");
-        setCustomText("");
-        setFamilyEmail("");
-        setPhotoFile(null);
-        if (photoPreview) {
-          URL.revokeObjectURL(photoPreview);
-        }
-        setPhotoPreview("");
-        if (createPhotoInputRef.current) {
-          createPhotoInputRef.current.value = "";
-        }
-      }
-      setShowCreateForm((prev) => !prev);
-    }}
-    style={{
-      padding: "10px 14px",
-      borderRadius: 12,
-      border: "1px solid rgba(0,0,0,0.10)",
-      background: showCreateForm ? "#111827" : "white",
-      color: showCreateForm ? "white" : "#111827",
-      fontWeight: 800,
-      cursor: "pointer",
-      width: isMobile ? "100%" : "auto",
-    }}
-  >
-    {showCreateForm ? "Cerrar" : "Nueva página"}
-  </button>
-</div>
-
-           
+              <div
+                style={{
+                  display: "flex",
+                  alignItems: "center",
+                  justifyContent: "space-between",
+                  padding: 18,
+                }}
+              >
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 900 }}>
                     Crear nueva página
@@ -3756,42 +3698,9 @@ const adminRenewalText = isTrial
       fontWeight: 600,
     }}
   >
-    <div>
-      No puedes crear más páginas en este momento.
-      {isTrialActive
-        ? " Tu periodo gratuito te permite gestionar las páginas creadas, pero no crear nuevas. Para crear más páginas, visita la pestaña Plan y suscripción."
-        : currentSubscriptionStatus === "trial"
-        ? " Tu prueba gratuita ha terminado."
-        : currentSubscriptionStatus === "active"
-        ? " Has alcanzado el límite mensual de tu plan."
-        : " Tu suscripción no está activa."}
-    </div>
-
-    <button
-      type="button"
-      onClick={() => {
-        setShowSubscriptionPanel(true);
-        setShowCreateForm(false);
-      }}
-      style={{
-        marginTop: 12,
-        border: "none",
-        borderRadius: 12,
-        padding: "10px 14px",
-        background: "#9a3412",
-        color: "white",
-        fontWeight: 700,
-        fontSize: 13,
-        cursor: "pointer",
-      }}
-    >
-      Ver planes y suscripción
-    </button>
-  </div>
-)}
     No puedes crear más páginas en este momento.
     {isTrialActive
-      ? " Tu periodo gratuito te permite gestionar las páginas existentes. Para crear nuevas necesitas activar un plan. Puedes hacerlo en la pestaña Plan y suscripción."
+      ? " Tu periodo gratuito sigue activo, pero revisa este aviso si algo no cuadra."
       : currentSubscriptionStatus === "trial"
       ? " Tu prueba gratuita ha terminado."
       : currentSubscriptionStatus === "active"
@@ -4000,7 +3909,7 @@ onChange={async (e) => {
                     </button>
                   </form>
                 </div>
-              
+              )}
             </div>
 
             <div
@@ -4746,8 +4655,8 @@ onChange={async (e) => {
             )}
           </div>
         </div>
-      
-    
+      </div>
+    </div>
   );
 }
 
