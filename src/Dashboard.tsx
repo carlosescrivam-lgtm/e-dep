@@ -4080,7 +4080,10 @@ onChange={async (e) => {
     alignItems: "center",
   }}
 >
-  <span>{item.is_searchable ? "Pública" : "No pública"}</span>
+<span style={{ fontWeight: 600 }}>
+  {item.is_searchable ? "🔍 Visible en buscador" : "🚫 Oculta del buscador"}
+</span>
+
 
   {item.pending_count > 0 && (
     <span
