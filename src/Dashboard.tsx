@@ -2984,23 +2984,19 @@ const adminRenewalText = isTrial
           />
         </div>
 
-
-
-        <div
+<div
   style={{
     display: "grid",
     gridTemplateColumns: isMobile ? "1fr" : "380px 1fr",
-    gridTemplateAreas: isMobile
-      ? `"main"
-         "sidebar"`
-      : `"sidebar main"`,
     gap: isMobile ? 16 : 24,
     alignItems: "start",
   }}
 >
+
+
          <div
   style={{
-    gridArea: "sidebar",
+    order: isMobile ? 2 : 1,
     background: "rgba(255,255,255,0.84)",
     backdropFilter: "blur(14px)",
     border: "1px solid rgba(255,255,255,0.75)",
@@ -3623,16 +3619,16 @@ const adminRenewalText = isTrial
 </div>
             
           </div>
-          <div
+
+
+<div
   style={{
-    gridArea: "main",
+    order: isMobile ? 1 : 2,
     display: "grid",
     gap: 18,
     alignContent: "start",
   }}
 >
-
-
   
 
 
@@ -3648,16 +3644,60 @@ const adminRenewalText = isTrial
               }}
             >
 
+<div
+  style={{
+    display: "flex",
+    flexDirection: isMobile ? "column" : "row",
+    alignItems: isMobile ? "stretch" : "center",
+    justifyContent: "space-between",
+    gap: isMobile ? 12 : 0,
+    padding: 18,
+  }}
+>
+  <div>
+    <div style={{ fontSize: 18, fontWeight: 900 }}>
+      Crear nueva página
+    </div>
 
+    <div style={{ fontSize: 13, color: "#64748b", marginTop: 4 }}>
+      Crea una página memorial para una familia
+    </div>
+  </div>
 
-              <div
-                style={{
-                  display: "flex",
-                  alignItems: "center",
-                  justifyContent: "space-between",
-                  padding: 18,
-                }}
-              >
+  <button
+    type="button"
+    onClick={() => {
+      if (showCreateForm) {
+        setFullName("");
+        setCustomText("");
+        setFamilyEmail("");
+        setPhotoFile(null);
+        if (photoPreview) {
+          URL.revokeObjectURL(photoPreview);
+        }
+        setPhotoPreview("");
+        if (createPhotoInputRef.current) {
+          createPhotoInputRef.current.value = "";
+        }
+      }
+      setShowCreateForm((prev) => !prev);
+    }}
+    style={{
+      padding: "10px 14px",
+      borderRadius: 12,
+      border: "1px solid rgba(0,0,0,0.10)",
+      background: showCreateForm ? "#111827" : "white",
+      color: showCreateForm ? "white" : "#111827",
+      fontWeight: 800,
+      cursor: "pointer",
+      width: isMobile ? "100%" : "auto",
+    }}
+  >
+    {showCreateForm ? "Cerrar" : "Nueva página"}
+  </button>
+</div>
+
+           
                 <div>
                   <div style={{ fontSize: 18, fontWeight: 900 }}>
                     Crear nueva página
