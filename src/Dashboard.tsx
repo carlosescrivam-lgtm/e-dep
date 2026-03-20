@@ -1929,24 +1929,27 @@ if (currentRole === "admin" && !isAdminSupportView) {
   </div>
 
   {/* Resto stats */}
-  <StatCard
-    title="Páginas totales"
-    value={String(adminStats.totalPages)}
-    subtitle="Difuntos creados"
-    isMobile={isMobile}
-  />
-  <StatCard
-    title="Abiertas"
-    value={String(adminStats.openPages)}
-    subtitle="Páginas activas"
-    isMobile={isMobile}
-  />
-  <StatCard
-    title="Cerradas"
-    value={String(adminStats.closedPages)}
-    subtitle="Páginas finalizadas"
-    isMobile={isMobile}
-  />
+  <div
+  style={{
+    borderRadius: 18,
+    padding: 16,
+    background: "white",
+    boxShadow: "0 6px 20px rgba(0,0,0,0.05)",
+    border: "1px solid rgba(0,0,0,0.05)",
+    display: "flex",
+    flexDirection: "column",
+    gap: 6,
+    fontSize: 14,
+  }}
+>
+  <div style={{ fontWeight: 700, marginBottom: 6 }}>
+    Páginas
+  </div>
+
+  <div>Totales: {adminStats.totalPages}</div>
+  <div>Abiertas: {adminStats.openPages}</div>
+  <div>Cerradas: {adminStats.closedPages}</div>
+</div>
 </div>
 
 
