@@ -1561,9 +1561,8 @@ const planLimitWarningText =
     : `Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`;
 
 const canCreatePage =
-  isTrialActive ||
-  (isPaidActive &&
-    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
+  (isTrialActive && (currentPlanLimit === null || pagesThisMonth < currentPlanLimit)) ||
+  (isPaidActive && (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
 
  const isAdminSupportView =
   currentRole === "admin" && !!adminViewingFuneralHomeId;
