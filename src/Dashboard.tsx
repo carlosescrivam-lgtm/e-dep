@@ -4778,7 +4778,13 @@ function StatCard({
   );
 }
 
-function MiniInfo({ label, value }: { label: string; value: string }) {
+function MiniInfo({
+  label,
+  value,
+}: {
+  label: string;
+  value: React.ReactNode;
+}) {
   return (
     <div
       style={{
