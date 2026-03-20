@@ -1484,14 +1484,15 @@ const isPaidActive =
 
 const normalizedPlan = (currentSubscriptionPlan || "").trim().toLowerCase();
 
-const currentPlanLimit =
-  normalizedPlan === "unlimited"
-    ? null
-    : normalizedPlan === "pro"
-    ? 20
-    : normalizedPlan === "basic"
-    ? 10
-    : 10;
+const currentPlanLimit = isTrialActive
+  ? 3
+  : normalizedPlan === "unlimited"
+  ? null
+  : normalizedPlan === "pro"
+  ? 20
+  : normalizedPlan === "basic"
+  ? 10
+  : 10;
 
     const isCurrentBasicPlan = normalizedPlan === "basic" && isPaidActive;
 const isCurrentProPlan = normalizedPlan === "pro" && isPaidActive;
@@ -1551,7 +1552,8 @@ const planLimitWarningText =
     : `Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`;
 
 const canCreatePage =
-  isTrialActive ||
+  (isTrialActive &&
+    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit)) ||
   (isPaidActive &&
     (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
 
@@ -3684,7 +3686,7 @@ const adminRenewalText = isTrial
 
               {showCreateForm && (
                 <div style={{ padding: 18 }}>
-                {!canCreatePage && (
+ {!canCreatePage && (
   <div
     style={{
       background: "#fff7ed",
@@ -3700,7 +3702,7 @@ const adminRenewalText = isTrial
   >
     No puedes crear más páginas en este momento.
     {isTrialActive
-      ? " Tu periodo gratuito sigue activo, pero revisa este aviso si algo no cuadra."
+      ? " Tu periodo gratuito te permite gestionar las páginas creadas, pero no crear nuevas. Para crear nuevas páginas, visita la pestaña Plan y suscripción."
       : currentSubscriptionStatus === "trial"
       ? " Tu prueba gratuita ha terminado."
       : currentSubscriptionStatus === "active"
