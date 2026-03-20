@@ -2126,35 +2126,7 @@ const adminRenewalText = isTrial
 
                     <div style={{ position: "relative", zIndex: 1 }}>
 
-          {!isMobile && (
-  <div
-    style={{
-      position: "absolute",
-      top: 18,
-      right: 18,
-      zIndex: 2,
-    }}
-  >
-    <button
-      type="button"
-      onClick={() =>
-        handleDeleteFuneralHome(home.id, home.name || "Funeraria")
-      }
-      style={{
-        border: "1px solid rgba(239,68,68,0.18)",
-        background: "rgba(254,242,242,0.95)",
-        color: "#b91c1c",
-        borderRadius: 10,
-        padding: "8px 12px",
-        fontWeight: 700,
-        fontSize: 13,
-        cursor: "pointer",
-      }}
-    >
-      Eliminar funeraria
-    </button>
-  </div>
-)}
+          
                      
 
  <div
@@ -2215,7 +2187,7 @@ const adminRenewalText = isTrial
     {accessLabel}
   </div>
 
-  {isMobile && (
+  {true && (
     <button
       type="button"
       onClick={() =>
