@@ -1905,7 +1905,6 @@ if (currentRole === "admin" && !isAdminSupportView) {
     marginBottom: 24,
   }}
 >
-  {/* Funerarias */}
   <StatCard
     title="Funerarias"
     value={String(adminStats.totalFuneralHomes)}
@@ -1913,47 +1912,82 @@ if (currentRole === "admin" && !isAdminSupportView) {
     isMobile={isMobile}
   />
 
-  {/* Planes */}
   <div
     style={{
-      borderRadius: 18,
-      padding: 16,
-      background: "white",
-      boxShadow: "0 6px 20px rgba(0,0,0,0.05)",
-      border: "1px solid rgba(0,0,0,0.05)",
+      background: "rgba(255,255,255,0.84)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255,255,255,0.72)",
+      borderRadius: isMobile ? 16 : 22,
+      padding: isMobile ? "10px 12px" : 18,
+      boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
       display: "flex",
       flexDirection: "column",
       gap: 6,
-      fontSize: 14,
     }}
   >
-    <div style={{ fontWeight: 700, marginBottom: 6 }}>Planes</div>
+    <div
+      style={{
+        fontSize: isMobile ? 11 : 13,
+        fontWeight: 700,
+        color: "#64748b",
+        marginBottom: isMobile ? 4 : 8,
+        textTransform: "uppercase",
+        letterSpacing: "0.04em",
+      }}
+    >
+      Planes
+    </div>
 
-    <div>Trial: {adminTrialCount}</div>
-    <div>Basic: {adminBasicCount}</div>
-    <div>Pro: {adminProCount}</div>
-    <div>Ilimitado: {adminUnlimitedCount}</div>
+    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
+      Trial: {adminTrialCount}
+    </div>
+    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
+      Basic: {adminBasicCount}
+    </div>
+    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
+      Pro: {adminProCount}
+    </div>
+    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
+      Ilimitado: {adminUnlimitedCount}
+    </div>
   </div>
 
-  {/* Resto stats */}
-  <StatCard
-    title="Páginas totales"
-    value={String(adminStats.totalPages)}
-    subtitle="Difuntos creados"
-    isMobile={isMobile}
-  />
-  <StatCard
-    title="Abiertas"
-    value={String(adminStats.openPages)}
-    subtitle="Páginas activas"
-    isMobile={isMobile}
-  />
-  <StatCard
-    title="Cerradas"
-    value={String(adminStats.closedPages)}
-    subtitle="Páginas finalizadas"
-    isMobile={isMobile}
-  />
+  <div
+    style={{
+      background: "rgba(255,255,255,0.84)",
+      backdropFilter: "blur(12px)",
+      border: "1px solid rgba(255,255,255,0.72)",
+      borderRadius: isMobile ? 16 : 22,
+      padding: isMobile ? "10px 12px" : 18,
+      boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
+      display: "flex",
+      flexDirection: "column",
+      gap: 6,
+    }}
+  >
+    <div
+      style={{
+        fontSize: isMobile ? 11 : 13,
+        fontWeight: 700,
+        color: "#64748b",
+        marginBottom: isMobile ? 4 : 8,
+        textTransform: "uppercase",
+        letterSpacing: "0.04em",
+      }}
+    >
+      Páginas
+    </div>
+
+    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
+      Totales: {adminStats.totalPages}
+    </div>
+    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
+      Abiertas: {adminStats.openPages}
+    </div>
+    <div style={{ fontSize: isMobile ? 13 : 14, color: "#0f172a", fontWeight: 700 }}>
+      Cerradas: {adminStats.closedPages}
+    </div>
+  </div>
 </div>
 
 
@@ -3707,9 +3741,42 @@ const adminRenewalText = isTrial
       fontWeight: 600,
     }}
   >
+    <div>
+      No puedes crear más páginas en este momento.
+      {isTrialActive
+        ? " Tu periodo gratuito te permite gestionar las páginas creadas, pero no crear nuevas. Para crear más páginas, visita la pestaña Plan y suscripción."
+        : currentSubscriptionStatus === "trial"
+        ? " Tu prueba gratuita ha terminado."
+        : currentSubscriptionStatus === "active"
+        ? " Has alcanzado el límite mensual de tu plan."
+        : " Tu suscripción no está activa."}
+    </div>
+
+    <button
+      type="button"
+      onClick={() => {
+        setShowSubscriptionPanel(true);
+        setShowCreateForm(false);
+      }}
+      style={{
+        marginTop: 12,
+        border: "none",
+        borderRadius: 12,
+        padding: "10px 14px",
+        background: "#9a3412",
+        color: "white",
+        fontWeight: 700,
+        fontSize: 13,
+        cursor: "pointer",
+      }}
+    >
+      Ver planes y suscripción
+    </button>
+  </div>
+)}
     No puedes crear más páginas en este momento.
     {isTrialActive
-      ? " Tu periodo gratuito sigue activo, pero revisa este aviso si algo no cuadra."
+      ? " Tu periodo gratuito te permite gestionar las páginas existentes. Para crear nuevas necesitas activar un plan. Puedes hacerlo en la pestaña Plan y suscripción."
       : currentSubscriptionStatus === "trial"
       ? " Tu prueba gratuita ha terminado."
       : currentSubscriptionStatus === "active"
