@@ -2315,30 +2315,48 @@ const adminRenewalText = isTrial
     marginBottom: isMobile ? 12 : 16,
   }}
 >
-                        <MiniInfo
-                          label="Páginas"
-                          value={String(home.total_pages || 0)}
-                        />
-                        <MiniInfo
-                          label="Abiertas"
-                          value={String(home.open_pages || 0)}
-                        />
-                        <MiniInfo
-                          label="Cerradas"
-                          value={String(home.closed_pages || 0)}
-                        />
-                        <MiniInfo
-                          label="Estado"
-                          value={home.subscription_status || "inactive"}
-                        />
-
-                        <MiniInfo label="Mensajes" value={String(home.total_condolences || 0)} />
-                        <MiniInfo label="Publicados" value={String(home.approved_condolences || 0)} />
-                        <MiniInfo label="Pendientes" value={String(home.pending_condolences || 0)} />
-                        <MiniInfo label="Rechazados" value={String(home.rejected_condolences || 0)} />
-                        <MiniInfo label="Hoy" value={String(home.condolences_today || 0)}/>
-                        <MiniInfo label="Últimos 7 días" value={String(home.condolences_last_7_days || 0)}
+                     
+<MiniInfo
+  label="Páginas"
+  value={
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        fontWeight: 500,
+        color: "#64748b",
+      }}
+    >
+      <span>Totales: {home.total_pages || 0}</span>
+      <span>Abiertas: {home.open_pages || 0}</span>
+      <span>Cerradas: {home.closed_pages || 0}</span>
+    </div>
+  }
 />
+                      
+                       
+<MiniInfo
+  label="Mensajes"
+  value={
+    <div
+      style={{
+        display: "flex",
+        flexDirection: "column",
+        gap: 2,
+        fontWeight: 500,
+        color: "#64748b",
+      }}
+    >
+      <span>Totales: {home.total_condolences || 0}</span>
+      <span>Publicados: {home.approved_condolences || 0}</span>
+      <span>Pendientes: {home.pending_condolences || 0}</span>
+      <span>Rechazados: {home.rejected_condolences || 0}</span>
+    </div>
+  }
+/>
+                   
+
 
 <div
   style={{
