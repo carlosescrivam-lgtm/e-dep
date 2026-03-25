@@ -213,12 +213,21 @@ if (data?.moderation_status === "rejected") {
 
   // Si está cerrada o pasó la fecha, mostramos cerrado
   const isExpired = Date.now() > new Date(page.closes_at).getTime();
-  if (page.status === "closed" || isExpired)
-    return (
-      <div style={{ padding: 24, fontFamily: "system-ui" }}>
-        ⚠️ Esta página ya está cerrada.
-      </div>
-    );
+
+if (page.status === "pending_payment") {
+  return (
+    <div style={{ padding: 24, fontFamily: "system-ui", textAlign: "center" }}>
+      ⚠️ Esta página todavía no está activa.
+    </div>
+  );
+}
+
+if (page.status === "closed" || isExpired)
+  return (
+    <div style={{ padding: 24, fontFamily: "system-ui" }}>
+      ⚠️ Esta página ya está cerrada.
+    </div>
+  );
 
 const isPhotoTheme = page.theme === "photo";
 const isMinimalTheme = page.theme === "minimal";

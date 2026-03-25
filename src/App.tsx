@@ -4,7 +4,8 @@ import { supabase } from "./lib/supabaseClient";
 import Auth from "./Auth";
 import Dashboard from "./Dashboard";
 import PublicPage from "./PublicPage";
-
+import ParticularCreatePage from "./ParticularCreatePage";
+import ParticularSuccessPage from "./ParticularSuccessPage";
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -25,9 +26,13 @@ export default function App() {
   if (loading) return <div style={{ padding: 24 }}>Cargando...</div>;
 
   return (
-    <Routes>
-      <Route path="/p/:slug" element={<PublicPage />} />
-      <Route path="/*" element={loggedIn ? <Dashboard /> : <Auth />} />
-    </Routes>
+   <Routes>
+  <Route path="/p/:slug" element={<PublicPage />} />
+  
+  <Route path="/particular" element={<ParticularCreatePage />} />
+  <Route path="/particular/success" element={<ParticularSuccessPage />} />
+  <Route path="/*" element={loggedIn ? <Dashboard /> : <Auth />} />
+  
+</Routes>
   );
 }

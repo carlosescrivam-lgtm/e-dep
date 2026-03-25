@@ -19,7 +19,7 @@ const [searching, setSearching] = useState(false);
 const [deferredPrompt, setDeferredPrompt] = useState<any>(null);
 const [showInstall, setShowInstall] = useState(false);
 const [isIOS, setIsIOS] = useState(false);
-
+const [entryView, setEntryView] = useState<"chooser" | "funeral">("chooser");
   async function signIn() {
     try {
       setLoading(true);
@@ -217,6 +217,7 @@ async function handleInstallClick() {
   }
 }
 
+if (entryView === "chooser") {
   return (
     <div
       style={{
@@ -233,6 +234,243 @@ async function handleInstallClick() {
     >
       <div
         style={{
+          width: "100%",
+          maxWidth: 460,
+          background: "rgba(255,255,255,0.92)",
+          border: "1px solid rgba(255,255,255,0.75)",
+          borderRadius: 28,
+          boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
+          padding: 28,
+        }}
+      >
+        {showInstall && (
+          <div
+            style={{
+              marginBottom: 16,
+              padding: "12px 14px",
+              borderRadius: 14,
+              background: "rgba(15,23,42,0.06)",
+              border: "1px solid rgba(15,23,42,0.15)",
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              gap: 10,
+            }}
+          >
+            <div style={{ fontSize: 13, fontWeight: 600 }}>
+              Instala E-Dep para acceso rápido
+            </div>
+
+            <button
+              onClick={handleInstallClick}
+              style={{
+                padding: "8px 12px",
+                borderRadius: 10,
+                border: "none",
+                background: "#0f172a",
+                color: "white",
+                fontWeight: 700,
+                fontSize: 12,
+                cursor: "pointer",
+              }}
+            >
+              {isIOS ? "Cómo instalar" : "Instalar"}
+            </button>
+          </div>
+        )}
+
+        <div
+          style={{
+            display: "inline-flex",
+            padding: "8px 12px",
+            borderRadius: 999,
+            background: "#e2e8f0",
+            color: "#0f172a",
+            fontSize: 12,
+            fontWeight: 700,
+            marginBottom: 14,
+          }}
+        >
+          E-Dep
+        </div>
+
+        <h1
+          style={{
+            margin: 0,
+            fontSize: 30,
+            lineHeight: 1.1,
+            fontWeight: 800,
+            letterSpacing: "-0.03em",
+            color: "#0f172a",
+          }}
+        >
+          Bienvenido a E-Dep
+        </h1>
+
+        <p
+          style={{
+            marginTop: 10,
+            marginBottom: 22,
+            color: "#475569",
+            lineHeight: 1.6,
+            fontSize: 14,
+          }}
+        >
+          Elige cómo quieres acceder o busca directamente una página de condolencias.
+        </p>
+
+        <button
+          onClick={() => {
+            setEntryView("funeral");
+            setMsg("");
+          }}
+          style={{
+            width: "100%",
+            border: "none",
+            borderRadius: 16,
+            padding: "15px 18px",
+            background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+            color: "white",
+            fontWeight: 700,
+            fontSize: 15,
+            cursor: "pointer",
+            marginBottom: 12,
+          }}
+        >
+          Soy empresa funeraria
+        </button>
+
+        <button
+          onClick={() => {
+            window.location.href = "/particular";
+          }}
+          style={{
+            width: "100%",
+            border: "1px solid #dbe3ee",
+            borderRadius: 16,
+            padding: "13px 18px",
+            background: "white",
+            color: "#0f172a",
+            fontWeight: 700,
+            fontSize: 14,
+            cursor: "pointer",
+            marginBottom: 28,
+          }}
+        >
+          Soy particular
+        </button>
+
+        <div style={{ marginTop: 10 }}>
+          <div
+            style={{
+              fontSize: 18,
+              fontWeight: 800,
+              marginBottom: 12,
+              textAlign: "center",
+            }}
+          >
+            Buscar página de condolencias
+          </div>
+
+          <div
+            style={{
+              display: "flex",
+              gap: 10,
+              maxWidth: 420,
+              margin: "0 auto",
+            }}
+          >
+            <input
+              value={searchQuery}
+              onChange={(e) => setSearchQuery(e.target.value)}
+              placeholder="Nombre del difunto"
+              style={{
+                flex: 1,
+                padding: 12,
+                borderRadius: 12,
+                border: "1px solid #cbd5e1",
+              }}
+            />
+
+            <button
+              type="button"
+              onClick={handlePublicSearch}
+              style={{
+                padding: "12px 16px",
+                borderRadius: 12,
+                border: "none",
+                background: "#0f172a",
+                color: "white",
+                fontWeight: 700,
+                cursor: "pointer",
+              }}
+            >
+              Buscar
+            </button>
+          </div>
+
+          <div style={{ marginTop: 18, maxWidth: 420, marginInline: "auto" }}>
+            {searching ? (
+              <div style={{ textAlign: "center" }}>Buscando...</div>
+            ) : (
+              searchResults.map((item) => (
+                <div
+                  key={item.id}
+                  style={{
+                    padding: 14,
+                    borderRadius: 14,
+                    background: "white",
+                    border: "1px solid #e2e8f0",
+                    marginBottom: 10,
+                  }}
+                >
+                  <div style={{ fontWeight: 800 }}>{item.full_name}</div>
+
+                  {item.funeral_home_name && (
+                    <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
+                      Gestionado por {item.funeral_home_name}
+                    </div>
+                  )}
+
+                  <div style={{ marginTop: 10 }}>
+                    <a
+                      href={`/p/${item.slug}?token=${item.access_token}`}
+                      style={{
+                        color: "#0f172a",
+                        fontWeight: 700,
+                        textDecoration: "none",
+                      }}
+                    >
+                      Ver página
+                    </a>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+        </div>
+      </div>
+    </div>
+  );
+}
+
+  return (
+    <div
+      style={{
+        minHeight: "100vh",
+        background:
+          "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e8edf5 100%)",
+        padding: 24,
+        fontFamily:
+          'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "center",
+      }}
+    >
+      <div
+        style={{
+          position: "relative",
           width: "100%",
           maxWidth: 460,
           background: "rgba(255,255,255,0.92)",
@@ -278,6 +516,28 @@ async function handleInstallClick() {
     </button>
   </div>
 )}
+
+<button
+  type="button"
+  onClick={() => {
+    setEntryView("chooser");
+    setMsg("");
+  }}
+style={{
+  position: "absolute",
+  top: 16,
+  right: 16,
+  background: "none",
+  border: "none",
+  padding: 0,
+  color: "#334155",
+  cursor: "pointer",
+  fontSize: 14,
+  fontWeight: 600,
+}}
+>
+  ← Volver
+</button>
 
         <div
           style={{
@@ -478,95 +738,6 @@ async function handleInstallClick() {
           </div>
         ) : null}
 
-<div style={{ marginTop: 40 }}>
-  <div
-    style={{
-      fontSize: 18,
-      fontWeight: 800,
-      marginBottom: 12,
-      textAlign: "center",
-    }}
-  >
-    Buscar página de condolencias
-  </div>
-
-  <div
-    style={{
-      display: "flex",
-      gap: 10,
-      maxWidth: 420,
-      margin: "0 auto",
-    }}
-  >
-    <input
-      value={searchQuery}
-      onChange={(e) => setSearchQuery(e.target.value)}
-      placeholder="Nombre del difunto"
-      style={{
-        flex: 1,
-        padding: 12,
-        borderRadius: 12,
-        border: "1px solid #cbd5e1",
-      }}
-    />
-
-    <button
-      type="button"
-      onClick={handlePublicSearch}
-      style={{
-        padding: "12px 16px",
-        borderRadius: 12,
-        border: "none",
-        background: "#0f172a",
-        color: "white",
-        fontWeight: 700,
-        cursor: "pointer",
-      }}
-    >
-      Buscar
-    </button>
-  </div>
-
-  <div style={{ marginTop: 18, maxWidth: 420, marginInline: "auto" }}>
-    {searching ? (
-      <div style={{ textAlign: "center" }}>Buscando...</div>
-    ) : (
-      searchResults.map((item) => (
-        <div
-          key={item.id}
-          style={{
-            padding: 14,
-            borderRadius: 14,
-            background: "white",
-            border: "1px solid #e2e8f0",
-            marginBottom: 10,
-          }}
-        >
-          <div style={{ fontWeight: 800 }}>{item.full_name}</div>
-
-          {item.funeral_home_name && (
-            <div style={{ fontSize: 12, color: "#64748b", marginTop: 4 }}>
-              Gestionado por {item.funeral_home_name}
-            </div>
-          )}
-
-          <div style={{ marginTop: 10 }}>
-            <a
-              href={`/p/${item.slug}?token=${item.access_token}`}
-              style={{
-                color: "#0f172a",
-                fontWeight: 700,
-                textDecoration: "none",
-              }}
-            >
-              Ver página
-            </a>
-          </div>
-        </div>
-      ))
-    )}
-  </div>
-</div>
 
       </div>
     </div>
