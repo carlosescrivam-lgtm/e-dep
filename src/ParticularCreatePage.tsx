@@ -7,7 +7,7 @@ export default function ParticularCreatePage() {
   const [contactEmail, setContactEmail] = useState("");
   const [durationDays, setDurationDays] = useState("7");
   const [isSearchable, setIsSearchable] = useState(false);
-  const [photoFile, setPhotoFile] = useState<File | null>(null);
+  const [, setPhotoFile] = useState<File | null>(null);
 const [photoPreview, setPhotoPreview] = useState("");
 const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [openFaq, setOpenFaq] = useState<string | null>(null);
