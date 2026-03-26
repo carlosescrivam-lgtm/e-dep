@@ -229,3 +229,6 @@ subscriptionUntil = periodEnd
     };
   }
 };
+export const config = {
+  bodyParser: false,
+};
