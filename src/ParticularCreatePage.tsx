@@ -5,7 +5,8 @@ export default function ParticularCreatePage() {
   const [memorialText, setMemorialText] = useState("");
   const MAX_TEXT_LENGTH = 280;
   const [contactEmail, setContactEmail] = useState("");
-  const [durationDays, setDurationDays] = useState("7");
+  const [durationDays, setDurationDays] = useState("3");
+  const [theme, setTheme] = useState("classic");
   const [isSearchable, setIsSearchable] = useState(false);
   const [, setPhotoFile] = useState<File | null>(null);
 const [photoPreview, setPhotoPreview] = useState("");
@@ -16,7 +17,9 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
   const previewTitle = useMemo(() => {
     return fullName.trim() || "Nombre del ser querido";
   }, [fullName]);
-
+const isMobile = typeof window !== "undefined" && window.innerWidth < 900;
+const isPhotoTheme = theme === "photo";
+const isMinimalTheme = theme === "minimal";
   const previewText = useMemo(() => {
     return (
       memorialText.trim() ||
@@ -30,7 +33,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
         minHeight: "100vh",
         background:
           "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e8edf5 100%)",
-        padding: 20,
+        padding: isMobile ? 12 : 20,
         fontFamily:
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
@@ -56,22 +59,22 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
         </button>
 
         <div
-          style={{
-            display: "grid",
-            gridTemplateColumns: "1.05fr 0.95fr",
-            gap: 20,
-            alignItems: "start",
-          }}
-        >
-          <div
-            style={{
-              background: "rgba(255,255,255,0.92)",
-              border: "1px solid rgba(255,255,255,0.75)",
-              borderRadius: 28,
-              boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
-              padding: 24,
-            }}
-          >
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1.05fr 0.95fr",
+    gap: 20,
+    alignItems: "start",
+  }}
+>
+         <div
+  style={{
+    background: "rgba(255,255,255,0.92)",
+    border: "1px solid rgba(255,255,255,0.75)",
+    borderRadius: 28,
+    boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
+    padding: isMobile ? 16 : 24,
+  }}
+>
             <div
               style={{
                 display: "inline-flex",
@@ -90,7 +93,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
             <h1
               style={{
                 margin: 0,
-                fontSize: 30,
+                fontSize: isMobile ? 24 : 30,
                 lineHeight: 1.1,
                 fontWeight: 800,
                 letterSpacing: "-0.03em",
@@ -232,6 +235,19 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
               </select>
             </div>
 
+<div style={{ marginBottom: 12 }}>
+  <label style={labelStyle}>Tema visual</label>
+  <select
+    value={theme}
+    onChange={(e) => setTheme(e.target.value)}
+    style={inputStyle}
+  >
+    <option value="classic">Clásico</option>
+    <option value="photo">Foto destacada</option>
+    <option value="minimal">Minimalista</option>
+  </select>
+</div>
+
            <div style={{ marginBottom: 12 }}>
   <label style={labelStyle}>Foto (opcional)</label>
 
@@ -350,7 +366,7 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
           custom_text: memorialText,
           contact_email: contactEmail,
           duration_days: Number(durationDays),
-          theme: "classic",
+          theme,
           is_searchable: isSearchable,
           photo_url: photoPreview || null,
         }),
@@ -404,16 +420,16 @@ window.location.href = checkoutData.url;
           </div>
 
           <div
-            style={{
-              background: "rgba(255,255,255,0.92)",
-              border: "1px solid rgba(255,255,255,0.75)",
-              borderRadius: 28,
-              boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
-              padding: 24,
-              position: "sticky",
-              top: 20,
-            }}
-          >
+  style={{
+    background: "rgba(255,255,255,0.92)",
+    border: "1px solid rgba(255,255,255,0.75)",
+    borderRadius: 28,
+    boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
+    padding: isMobile ? 16 : 24,
+    position: isMobile ? "static" : "sticky",
+    top: isMobile ? undefined : 20,
+  }}
+>
             <div
               style={{
                 fontSize: 12,
@@ -436,17 +452,21 @@ window.location.href = checkoutData.url;
                 overflow: "hidden",
               }}
             >
-              {photoPreview ? (
+              {photoPreview && !isMinimalTheme ? (
                 <img
                   src={photoPreview}
                   alt={previewTitle}
                   style={{
-                    width: "100%",
-                    height: 240,
-                    objectFit: "cover",
-                    borderRadius: 18,
-                    marginBottom: 18,
-                  }}
+  width: isPhotoTheme ? "100%" : 180,
+  maxWidth: "100%",
+  height: isPhotoTheme ? 260 : 180,
+  objectFit: "cover",
+  borderRadius: isPhotoTheme ? 18 : isMinimalTheme ? 12 : "50%",
+  marginBottom: 18,
+  display: "block",
+  marginLeft: "auto",
+  marginRight: "auto",
+}}
                 />
               ) : (
                 <div
@@ -469,38 +489,41 @@ window.location.href = checkoutData.url;
 
               <h2
                 style={{
-                  margin: 0,
-                  fontSize: 28,
-                  lineHeight: 1.15,
-                  fontWeight: 800,
-                  color: "#0f172a",
-                }}
+  margin: 0,
+  fontSize: isMinimalTheme ? 24 : 28,
+  lineHeight: 1.15,
+  fontWeight: isMinimalTheme ? 700 : 800,
+  color: "#0f172a",
+  textAlign: isMinimalTheme ? "left" : "center",
+}}
               >
                 {previewTitle}
               </h2>
 
-              <div
-                style={{
-                  marginTop: 10,
-                  color: "#64748b",
-                  fontSize: 14,
-                  fontWeight: 600,
-                }}
-              >
+             <div
+  style={{
+    marginTop: 10,
+    color: "#64748b",
+    fontSize: 14,
+    fontWeight: 600,
+    textAlign: isMinimalTheme ? "left" : "center",
+  }}
+>
                 Página activa durante {durationDays} días
               </div>
 
              <p
   style={{
-    marginTop: 18,
-    marginBottom: 0,
-    color: "#334155",
-    lineHeight: 1.75,
-    fontSize: 15,
-    whiteSpace: "pre-wrap",
-    overflowWrap: "break-word",
-    wordBreak: "break-word",
-  }}
+  marginTop: 18,
+  marginBottom: 0,
+  color: "#334155",
+  lineHeight: 1.75,
+  fontSize: 15,
+  whiteSpace: "pre-wrap",
+  overflowWrap: "break-word",
+  wordBreak: "break-word",
+  textAlign: isMinimalTheme ? "left" : "center",
+}}
 >
   {previewText}
 </p>
