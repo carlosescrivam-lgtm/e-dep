@@ -25,7 +25,10 @@ export const handler: Handler = async (event) => {
     }
 
     const webhookSecret = process.env.STRIPE_WEBHOOK_SECRET!;
-    const rawBody = event.body || "";
+    const rawBody = event.isBase64Encoded
+  ? Buffer.from(event.body || "", "base64").toString("utf-8")
+  : event.body || "";
+    
 
     const stripeEvent = stripe.webhooks.constructEvent(
       rawBody,
