@@ -6,6 +6,11 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
+const supabaseAuth = createClient(
+  process.env.SUPABASE_URL!,
+  process.env.VITE_SUPABASE_ANON_KEY!
+);
+
 function normalizeStoragePath(value: string | null | undefined, bucketName: string) {
   if (!value) return null;
 
@@ -49,6 +54,54 @@ export const handler: Handler = async (event) => {
 
     const body = event.body ? JSON.parse(event.body) : null;
     const funeralHomeId = body?.funeral_home_id;
+
+    
+
+    const authHeader =
+  event.headers.authorization || event.headers.Authorization || "";
+
+const token = authHeader.startsWith("Bearer ")
+  ? authHeader.slice(7)
+  : null;
+
+if (!token) {
+  return {
+    statusCode: 401,
+    body: JSON.stringify({ error: "Falta token de sesión." }),
+  };
+}
+
+const {
+  data: { user },
+  error: authError,
+} = await supabaseAuth.auth.getUser(token);
+
+if (authError || !user) {
+  return {
+    statusCode: 401,
+    body: JSON.stringify({ error: "Sesión inválida o expirada." }),
+  };
+}
+
+const { data: profile, error: profileError } = await supabase
+  .from("funeral_home_users")
+  .select("role")
+  .eq("user_id", user.id)
+  .maybeSingle();
+
+if (profileError) {
+  return {
+    statusCode: 500,
+    body: JSON.stringify({ error: profileError.message }),
+  };
+}
+
+if (!profile || profile.role !== "admin") {
+  return {
+    statusCode: 403,
+    body: JSON.stringify({ error: "No tienes permisos para eliminar funerarias." }),
+  };
+}
 
     if (!funeralHomeId) {
       return {

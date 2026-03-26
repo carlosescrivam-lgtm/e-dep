@@ -563,15 +563,21 @@ async function handleDeleteFuneralHome(
   if (!ok) return;
 
   try {
-    const res = await fetch("/.netlify/functions/deleteFuneralHome", {
-      method: "POST",
-      headers: {
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify({
-        funeral_home_id: funeralHomeId,
-      }),
-    });
+    const {
+  data: { session },
+} = await supabase.auth.getSession();
+
+
+const res = await fetch("/.netlify/functions/deleteFuneralHome", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+    Authorization: `Bearer ${session?.access_token || ""}`,
+  },
+  body: JSON.stringify({
+    funeral_home_id: funeralHomeId,
+  }),
+});
 
     const data = await res.json();
 
