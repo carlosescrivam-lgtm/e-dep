@@ -711,29 +711,64 @@ async function handleDeletePage(pageId: string, fullName: string) {
   if (!ok) return;
 
   try {
-    setDeletingPageId(pageId);
+    
+setDeletingPageId(pageId);
 
-    const { error: condolencesError } = await supabase
-      .from("condolences")
-      .delete()
-      .eq("page_id", pageId);
+if (isAdminSupportView) {
+  const {
+    data: { session },
+  } = await supabase.auth.getSession();
 
-    if (condolencesError) throw condolencesError;
+  const res = await fetch("/.netlify/functions/deleteSupportPage", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session?.access_token || ""}`,
+    },
+    body: JSON.stringify({
+      page_id: pageId,
+    }),
+  });
 
-    const { data: deletedPages, error: pageError } = await supabase
-      .from("deceased_pages")
-      .delete()
-      .eq("id", pageId)
-      .select("id");
+  const data = await res.json();
 
-    if (pageError) throw pageError;
+  if (!res.ok) {
+    throw new Error(data?.error || "No se pudo eliminar la página.");
+  }
 
-    if (!deletedPages || deletedPages.length === 0) {
-      throw new Error(
-        "La página no se ha eliminado en la base de datos. Revisa permisos/policies de Supabase."
-      );
-    }
+  if (adminViewingFuneralHomeId) {
+    await loadAdminSupportData(adminViewingFuneralHomeId);
+  } else {
+    await loadData();
+  }
 
+  alert("Página eliminada correctamente.");
+  return;
+}
+
+const { error: condolencesError } = await supabase
+  .from("condolences")
+  .delete()
+  .eq("page_id", pageId);
+
+if (condolencesError) throw condolencesError;
+
+const { data: deletedPages, error: pageError } = await supabase
+  .from("deceased_pages")
+  .delete()
+  .eq("id", pageId)
+  .select("id");
+
+if (pageError) throw pageError;
+
+if (!deletedPages || deletedPages.length === 0) {
+  throw new Error(
+    "La página no se ha eliminado en la base de datos. Revisa permisos/policies de Supabase."
+  );
+}
+
+await loadData();
+alert("Página eliminada correctamente.");
     await loadData();
     alert("Página eliminada correctamente.");
   } catch (err: any) {
