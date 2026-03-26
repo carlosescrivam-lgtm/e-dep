@@ -378,7 +378,7 @@ const isMinimalTheme = theme === "minimal";
         throw new Error(data?.error || "No se pudo preparar la página.");
       }
 
-     const checkoutRes = await fetch("/.netlify/functions/createParticularCheckout", {
+const checkoutRes = await fetch("/.netlify/functions/createParticularCheckout", {
   method: "POST",
   headers: {
     "Content-Type": "application/json",
@@ -388,13 +388,26 @@ const isMinimalTheme = theme === "minimal";
   }),
 });
 
-const checkoutData = await checkoutRes.json();
+const checkoutRaw = await checkoutRes.text();
+
+let checkoutData: any = {};
+try {
+  checkoutData = checkoutRaw ? JSON.parse(checkoutRaw) : {};
+} catch {
+  checkoutData = { error: checkoutRaw || "Respuesta no válida del servidor" };
+}
 
 if (!checkoutRes.ok) {
   throw new Error(checkoutData?.error || "No se pudo iniciar el pago.");
 }
 
+if (!checkoutData?.url) {
+  throw new Error("Stripe no devolvió la URL de pago.");
+}
+
 window.location.href = checkoutData.url;
+
+
     } catch (err: any) {
       alert(err?.message || "No se pudo crear la página.");
     } finally {
