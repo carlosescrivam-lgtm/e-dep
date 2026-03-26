@@ -368,7 +368,7 @@ const isMinimalTheme = theme === "minimal";
           duration_days: Number(durationDays),
           theme,
           is_searchable: isSearchable,
-          photo_url: photoPreview || null,
+          photo_url: null,
         }),
       });
 
