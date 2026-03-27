@@ -68,9 +68,11 @@ export const handler: Handler = async (event) => {
 
     const pageUrl = `${origin}/p/${page.slug}?token=${page.access_token}`;
 
-    // 🔥 EMAIL (IDEMPOTENTE SIMPLE)
+ 
+let mailSent = false;
+let mailError: string | null = null;
 
-   // 🔥 EMAIL (IDEMPOTENTE SIMPLE)
+// 🔥 EMAIL (IDEMPOTENTE SIMPLE)
 if (page.family_email) {
   try {
     const { data, error } = await resend.emails.send({
@@ -82,22 +84,29 @@ if (page.family_email) {
 
     if (error) {
       console.error("Resend error (success):", error);
+      mailError =
+        typeof error === "string" ? error : JSON.stringify(error);
     } else {
       console.log("Email enviado OK (success):", data);
+      mailSent = true;
     }
-  } catch (e) {
+  } catch (e: any) {
     console.error("Error enviando email (success):", e);
+    mailError = e?.message || "Error desconocido enviando email";
   }
 }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        full_name: page.full_name,
-        status: "open",
-        url: pageUrl,
-      }),
-    };
+   return {
+  statusCode: 200,
+  body: JSON.stringify({
+    full_name: page.full_name,
+    status: "open",
+    url: pageUrl,
+    mail_sent: mailSent,
+    mail_error: mailError,
+    family_email: page.family_email || null,
+  }),
+};
   } catch (err: any) {
     console.error("confirmParticularPayment error:", err);
     return {

@@ -5,6 +5,9 @@ type SuccessData = {
   full_name: string;
   status: string;
   url: string;
+  mail_sent?: boolean;
+  mail_error?: string | null;
+  family_email?: string | null;
 };
 
 export default function ParticularSuccessPage() {
@@ -283,6 +286,29 @@ useEffect(() => {
                 Guárdalo o compártelo ahora. Al cerrarse la página, recibirás también el PDF
                 final con los mensajes recopilados.
               </div>
+              <div
+  style={{
+    marginTop: 16,
+    padding: 12,
+    borderRadius: 12,
+    background: data.mail_sent ? "#ecfdf5" : "#fef2f2",
+    border: data.mail_sent
+      ? "1px solid #bbf7d0"
+      : "1px solid #fecaca",
+    color: data.mail_sent ? "#166534" : "#991b1b",
+    fontSize: 14,
+    lineHeight: 1.6,
+  }}
+>
+  {data.mail_sent ? (
+    <>Email enviado correctamente a {data.family_email || "tu correo"}.</>
+  ) : (
+    <>
+      No se ha podido enviar el email automáticamente.
+      {data.mail_error ? ` Error: ${data.mail_error}` : ""}
+    </>
+  )}
+</div>
             </div>
 
             <div
