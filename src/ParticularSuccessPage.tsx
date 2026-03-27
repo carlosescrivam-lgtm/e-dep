@@ -32,44 +32,35 @@ useEffect(() => {
       return;
     }
 
-    let lastError = "No se pudo confirmar el pago.";
+    try {
+      const res = await fetch("/.netlify/functions/confirmParticularPayment", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          page_id: pageId,
+          session_id: sessionId,
+        }),
+      });
 
-    for (let attempt = 1; attempt <= 3; attempt++) {
+      const raw = await res.text();
+
+      let json: any = {};
       try {
-        const res = await fetch("/.netlify/functions/confirmParticularPayment", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            page_id: pageId,
-            session_id: sessionId,
-          }),
-        });
-
-        const raw = await res.text();
-
-        let json: any = {};
-        try {
-          json = raw ? JSON.parse(raw) : {};
-        } catch {
-          json = { error: raw || "Respuesta no válida del servidor" };
-        }
-
-        if (res.ok) {
-          setData(json);
-          setLoading(false);
-          return;
-        }
-
-        lastError = json?.error || `Error ${res.status}`;
-      } catch (err: any) {
-        lastError = err?.message || "Error de red";
+        json = raw ? JSON.parse(raw) : {};
+      } catch {
+        json = { error: raw || "Respuesta no válida del servidor" };
       }
 
-      await new Promise((resolve) => setTimeout(resolve, 1500));
-    }
+      if (!res.ok) {
+        throw new Error(json?.error || "No se pudo confirmar el pago.");
+      }
 
-    console.error("confirmParticularPayment:", lastError);
-    setLoading(false);
+      setData(json);
+    } catch (err: any) {
+      console.error("confirmParticularPayment:", err);
+    } finally {
+      setLoading(false);
+    }
   }
 
   load();
