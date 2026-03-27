@@ -87,12 +87,29 @@ console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
 
 console.log("CREATE PARTICULAR PAGE inserted row photo_url:", data?.photo_url);
 
-    if (error) {
-      return {
-        statusCode: 500,
-        body: JSON.stringify({ error: error.message }),
-      };
-    }
+if (error || !data) {
+  return {
+    statusCode: 500,
+    body: JSON.stringify({ error: error?.message || "No se pudo crear la página." }),
+  };
+}
+
+// Si la foto no quedó guardada en el insert, la actualizamos justo después
+if (photoUrl && !data.photo_url) {
+  const { data: updatedRow, error: updatePhotoError } = await supabase
+    .from("deceased_pages")
+    .update({ photo_url: photoUrl })
+    .eq("id", data.id)
+    .select("id, slug, access_token, status, photo_url")
+    .single();
+
+  if (updatePhotoError) {
+    console.error("CREATE PARTICULAR PAGE update photo_url error:", updatePhotoError);
+  } else if (updatedRow) {
+    console.log("CREATE PARTICULAR PAGE updated row photo_url:", updatedRow.photo_url);
+    Object.assign(data, updatedRow);
+  }
+}
 
    return {
   statusCode: 200,
