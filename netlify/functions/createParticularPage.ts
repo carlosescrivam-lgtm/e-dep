@@ -35,6 +35,7 @@ export const handler: Handler = async (event) => {
     const theme = String(body?.theme || "classic").trim();
     const isSearchable = !!body?.is_searchable;
     const photoUrl = body?.photo_url ? String(body.photo_url).trim() : null;
+    console.log("CREATE PARTICULAR PAGE photo_url recibida:", photoUrl);
 
     if (!fullName) {
       return {
@@ -63,7 +64,7 @@ export const handler: Handler = async (event) => {
     closesAt.setDate(closesAt.getDate() + safeDuration);
 
     const GENERIC_FUNERAL_HOME_ID = "70fa03b2-753e-4894-90fd-a7371b4e0cb5";
-
+console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
     const payload = {
       full_name: fullName,
       custom_text: customText || null,
