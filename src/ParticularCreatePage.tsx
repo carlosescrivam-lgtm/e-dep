@@ -360,32 +360,28 @@ const isMinimalTheme = theme === "minimal";
    let uploadedPhotoUrl: string | null = null;
 
 if (photoFile) {
-  const prepRes = await fetch("/.netlify/functions/createParticularPhotoUpload", {
-    method: "POST",
-    headers: {
-      "Content-Type": "application/json",
-    },
-    body: JSON.stringify({
-      fileName: photoFile.name,
-      mimeType: photoFile.type || "image/jpeg",
-    }),
-  });
-
-  const prepData = await prepRes.json();
-
-  if (!prepRes.ok) {
-    throw new Error(prepData?.error || "No se pudo preparar la subida de la foto.");
-  }
+  const fileExt = photoFile.name.split(".").pop()?.toLowerCase() || "jpg";
+  const fileName = `particular-${Date.now()}.${fileExt}`;
+  const filePath = `particulars/${fileName}`;
 
   const { error: uploadError } = await supabase.storage
     .from("deceased-photos")
-    .uploadToSignedUrl(prepData.path, prepData.token, photoFile);
+    .upload(filePath, photoFile);
 
   if (uploadError) {
+    console.error("ERROR STORAGE FOTO PARTICULAR:", uploadError);
     throw new Error(uploadError.message || "No se pudo subir la foto.");
   }
 
-  uploadedPhotoUrl = prepData.publicUrl;
+  const { data: publicUrlData } = supabase.storage
+    .from("deceased-photos")
+    .getPublicUrl(filePath);
+
+  if (!publicUrlData?.publicUrl) {
+    throw new Error("No se pudo obtener la URL pública de la foto.");
+  }
+
+  uploadedPhotoUrl = publicUrlData.publicUrl;
 }
 
 const res = await fetch("/.netlify/functions/createParticularPage", {
