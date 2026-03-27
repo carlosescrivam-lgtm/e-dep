@@ -68,7 +68,8 @@ export const handler: Handler = async (event) => {
 
     const pageUrl = `${origin}/p/${page.slug}?token=${page.access_token}`;
 
- 
+
+
 let mailSent = false;
 let mailError: string | null = null;
 
