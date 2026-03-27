@@ -23,11 +23,16 @@ export default function ParticularSuccessPage() {
       }
 
       try {
-        const res = await fetch("/.netlify/functions/getParticularPageLink", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ page_id: pageId }),
-        });
+       const sessionId = searchParams.get("session_id");
+
+const res = await fetch("/.netlify/functions/confirmParticularPayment", {
+  method: "POST",
+  headers: { "Content-Type": "application/json" },
+  body: JSON.stringify({
+    page_id: pageId,
+    session_id: sessionId,
+  }),
+});
 
         const json = await res.json();
 
