@@ -421,6 +421,7 @@ const res = await fetch("/.netlify/functions/createParticularPage", {
 });
 
       const data = await res.json();
+      console.log("CREATE PARTICULAR PAGE RESPONSE:", data);
 
       if (!res.ok) {
         throw new Error(data?.error || "No se pudo preparar la página.");

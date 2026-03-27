@@ -79,11 +79,13 @@ console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
       is_searchable: isSearchable,
     };
 
-    const { data, error } = await supabase
-      .from("deceased_pages")
-      .insert(payload)
-      .select("id, slug, access_token, status")
-      .single();
+   const { data, error } = await supabase
+  .from("deceased_pages")
+  .insert(payload)
+  .select("id, slug, access_token, status, photo_url")
+  .single();
+
+console.log("CREATE PARTICULAR PAGE inserted row photo_url:", data?.photo_url);
 
     if (error) {
       return {
@@ -92,16 +94,17 @@ console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
       };
     }
 
-    return {
-      statusCode: 200,
-      body: JSON.stringify({
-        ok: true,
-        pageId: data.id,
-        slug: data.slug,
-        accessToken: data.access_token,
-        status: data.status,
-      }),
-    };
+   return {
+  statusCode: 200,
+  body: JSON.stringify({
+    ok: true,
+    pageId: data.id,
+    slug: data.slug,
+    accessToken: data.access_token,
+    status: data.status,
+    photo_url: data.photo_url || null,
+  }),
+};
   } catch (err: any) {
     return {
       statusCode: 500,
