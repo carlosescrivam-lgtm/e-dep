@@ -15,37 +15,62 @@ export default function ParticularSuccessPage() {
   const [loading, setLoading] = useState(true);
   const [copyOk, setCopyOk] = useState(false);
 
-  useEffect(() => {
-    async function load() {
-      if (!pageId) {
-        setLoading(false);
-        return;
-      }
+useEffect(() => {
+  async function load() {
+    if (!pageId) {
+      setLoading(false);
+      return;
+    }
 
+    const sessionId = searchParams.get("session_id");
+
+    if (!sessionId) {
+      setLoading(false);
+      return;
+    }
+
+    let lastError = "No se pudo confirmar el pago.";
+
+    for (let attempt = 1; attempt <= 3; attempt++) {
       try {
-       const sessionId = searchParams.get("session_id");
+        const res = await fetch("/.netlify/functions/confirmParticularPayment", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            page_id: pageId,
+            session_id: sessionId,
+          }),
+        });
 
-const res = await fetch("/.netlify/functions/confirmParticularPayment", {
-  method: "POST",
-  headers: { "Content-Type": "application/json" },
-  body: JSON.stringify({
-    page_id: pageId,
-    session_id: sessionId,
-  }),
-});
+        const raw = await res.text();
 
-        const json = await res.json();
+        let json: any = {};
+        try {
+          json = raw ? JSON.parse(raw) : {};
+        } catch {
+          json = { error: raw || "Respuesta no válida del servidor" };
+        }
 
         if (res.ok) {
           setData(json);
+          setLoading(false);
+          return;
         }
-      } finally {
-        setLoading(false);
+
+        lastError = json?.error || `Error ${res.status}`;
+      } catch (err: any) {
+        lastError = err?.message || "Error de red";
       }
+
+      await new Promise((resolve) => setTimeout(resolve, 1500));
     }
 
-    load();
-  }, [pageId]);
+    console.error("confirmParticularPayment:", lastError);
+    setLoading(false);
+  }
+
+  load();
+}, [pageId, searchParams]);
 
   const qrUrl = useMemo(() => {
     if (!data?.url) return "";
