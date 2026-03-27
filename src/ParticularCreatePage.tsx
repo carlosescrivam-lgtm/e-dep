@@ -376,18 +376,34 @@ if (photoFile) {
     throw new Error(prepData?.error || "No se pudo preparar la subida de la foto.");
   }
 
-  const { error: uploadError } = await supabase.storage
+console.log("PREP DATA FOTO:", prepData);
+console.log("PHOTO FILE JUST BEFORE UPLOAD:", photoFile);
+
+let uploadError: any = null;
+
+try {
+  const uploadResult = await supabase.storage
     .from("deceased-photos")
     .uploadToSignedUrl(prepData.path, prepData.token, photoFile);
 
-  if (uploadError) {
-    console.error("ERROR STORAGE FOTO PARTICULAR:", uploadError);
-    throw new Error(uploadError.message || "No se pudo subir la foto.");
-  }
+  uploadError = uploadResult.error;
+
+  console.log("UPLOAD RESULT FOTO:", uploadResult);
+} catch (e) {
+  console.error("UPLOAD THROW FOTO:", e);
+  throw e;
+}
+
+if (uploadError) {
+  console.error("ERROR STORAGE FOTO PARTICULAR:", uploadError);
+  throw new Error(uploadError.message || "No se pudo subir la foto.");
+}
+
+console.log("PUBLIC URL FOTO:", prepData.publicUrl);
 
   uploadedPhotoUrl = prepData.publicUrl;
 }
-
+console.log("UPLOADED PHOTO URL FINAL:", uploadedPhotoUrl);
 const res = await fetch("/.netlify/functions/createParticularPage", {
   method: "POST",
   headers: {
