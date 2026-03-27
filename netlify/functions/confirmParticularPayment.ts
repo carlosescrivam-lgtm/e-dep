@@ -76,7 +76,7 @@ let mailError: string | null = null;
 if (page.family_email) {
   try {
     const { data, error } = await resend.emails.send({
-      from: "E-Dep <onboarding@resend.dev>",
+      from: "E-Dep <no-reply@e-dep.org>",
       to: page.family_email,
       subject: "Tu página ya está activa",
       html: `<p>Accede aquí: <a href="${pageUrl}">${pageUrl}</a></p>`,
