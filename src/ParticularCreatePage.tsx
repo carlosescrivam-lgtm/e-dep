@@ -1,4 +1,5 @@
 import React, { useMemo, useRef, useState } from "react";
+import { supabase } from "./lib/supabaseClient";
 
 export default function ParticularCreatePage() {
   const [fullName, setFullName] = useState("");
@@ -8,7 +9,7 @@ export default function ParticularCreatePage() {
   const [durationDays, setDurationDays] = useState("3");
   const [theme, setTheme] = useState("classic");
   const [isSearchable, setIsSearchable] = useState(false);
-  const [, setPhotoFile] = useState<File | null>(null);
+  const [photoFile, setPhotoFile] = useState<File | null>(null);
 const [photoPreview, setPhotoPreview] = useState("");
 const fileInputRef = useRef<HTMLInputElement | null>(null);
   const [openFaq, setOpenFaq] = useState<string | null>(null);
@@ -356,21 +357,52 @@ const isMinimalTheme = theme === "minimal";
 
       setSaving(true);
 
-      const res = await fetch("/.netlify/functions/createParticularPage", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({
-          full_name: fullName,
-          custom_text: memorialText,
-          contact_email: contactEmail,
-          duration_days: Number(durationDays),
-          theme,
-          is_searchable: isSearchable,
-          photo_url: null,
-        }),
-      });
+   let uploadedPhotoUrl: string | null = null;
+
+if (photoFile) {
+  const prepRes = await fetch("/.netlify/functions/createParticularPhotoUpload", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+    },
+    body: JSON.stringify({
+      fileName: photoFile.name,
+      mimeType: photoFile.type || "image/jpeg",
+    }),
+  });
+
+  const prepData = await prepRes.json();
+
+  if (!prepRes.ok) {
+    throw new Error(prepData?.error || "No se pudo preparar la subida de la foto.");
+  }
+
+  const { error: uploadError } = await supabase.storage
+    .from("deceased-photos")
+    .uploadToSignedUrl(prepData.path, prepData.token, photoFile);
+
+  if (uploadError) {
+    throw new Error(uploadError.message || "No se pudo subir la foto.");
+  }
+
+  uploadedPhotoUrl = prepData.publicUrl;
+}
+
+const res = await fetch("/.netlify/functions/createParticularPage", {
+  method: "POST",
+  headers: {
+    "Content-Type": "application/json",
+  },
+  body: JSON.stringify({
+    full_name: fullName,
+    custom_text: memorialText,
+    contact_email: contactEmail,
+    duration_days: Number(durationDays),
+    theme,
+    is_searchable: isSearchable,
+    photo_url: uploadedPhotoUrl,
+  }),
+});
 
       const data = await res.json();
 
