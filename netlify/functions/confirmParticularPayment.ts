@@ -69,18 +69,26 @@ export const handler: Handler = async (event) => {
     const pageUrl = `${origin}/p/${page.slug}?token=${page.access_token}`;
 
     // 🔥 EMAIL (IDEMPOTENTE SIMPLE)
-    if (page.family_email) {
-      try {
-        await resend.emails.send({
-          from: "E-Dep <onboarding@resend.dev>",
-          to: page.family_email,
-          subject: "Tu página ya está activa",
-          html: `<p>Accede aquí: <a href="${pageUrl}">${pageUrl}</a></p>`,
-        });
-      } catch (e) {
-        console.error("Error enviando email (success):", e);
-      }
+
+   // 🔥 EMAIL (IDEMPOTENTE SIMPLE)
+if (page.family_email) {
+  try {
+    const { data, error } = await resend.emails.send({
+      from: "E-Dep <onboarding@resend.dev>",
+      to: page.family_email,
+      subject: "Tu página ya está activa",
+      html: `<p>Accede aquí: <a href="${pageUrl}">${pageUrl}</a></p>`,
+    });
+
+    if (error) {
+      console.error("Resend error (success):", error);
+    } else {
+      console.log("Email enviado OK (success):", data);
     }
+  } catch (e) {
+    console.error("Error enviando email (success):", e);
+  }
+}
 
     return {
       statusCode: 200,

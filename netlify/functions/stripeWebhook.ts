@@ -79,12 +79,11 @@ if (metadata.kind === "particular_page" && metadata.page_id) {
     if (updatedPage.family_email) {
       console.log("Intentando enviar email a:", updatedPage.family_email);
       try {
-        const result = await resend.emails.send({
-       
-          from: "E-Dep <onboarding@resend.dev>",
-          to: updatedPage.family_email,
-          subject: `Tu página de condolencias ya está lista`,
-          html: `
+       const { data, error } = await resend.emails.send({
+  from: "E-Dep <onboarding@resend.dev>",
+  to: updatedPage.family_email,
+  subject: `Tu página de condolencias ya está lista`,
+   html: `
             <div style="font-family: Arial, sans-serif; color: #0f172a; line-height: 1.6;">
               
               <h2 style="margin-bottom: 8px;">Tu página ya está activa</h2>
@@ -119,8 +118,13 @@ if (metadata.kind === "particular_page" && metadata.page_id) {
 
             </div>
           `,
-        });
-        console.log("Email enviado OK:", result);
+});
+
+if (error) {
+  console.error("Resend error:", error);
+} else {
+  console.log("Email enviado OK:", data);
+}
       } catch (mailError) {
         console.error("Error enviando email:", mailError);
       }
