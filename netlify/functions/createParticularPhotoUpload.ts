@@ -26,12 +26,11 @@ export const handler: Handler = async (event) => {
 
     const body = event.body ? JSON.parse(event.body) : null;
     const fileName = String(body?.fileName || "").trim();
-    const mimeType = String(body?.mimeType || "").trim();
 
-    if (!fileName || !mimeType) {
+    if (!fileName) {
       return {
         statusCode: 400,
-        body: JSON.stringify({ error: "Faltan fileName o mimeType." }),
+        body: JSON.stringify({ error: "Falta fileName." }),
       };
     }
 
@@ -48,7 +47,9 @@ export const handler: Handler = async (event) => {
     if (error || !data) {
       return {
         statusCode: 500,
-        body: JSON.stringify({ error: error?.message || "No se pudo preparar la subida." }),
+        body: JSON.stringify({
+          error: error?.message || "No se pudo preparar la subida.",
+        }),
       };
     }
 
