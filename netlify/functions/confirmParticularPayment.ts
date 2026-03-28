@@ -64,7 +64,7 @@ export const handler: Handler = async (event) => {
       console.log("Página activada desde success:", pageId);
     }
 
-    const origin = process.env.URL || "https://e-dep.org";
+    const origin = process.env.URL || "https://www.e-dep.org";
 
     const pageUrl = `${origin}/p/${page.slug}?token=${page.access_token}`;
 
