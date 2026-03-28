@@ -85,44 +85,67 @@ const { data, error } = await resend.emails.send({
   to: page.family_email,
   subject: `Tu página de condolencias ya está activa`,
   html: `
-    <div style="font-family: Arial, sans-serif; color:#0f172a; line-height:1.6;">
-      <h2 style="margin-bottom: 8px;">Tu página ya está activa</h2>
+    <div style="font-family: Arial, sans-serif; background:#f8fafc; padding:20px;">
+    
+    <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:14px; padding:24px; border:1px solid #e2e8f0;">
+      
+      <h2 style="margin:0 0 10px 0; font-size:22px; color:#0f172a;">
+        Tu página ya está activa
+      </h2>
 
-      <p>
-        Gracias por tu compra. Ya puedes acceder y compartir tu página de condolencias.
+      <p style="margin:0 0 16px 0; color:#475569;">
+        Gracias por confiar en E-Dep. Ya puedes acceder y compartir tu página de condolencias.
       </p>
 
-      <p style="margin-top: 16px;">
-        <a
-          href="${pageUrl}"
-          style="display:inline-block; padding:12px 18px; background:#0f172a; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700;"
-        >
+      <div style="text-align:center; margin:20px 0;">
+        <a href="${pageUrl}"
+          style="display:inline-block; padding:14px 22px; background:#0f172a; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700;">
           Ver mi página
         </a>
-      </p>
+      </div>
 
-      <p style="margin-top: 20px;">
-        <strong>Enlace directo:</strong><br/>
-        ${pageUrl}
-      </p>
+      <div style="margin-top:20px;">
+        <p style="margin:0 0 6px 0; font-size:14px; color:#64748b;">
+          Enlace directo
+        </p>
+        <p style="word-break:break-all; font-size:14px; color:#0f172a;">
+          ${pageUrl}
+        </p>
+      </div>
 
-      <p style="margin-top: 20px;"><strong>Código QR:</strong></p>
-      <p>
-        <img src="${qrUrl}" alt="QR página condolencias" width="220" height="220" />
-      </p>
+      <div style="margin-top:26px; text-align:center;">
+        <p style="margin-bottom:10px; font-weight:600;">
+          Código QR
+        </p>
+        <img src="${qrUrl}" width="220" height="220" style="border-radius:12px; border:1px solid #e2e8f0; padding:10px; background:#ffffff;" />
+        <p style="font-size:13px; color:#64748b; margin-top:8px;">
+          Puedes guardar esta imagen o compartirla directamente
+        </p>
+      </div>
 
-      <hr style="margin: 28px 0; border:none; border-top:1px solid #e2e8f0;" />
+      <hr style="margin:28px 0; border:none; border-top:1px solid #e2e8f0;" />
 
-      <h3 style="margin-bottom: 8px;">Comprobante de compra</h3>
-      <p>Servicio: Página de condolencias E-Dep</p>
-      <p>Importe: 12,00 €</p>
-      <p>Estado: Pagado</p>
+      <div>
+        <h3 style="margin-bottom:10px;">Comprobante de compra</h3>
+        <p style="margin:4px 0;">Servicio: Página de condolencias E-Dep</p>
+        <p style="margin:4px 0;">Importe: 12,00 €</p>
+        <p style="margin:4px 0;">Estado: Pagado</p>
+        <p style="margin:4px 0;">Fecha: ${new Date().toLocaleString("es-ES")}</p>
+      </div>
 
-      <p style="margin-top: 20px;">
-        Al finalizar el periodo, recibirás también el PDF final con los mensajes recopilados.
-      </p>
+      <div style="margin-top:20px; font-size:14px; color:#475569;">
+        <p>
+          Al finalizar el periodo contratado, recibirás automáticamente un PDF con todos los mensajes recopilados.
+        </p>
+      </div>
+
+      <div style="margin-top:24px; font-size:12px; color:#94a3b8; text-align:center;">
+        © E-Dep · Servicio de condolencias digitales
+      </div>
+
     </div>
-  `,
+  </div>
+`,
 });
 
     if (error) {
