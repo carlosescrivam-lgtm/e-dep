@@ -76,12 +76,54 @@ let mailError: string | null = null;
 // 🔥 EMAIL (IDEMPOTENTE SIMPLE)
 if (page.family_email) {
   try {
-    const { data, error } = await resend.emails.send({
-      from: "E-Dep <no-reply@e-dep.org>",
-      to: page.family_email,
-      subject: "Tu página ya está activa",
-      html: `<p>Accede aquí: <a href="${pageUrl}">${pageUrl}</a></p>`,
-    });
+  const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=240x240&data=${encodeURIComponent(
+  pageUrl
+)}`;
+
+const { data, error } = await resend.emails.send({
+  from: "E-Dep <no-reply@e-dep.org>",
+  to: page.family_email,
+  subject: `Tu página de condolencias ya está activa`,
+  html: `
+    <div style="font-family: Arial, sans-serif; color:#0f172a; line-height:1.6;">
+      <h2 style="margin-bottom: 8px;">Tu página ya está activa</h2>
+
+      <p>
+        Gracias por tu compra. Ya puedes acceder y compartir tu página de condolencias.
+      </p>
+
+      <p style="margin-top: 16px;">
+        <a
+          href="${pageUrl}"
+          style="display:inline-block; padding:12px 18px; background:#0f172a; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700;"
+        >
+          Ver mi página
+        </a>
+      </p>
+
+      <p style="margin-top: 20px;">
+        <strong>Enlace directo:</strong><br/>
+        ${pageUrl}
+      </p>
+
+      <p style="margin-top: 20px;"><strong>Código QR:</strong></p>
+      <p>
+        <img src="${qrUrl}" alt="QR página condolencias" width="220" height="220" />
+      </p>
+
+      <hr style="margin: 28px 0; border:none; border-top:1px solid #e2e8f0;" />
+
+      <h3 style="margin-bottom: 8px;">Comprobante de compra</h3>
+      <p>Servicio: Página de condolencias E-Dep</p>
+      <p>Importe: 12,00 €</p>
+      <p>Estado: Pagado</p>
+
+      <p style="margin-top: 20px;">
+        Al finalizar el periodo, recibirás también el PDF final con los mensajes recopilados.
+      </p>
+    </div>
+  `,
+});
 
     if (error) {
       console.error("Resend error (success):", error);

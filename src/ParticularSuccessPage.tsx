@@ -336,6 +336,70 @@ boxSizing: "border-box",
                 />
               ) : null}
 
+              {qrUrl ? (
+  <div
+    style={{
+      display: "flex",
+      gap: 12,
+      marginTop: 14,
+      flexDirection: isMobile ? "column" : "row",
+    }}
+  >
+    <a
+      href={qrUrl}
+      download="qr-pagina-condolencias.png"
+      target="_blank"
+      rel="noreferrer"
+      style={{
+        display: "inline-block",
+        padding: "12px 18px",
+        borderRadius: 14,
+        background: "#0f172a",
+        color: "white",
+        textDecoration: "none",
+        fontWeight: 700,
+        width: isMobile ? "100%" : undefined,
+        boxSizing: "border-box",
+        textAlign: "center",
+      }}
+    >
+      Guardar QR
+    </a>
+
+    <button
+      type="button"
+      onClick={async () => {
+        try {
+          if (navigator.share) {
+            await navigator.share({
+              title: "QR de la página de condolencias",
+              text: "Te comparto el código QR de la página de condolencias.",
+              url: qrUrl,
+            });
+          } else {
+            window.open(qrUrl, "_blank");
+          }
+        } catch (err) {
+          console.error(err);
+        }
+      }}
+      style={{
+        padding: "12px 18px",
+        borderRadius: 14,
+        background: "white",
+        color: "#0f172a",
+        border: "1px solid #cbd5e1",
+        fontWeight: 700,
+        cursor: "pointer",
+        width: isMobile ? "100%" : undefined,
+        boxSizing: "border-box",
+      }}
+    >
+      Compartir QR
+    </button>
+  </div>
+) : null}
+
               <div
                 style={{
                   marginTop: 14,
