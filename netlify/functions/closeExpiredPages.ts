@@ -95,28 +95,67 @@ for (const p of pages) {
     // 4) Enviar email final
     if (p.family_email) {
       try {
-        await resend.emails.send({
-          from: "E-Dep <onboarding@resend.dev>",
-          to: p.family_email,
-          subject: `PDF final de ${p.full_name}`,
-          html: `
-            <div style="font-family: Arial, sans-serif; color:#0f172a; line-height:1.6;">
-              <h2>La página ha finalizado</h2>
-              <p>La página de condolencias de <strong>${p.full_name}</strong> ya se ha cerrado.</p>
-              <p>Ya puedes acceder al PDF final con los mensajes recopilados:</p>
+       await resend.emails.send({
+  from: "E-Dep <no-reply@e-dep.org>",
+  to: p.family_email,
+  subject: `PDF final disponible · ${p.full_name}`,
+  html: `
+    <div style="font-family: Arial, sans-serif; background:#f8fafc; padding:20px;">
+      <div style="max-width:600px; margin:0 auto; background:#ffffff; border-radius:14px; padding:24px; border:1px solid #e2e8f0;">
 
-              <p style="margin-top:16px;">
-                <a href="${pdfUrl}" style="display:inline-block;padding:12px 18px;background:#0f172a;color:#ffffff;text-decoration:none;border-radius:10px;font-weight:700;">
-                  Ver PDF final
-                </a>
-              </p>
+        <h2 style="margin:0 0 10px 0; font-size:22px; color:#0f172a;">
+          La página de condolencias ha finalizado
+        </h2>
 
-              <p style="margin-top:20px;"><strong>Enlace directo:</strong><br/>${pdfUrl}</p>
+        <p style="margin:0 0 16px 0; color:#475569; line-height:1.6;">
+          La página de condolencias de <strong>${p.full_name}</strong> ya se ha cerrado y no admite nuevos mensajes.
+        </p>
 
-              <p style="margin-top:20px;">Gracias por haber utilizado E-Dep.</p>
-            </div>
-          `,
-        });
+        <p style="margin:0 0 16px 0; color:#475569; line-height:1.6;">
+          Hemos preparado el <strong>PDF final</strong> con todos los mensajes recopilados para que puedas guardarlo, compartirlo o imprimirlo si lo deseas.
+        </p>
+
+        <div style="text-align:center; margin:20px 0;">
+          <a
+            href="${pdfUrl}"
+            style="display:inline-block; padding:14px 22px; background:#0f172a; color:#ffffff; text-decoration:none; border-radius:10px; font-weight:700;"
+          >
+            Ver PDF final
+          </a>
+        </div>
+
+        <div style="margin-top:20px;">
+          <p style="margin:0 0 6px 0; font-size:14px; color:#64748b;">
+            Enlace directo al PDF
+          </p>
+          <p style="word-break:break-all; font-size:14px; color:#0f172a; margin:0;">
+            ${pdfUrl}
+          </p>
+        </div>
+
+        <hr style="margin:28px 0; border:none; border-top:1px solid #e2e8f0;" />
+
+        <div>
+          <h3 style="margin:0 0 10px 0; font-size:18px; color:#0f172a;">
+            Recuerdo final
+          </h3>
+
+          <p style="margin:4px 0; color:#475569; line-height:1.6;">
+            Este documento reúne los mensajes recibidos durante el tiempo en que la página estuvo activa.
+          </p>
+
+          <p style="margin:12px 0 0 0; color:#475569; line-height:1.6;">
+            Gracias por haber confiado en E-Dep para conservar este recuerdo.
+          </p>
+        </div>
+
+        <div style="margin-top:24px; font-size:12px; color:#94a3b8; text-align:center;">
+          © E-Dep · Servicio de condolencias digitales
+        </div>
+      </div>
+    </div>
+  `,
+});
 
         console.log("Email enviado:", p.id);
       } catch (err) {

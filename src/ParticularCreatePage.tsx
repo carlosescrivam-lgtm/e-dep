@@ -562,18 +562,6 @@ window.location.href = checkoutData.url;
                 {previewTitle}
               </h2>
 
-             <div
-  style={{
-    marginTop: 10,
-    color: "#64748b",
-    fontSize: 14,
-    fontWeight: 600,
-    textAlign: isMinimalTheme ? "left" : "center",
-  }}
->
-                Página activa durante {durationDays} días
-              </div>
-
              <p
   style={{
   marginTop: 18,
