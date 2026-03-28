@@ -232,10 +232,32 @@ if (entryView === "chooser") {
         justifyContent: "center",
       }}
     >
+    <button
+  type="button"
+  onClick={() => {
+    window.location.href = "/admin-login";
+  }}
+  style={{
+    position: "absolute",
+    top: 16,
+    right: 16,
+    background: "none",
+    border: "none",
+    padding: 0,
+    color: "#334155",
+    cursor: "pointer",
+    fontSize: 13,
+    fontWeight: 700,
+  }}
+>
+  Acceso admin
+</button>
+
       <div
-        style={{
-          width: "100%",
-          maxWidth: 460,
+  style={{
+    position: "relative",
+    width: "100%",
+    maxWidth: 460,
           background: "rgba(255,255,255,0.92)",
           border: "1px solid rgba(255,255,255,0.75)",
           borderRadius: 28,
@@ -577,8 +599,8 @@ style={{
           }}
         >
           {mode === "login"
-            ? "Accede a tu panel de funeraria o al panel de administración."
-            : "Registra tu funeraria para empezar a usar E-Dep."}
+  ? "Accede a tu panel de funeraria."
+  : "Registra tu funeraria para empezar a usar E-Dep."}
         </p>
 
         {mode === "register" ? (
