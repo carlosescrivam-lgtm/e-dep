@@ -17,6 +17,7 @@ export default function ParticularSuccessPage() {
   const [data, setData] = useState<SuccessData | null>(null);
   const [loading, setLoading] = useState(true);
   const [copyOk, setCopyOk] = useState(false);
+  const isMobile = typeof window !== "undefined" && window.innerWidth < 900;
 
 useEffect(() => {
   async function load() {
@@ -86,7 +87,7 @@ useEffect(() => {
         minHeight: "100vh",
         background:
           "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e8edf5 100%)",
-        padding: 24,
+        padding: isMobile ? 12 : 24,
         fontFamily:
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
         display: "flex",
@@ -102,7 +103,7 @@ useEffect(() => {
           border: "1px solid rgba(255,255,255,0.75)",
           borderRadius: 28,
           boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
-          padding: 28,
+         padding: isMobile ? 18 : 28,
         }}
       >
         <div
@@ -123,7 +124,7 @@ useEffect(() => {
         <h1
           style={{
             margin: 0,
-            fontSize: 30,
+            fontSize: isMobile ? 24 : 30,
             lineHeight: 1.1,
             fontWeight: 800,
             letterSpacing: "-0.03em",
@@ -153,14 +154,14 @@ useEffect(() => {
             No se pudo recuperar la información de la página.
           </p>
         ) : (
-          <div
-            style={{
-              display: "grid",
-              gridTemplateColumns: "1.1fr 0.9fr",
-              gap: 20,
-              alignItems: "start",
-            }}
-          >
+         <div
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1.1fr 0.9fr",
+    gap: 20,
+    alignItems: "start",
+  }}
+>
             <div
               style={{
                 background: "#f8fafc",
@@ -176,7 +177,7 @@ useEffect(() => {
               <div
                 style={{
                   marginTop: 8,
-                  fontSize: 26,
+                  fontSize: isMobile ? 22 : 26,
                   fontWeight: 800,
                   color: "#0f172a",
                 }}
@@ -224,6 +225,9 @@ useEffect(() => {
                     color: "white",
                     textDecoration: "none",
                     fontWeight: 700,
+                    width: isMobile ? "100%" : undefined,
+textAlign: "center",
+boxSizing: "border-box",
                   }}
                 >
                   Ver mi página
@@ -240,6 +244,8 @@ useEffect(() => {
                     border: "1px solid #cbd5e1",
                     fontWeight: 700,
                     cursor: "pointer",
+                    width: isMobile ? "100%" : undefined,
+boxSizing: "border-box",
                   }}
                 >
                   {copyOk ? "Enlace copiado" : "Copiar enlace"}
