@@ -47,6 +47,7 @@ export default function Dashboard() {
   const [saving, setSaving] = useState(false);
   const [items, setItems] = useState<PageCard[]>([]);
   const [adminFuneralHomes, setAdminFuneralHomes] = useState<any[]>([]);
+  const [adminSystemParticularsHome, setAdminSystemParticularsHome] = useState<any | null>(null);
   const [adminStats, setAdminStats] = useState({
   totalFuneralHomes: 0,
   totalPages: 0,
@@ -462,8 +463,7 @@ for (const condolence of condolences) {
     }
   }
 
-
-  async function loadAdminData() {
+async function loadAdminData() {
   const res = await fetch("/.netlify/functions/getAdminOverview");
   const data = await res.json();
 
@@ -475,6 +475,7 @@ for (const condolence of condolences) {
 
   setAdminStats(data.stats);
   setAdminFuneralHomes(data.funeralHomes || []);
+  setAdminSystemParticularsHome(data.systemParticularsHome || null);
 }
 
 async function loadAdminSupportData(funeralHomeId: string) {
@@ -2023,6 +2024,93 @@ if (currentRole === "admin" && !isAdminSupportView) {
                   letterSpacing: "-0.02em",
                 }}
               >
+
+{adminSystemParticularsHome ? (
+  <div
+    style={{
+      marginBottom: 24,
+      background: "rgba(255,255,255,0.84)",
+      backdropFilter: "blur(14px)",
+      border: "1px solid rgba(255,255,255,0.75)",
+      borderRadius: 24,
+      boxShadow: "0 18px 50px rgba(15,23,42,0.08)",
+      padding: 20,
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        justifyContent: "space-between",
+        alignItems: "center",
+        gap: 12,
+        flexWrap: "wrap",
+      }}
+    >
+      <div>
+        <h2
+          style={{
+            margin: 0,
+            fontSize: 22,
+            fontWeight: 800,
+            letterSpacing: "-0.02em",
+          }}
+        >
+          Particulares E-Dep
+        </h2>
+
+        <p
+          style={{
+            margin: "6px 0 0 0",
+            color: "#64748b",
+            fontSize: 14,
+            lineHeight: 1.6,
+          }}
+        >
+          Espacio interno del sistema donde se agrupan todas las páginas creadas por particulares.
+        </p>
+      </div>
+
+      <button
+        onClick={() =>
+          openFuneralHomeSupportView(
+            adminSystemParticularsHome.id,
+            adminSystemParticularsHome.name || "Particulares E-Dep"
+          )
+        }
+        style={primarySmallButtonStyle}
+      >
+        Ver particulares
+      </button>
+    </div>
+
+    <div
+      style={{
+        display: "grid",
+        gridTemplateColumns: isMobile ? "1fr 1fr" : "repeat(4, minmax(140px, 1fr))",
+        gap: 12,
+        marginTop: 18,
+      }}
+    >
+      <MiniInfo
+        label="Páginas"
+        value={String(adminSystemParticularsHome.total_pages || 0)}
+      />
+      <MiniInfo
+        label="Abiertas"
+        value={String(adminSystemParticularsHome.open_pages || 0)}
+      />
+      <MiniInfo
+        label="Cerradas"
+        value={String(adminSystemParticularsHome.closed_pages || 0)}
+      />
+      <MiniInfo
+        label="Mensajes"
+        value={String(adminSystemParticularsHome.total_condolences || 0)}
+      />
+    </div>
+  </div>
+) : null}
+
                 Funerarias registradas
               </h2>
               <p

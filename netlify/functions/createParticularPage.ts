@@ -64,7 +64,26 @@ export const handler: Handler = async (event) => {
     closesAt.setDate(closesAt.getDate() + safeDuration);
 
     const GENERIC_FUNERAL_HOME_ID = "70fa03b2-753e-4894-90fd-a7371b4e0cb5";
+
+const { data: systemFuneralHome, error: systemFuneralHomeError } = await supabase
+  .from("funeral_homes")
+  .select("id")
+  .eq("system_key", "particulars")
+  .eq("is_system", true)
+  .maybeSingle();
+
+if (systemFuneralHomeError || !systemFuneralHome?.id) {
+  return {
+    statusCode: 500,
+    body: JSON.stringify({
+      error: "No se encontró la funeraria interna de particulares.",
+    }),
+  };
+}
+
 console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
+
+
     const payload = {
       full_name: fullName,
       custom_text: customText || null,
@@ -74,7 +93,7 @@ console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
       closes_at: closesAt.toISOString(),
       theme,
       family_email: contactEmail,
-      funeral_home_id: GENERIC_FUNERAL_HOME_ID,
+      funeral_home_id: systemFuneralHome.id,
       photo_url: null,
       is_searchable: isSearchable,
     };
