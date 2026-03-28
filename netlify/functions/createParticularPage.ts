@@ -35,6 +35,7 @@ export const handler: Handler = async (event) => {
     const theme = String(body?.theme || "classic").trim();
     const isSearchable = !!body?.is_searchable;
     const photoUrl = body?.photo_url ? String(body.photo_url).trim() : null;
+
     console.log("CREATE PARTICULAR PAGE photo_url recibida:", photoUrl);
 
     if (!fullName) {
@@ -54,8 +55,7 @@ export const handler: Handler = async (event) => {
     const allowedDurations = [3, 7, 10];
     const safeDuration = allowedDurations.includes(durationDays) ? durationDays : 7;
 
-    const slug =
-      slugify(fullName) + "-" + Date.now().toString().slice(-6);
+    const slug = slugify(fullName) + "-" + Date.now().toString().slice(-6);
 
     const accessToken =
       Math.random().toString(36).slice(2) + Date.now().toString(36);
@@ -63,26 +63,32 @@ export const handler: Handler = async (event) => {
     const closesAt = new Date();
     closesAt.setDate(closesAt.getDate() + safeDuration);
 
-    const GENERIC_FUNERAL_HOME_ID = "70fa03b2-753e-4894-90fd-a7371b4e0cb5";
+    const { data: systemFuneralHome, error: systemFuneralHomeError } = await supabase
+      .from("funeral_homes")
+      .select("id, name")
+      .eq("is_system", true)
+      .eq("system_key", "particulars")
+      .maybeSingle();
 
-const { data: systemFuneralHome, error: systemFuneralHomeError } = await supabase
-  .from("funeral_homes")
-  .select("id")
-  .eq("system_key", "particulars")
-  .eq("is_system", true)
-  .maybeSingle();
+    if (systemFuneralHomeError) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: systemFuneralHomeError.message,
+        }),
+      };
+    }
 
-if (systemFuneralHomeError || !systemFuneralHome?.id) {
-  return {
-    statusCode: 500,
-    body: JSON.stringify({
-      error: "No se encontró la funeraria interna de particulares.",
-    }),
-  };
-}
+    if (!systemFuneralHome?.id) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({
+          error: "No se encontró la funeraria interna de particulares.",
+        }),
+      };
+    }
 
-console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
-
+    console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
 
     const payload = {
       full_name: fullName,
@@ -94,53 +100,52 @@ console.log("CREATE PARTICULAR PAGE payload photo_url:", photoUrl);
       theme,
       family_email: contactEmail,
       funeral_home_id: systemFuneralHome.id,
-      photo_url: null,
+      photo_url: photoUrl,
       is_searchable: isSearchable,
     };
 
-   const { data, error } = await supabase
-  .from("deceased_pages")
-  .insert(payload)
-  .select("id, slug, access_token, status, photo_url")
-  .single();
+    const { data, error } = await supabase
+      .from("deceased_pages")
+      .insert(payload)
+      .select("id, slug, access_token, status, photo_url")
+      .single();
 
-console.log("CREATE PARTICULAR PAGE inserted row photo_url:", data?.photo_url);
+    console.log("CREATE PARTICULAR PAGE inserted row photo_url:", data?.photo_url);
 
-if (error || !data) {
-  return {
-    statusCode: 500,
-    body: JSON.stringify({ error: error?.message || "No se pudo crear la página." }),
-  };
-}
+    if (error || !data) {
+      return {
+        statusCode: 500,
+        body: JSON.stringify({ error: error?.message || "No se pudo crear la página." }),
+      };
+    }
 
-// Si la foto no quedó guardada en el insert, la actualizamos justo después
-if (photoUrl && !data.photo_url) {
-  const { data: updatedRow, error: updatePhotoError } = await supabase
-    .from("deceased_pages")
-    .update({ photo_url: photoUrl })
-    .eq("id", data.id)
-    .select("id, slug, access_token, status, photo_url")
-    .single();
+    if (photoUrl && !data.photo_url) {
+      const { data: updatedRow, error: updatePhotoError } = await supabase
+        .from("deceased_pages")
+        .update({ photo_url: photoUrl })
+        .eq("id", data.id)
+        .select("id, slug, access_token, status, photo_url")
+        .single();
 
-  if (updatePhotoError) {
-    console.error("CREATE PARTICULAR PAGE update photo_url error:", updatePhotoError);
-  } else if (updatedRow) {
-    console.log("CREATE PARTICULAR PAGE updated row photo_url:", updatedRow.photo_url);
-    Object.assign(data, updatedRow);
-  }
-}
+      if (updatePhotoError) {
+        console.error("CREATE PARTICULAR PAGE update photo_url error:", updatePhotoError);
+      } else if (updatedRow) {
+        console.log("CREATE PARTICULAR PAGE updated row photo_url:", updatedRow.photo_url);
+        Object.assign(data, updatedRow);
+      }
+    }
 
-   return {
-  statusCode: 200,
-  body: JSON.stringify({
-    ok: true,
-    pageId: data.id,
-    slug: data.slug,
-    accessToken: data.access_token,
-    status: data.status,
-    photo_url: data.photo_url || null,
-  }),
-};
+    return {
+      statusCode: 200,
+      body: JSON.stringify({
+        ok: true,
+        pageId: data.id,
+        slug: data.slug,
+        accessToken: data.access_token,
+        status: data.status,
+        photo_url: data.photo_url || null,
+      }),
+    };
   } catch (err: any) {
     return {
       statusCode: 500,
