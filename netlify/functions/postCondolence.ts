@@ -230,7 +230,7 @@ if (photo_path) {
   message: trimmedMessage,
   photo_path: photo_path || null,
   moderation_status: dbModerationStatus,
-  moderation_reason: decision.reason || null,
+  moderation_reason: decision?.reason || null,
 });
 
 if (!photo_path && decision?.status === "blocked") {
