@@ -4525,7 +4525,11 @@ onChange={async (e) => {
 
         {msg.photo_path && (
   <img
-    src={msg.photo_path}
+    src={
+  supabase.storage
+    .from("condolence-photos")
+    .getPublicUrl(msg.photo_path).data.publicUrl
+}
     alt="Foto adjunta al mensaje"
     style={{
       marginTop: 10,
@@ -4654,7 +4658,11 @@ onChange={async (e) => {
 
             {msg.photo_path && (
   <img
-    src={msg.photo_path}
+   src={
+  supabase.storage
+    .from("condolence-photos")
+    .getPublicUrl(msg.photo_path).data.publicUrl
+}
     alt="Foto adjunta al mensaje"
     style={{
       marginTop: 10,
@@ -4748,7 +4756,11 @@ onChange={async (e) => {
 
         {msg.photo_path && (
   <img
-    src={msg.photo_path}
+    src={
+  supabase.storage
+    .from("condolence-photos")
+    .getPublicUrl(msg.photo_path).data.publicUrl
+}
     alt="Foto adjunta al mensaje"
     style={{
       marginTop: 10,

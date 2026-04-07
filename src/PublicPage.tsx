@@ -153,7 +153,9 @@ async function submitMessage() {
 
 if (data?.moderation_status === "pending") {
   setSubmissionNotice(
-    "✔ Gracias por tu mensaje. Ha sido enviado correctamente y está pendiente de revisión antes de publicarse."
+    photoFile
+      ? "✔ Gracias por tu mensaje. Al incluir una imagen, quedará temporalmente pendiente de revisión por parte del equipo de E-Dep antes de publicarse."
+      : "✔ Gracias por tu mensaje. Ha sido enviado correctamente y está pendiente de revisión antes de publicarse."
   );
 
   setAuthor("");
@@ -528,7 +530,16 @@ onChange={async (e) => {
 
 />
 
-
+<div
+  style={{
+    marginTop: 6,
+    fontSize: 12,
+    color: "#64748b",
+    lineHeight: 1.4,
+  }}
+>
+  Los mensajes con imagen se revisan antes de publicarse.
+</div>
 
 {photoPreview && (
   <div style={{ marginTop: 10, display: "flex", gap: 10, alignItems: "center" }}>

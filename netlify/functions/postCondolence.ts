@@ -259,8 +259,8 @@ if (dbModerationStatus === "pending") {
       ok: true,
       moderation_status: "pending",
       message: photo_path
-        ? "Todos los mensajes con foto quedan temporalmente pendientes de revisión por parte del equipo de E-Dep."
-        : "Tu mensaje ha quedado pendiente de revisión antes de publicarse.",
+  ? "Tu mensaje incluye una imagen y quedará temporalmente pendiente de revisión por parte del equipo de E-Dep antes de publicarse."
+  : "Tu mensaje ha quedado pendiente de revisión antes de publicarse.",
     }),
   };
 }
