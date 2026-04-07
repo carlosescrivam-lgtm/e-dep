@@ -813,11 +813,11 @@ async function loadMessagesForPage(pageId: string) {
       return;
     }
 
-    const { data, error } = await supabase
-      .from("condolences")
-      .select("id, author_name, message, created_at, deleted_at, moderation_status, moderation_reason")
-      .eq("page_id", pageId)
-      .order("created_at", { ascending: false });
+   const { data, error } = await supabase
+  .from("condolences")
+  .select("id, author_name, message, photo_path, created_at, deleted_at, moderation_status, moderation_reason")
+  .eq("page_id", pageId)
+  .order("created_at", { ascending: false });
 
     if (error) throw error;
 
@@ -882,12 +882,12 @@ async function loadPendingMessagesForPage(pageId: string) {
     }
 
     const { data, error } = await supabase
-      .from("condolences")
-      .select("id, author_name, message, created_at, moderation_status, moderation_reason, deleted_at")
-      .eq("page_id", pageId)
-      .is("deleted_at", null)
-      .eq("moderation_status", "pending")
-      .order("created_at", { ascending: false });
+  .from("condolences")
+  .select("id, author_name, message, photo_path, created_at, moderation_status, moderation_reason, deleted_at")
+  .eq("page_id", pageId)
+  .is("deleted_at", null)
+  .eq("moderation_status", "pending")
+  .order("created_at", { ascending: false });
 
     if (error) throw error;
 
@@ -4523,6 +4523,23 @@ onChange={async (e) => {
           {msg.message}
         </div>
 
+        {msg.photo_path && (
+  <img
+    src={msg.photo_path}
+    alt="Foto adjunta al mensaje"
+    style={{
+      marginTop: 10,
+      width: 120,
+      height: 120,
+      objectFit: "cover",
+      borderRadius: 12,
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+      display: "block",
+    }}
+  />
+)}
+
         {msg.moderation_reason ? (
           <div
             style={{
@@ -4635,6 +4652,23 @@ onChange={async (e) => {
               {msg.message}
             </div>
 
+            {msg.photo_path && (
+  <img
+    src={msg.photo_path}
+    alt="Foto adjunta al mensaje"
+    style={{
+      marginTop: 10,
+      width: 120,
+      height: 120,
+      objectFit: "cover",
+      borderRadius: 12,
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+      display: "block",
+    }}
+  />
+)}
+
             <div style={{ marginTop: 10 }}>
               <button
                 type="button"
@@ -4711,6 +4745,23 @@ onChange={async (e) => {
         <div style={{ marginTop: 8, lineHeight: 1.5 }}>
           {msg.message}
         </div>
+
+        {msg.photo_path && (
+  <img
+    src={msg.photo_path}
+    alt="Foto adjunta al mensaje"
+    style={{
+      marginTop: 10,
+      width: 120,
+      height: 120,
+      objectFit: "cover",
+      borderRadius: 12,
+      border: "1px solid rgba(0,0,0,0.08)",
+      boxShadow: "0 4px 12px rgba(0,0,0,0.08)",
+      display: "block",
+    }}
+  />
+)}
 
         {msg.moderation_reason && (
           <div

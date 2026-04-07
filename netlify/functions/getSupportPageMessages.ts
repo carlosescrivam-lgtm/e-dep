@@ -19,9 +19,9 @@ export const handler: Handler = async (event) => {
 
     const { data: messages, error } = await supabase
       .from("condolences")
-      .select(
-        "id, page_id, author_name, message, created_at, deleted_at, moderation_status, moderation_reason"
-      )
+     .select(
+  "id, page_id, author_name, message, photo_path, created_at, deleted_at, moderation_status, moderation_reason"
+)
       .eq("page_id", pageId)
       .order("created_at", { ascending: false });
 
