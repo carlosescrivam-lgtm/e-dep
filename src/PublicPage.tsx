@@ -138,6 +138,7 @@ async function submitMessage() {
     });
 
     const data = await res.json();
+    const hadPhoto = !!photoFile;
 
     if (!res.ok) {
       throw new Error(data?.error || "Error enviando mensaje");
@@ -153,7 +154,7 @@ async function submitMessage() {
 
 if (data?.moderation_status === "pending") {
   setSubmissionNotice(
-    photoFile
+    hadPhoto
       ? "✔ Gracias por tu mensaje. Al incluir una imagen, quedará temporalmente pendiente de revisión por parte del equipo de E-Dep antes de publicarse."
       : "✔ Gracias por tu mensaje. Ha sido enviado correctamente y está pendiente de revisión antes de publicarse."
   );
