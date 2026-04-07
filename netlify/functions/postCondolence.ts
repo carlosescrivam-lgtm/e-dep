@@ -210,10 +210,19 @@ const photo_path = body?.photo_path ?? null;
     const trimmedAuthor = String(author_name || "").trim() || "Anónimo";
     const trimmedMessage = String(message).trim();
 
-    const decision = await moderateCondolence(trimmedMessage, trimmedAuthor);
+   let decision:
+  | { status: "approved" | "pending" | "blocked"; reason: string }
+  | null = null;
 
-    const dbModerationStatus =
-  decision.status === "blocked" ? "rejected" : decision.status;
+let dbModerationStatus: "approved" | "pending" | "rejected";
+
+if (photo_path) {
+  dbModerationStatus = "pending";
+} else {
+  decision = await moderateCondolence(trimmedMessage, trimmedAuthor);
+  dbModerationStatus =
+    decision.status === "blocked" ? "rejected" : decision.status;
+}
 
    const { error: insError } = await supabase.from("condolences").insert({
   page_id: page.id,
@@ -224,7 +233,7 @@ const photo_path = body?.photo_path ?? null;
   moderation_reason: decision.reason || null,
 });
 
-if (decision.status === "blocked") {
+if (!photo_path && decision?.status === "blocked") {
   return {
     statusCode: 200,
     body: JSON.stringify({
@@ -243,17 +252,18 @@ if (decision.status === "blocked") {
       };
     }
 
-    if (decision.status === "pending") {
-      return {
-        statusCode: 200,
-        body: JSON.stringify({
-          ok: true,
-          moderation_status: "pending",
-          message:
-            "Tu mensaje ha quedado pendiente de revisión antes de publicarse.",
-        }),
-      };
-    }
+if (dbModerationStatus === "pending") {
+  return {
+    statusCode: 200,
+    body: JSON.stringify({
+      ok: true,
+      moderation_status: "pending",
+      message: photo_path
+        ? "Todos los mensajes con foto quedan temporalmente pendientes de revisión por parte del equipo de E-Dep."
+        : "Tu mensaje ha quedado pendiente de revisión antes de publicarse.",
+    }),
+  };
+}
 
     return {
       statusCode: 200,
