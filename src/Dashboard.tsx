@@ -2118,6 +2118,23 @@ if (currentRole === "admin" && !isAdminSupportView) {
   </div>
 ) : null}
 
+<div
+  style={{
+    marginBottom: 18,
+  }}
+>
+  <input
+    value={adminSearch}
+    onChange={(e) => setAdminSearch(e.target.value)}
+    placeholder="Buscar funeraria..."
+    style={{
+      ...inputStyle,
+      width: "100%",
+      padding: "12px 14px",
+    }}
+  />
+</div>
+
                 Funerarias registradas
               </h2>
               <p
@@ -2139,17 +2156,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
     flexWrap: "wrap",
   }}
 >
-  <input
-    value={adminSearch}
-    onChange={(e) => setAdminSearch(e.target.value)}
-    placeholder="Buscar funeraria..."
-    style={{
-      ...inputStyle,
-      width: isMobile ? "100%" : 240,
-      minWidth: isMobile ? "100%" : 240,
-      padding: "12px 14px",
-    }}
-  />
+ 
 
   <button onClick={loadAdminData} style={filterStyle}>
     Actualizar
