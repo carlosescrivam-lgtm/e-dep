@@ -6,6 +6,7 @@ export default function Auth() {
   const [funeralHomeName, setFuneralHomeName] = useState("");
 const [address, setAddress] = useState("");
 const [city, setCity] = useState("");
+const [country, setCountry] = useState("");
 const [postalCode, setPostalCode] = useState("");
 const [phone, setPhone] = useState("");
 const [contactEmail, setContactEmail] = useState("");
@@ -148,6 +149,11 @@ useEffect(() => {
     try {
       setLoading(true);
       setMsg("Creando cuenta de funeraria...");
+      if (!country) {
+  setMsg("❌ Debes seleccionar un país.");
+  setLoading(false);
+  return;
+}
 
       const res = await fetch("/.netlify/functions/registerFuneralHome", {
         method: "POST",
@@ -161,8 +167,10 @@ useEffect(() => {
   postal_code: postalCode,
   phone,
   contact_email: contactEmail,
+  country,
   email,
   password,
+  
 }),
       });
 
@@ -183,6 +191,7 @@ setCity("");
 setPostalCode("");
 setPhone("");
 setContactEmail("");
+setCountry("");
 setPassword("");
     } catch (err: any) {
       setMsg("❌ " + (err?.message || "No se pudo crear la cuenta"));
@@ -646,13 +655,29 @@ style={{
     />
 
     <label style={labelStyle}>Email de contacto</label>
-    <input
+ <input
       style={inputStyle}
       value={contactEmail}
       onChange={(e) => setContactEmail(e.target.value)}
       placeholder="contacto@funeraria.com"
       type="email"
     />
+
+<label style={labelStyle}>País</label>
+<select
+  style={inputStyle}
+  value={country}
+  onChange={(e) => setCountry(e.target.value)}
+  required
+>
+  <option value="">Selecciona un país</option>
+  <option value="España">España</option>
+  <option value="Argentina">Argentina</option>
+  <option value="Chile">Chile</option>
+  <option value="Colombia">Colombia</option>
+  <option value="México">México</option>
+</select>
+
   </>
 ) : null}
 

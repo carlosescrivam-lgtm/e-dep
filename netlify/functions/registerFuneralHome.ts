@@ -26,8 +26,9 @@ const city = body?.city?.trim() || null;
 const postal_code = body?.postal_code?.trim() || null;
 const phone = body?.phone?.trim() || null;
 const contact_email = body?.contact_email?.trim().toLowerCase() || null;
+const country = body?.country?.trim() || null;
 
-    if (!name || !email || !password || !address || !city || !postal_code || !phone || !contact_email) {
+    if (!name || !email || !password || !address || !city || !postal_code || !phone || !contact_email || !country) {
   return {
     statusCode: 400,
     body: JSON.stringify({ error: "Faltan datos obligatorios" }),
@@ -59,13 +60,14 @@ console.log("Usuario auth creado:", authData?.user?.id, email);
 
     const { data: funeralHome, error: funeralHomeError } = await supabase
       .from("funeral_homes")
-      .insert({
+.insert({
   name,
   address,
   city,
   postal_code,
   phone,
   contact_email,
+  country,
   owner_user_id: user.id,
   subscription_status: "trial",
   trial_until: new Date(Date.now() + 15 * 24 * 60 * 60 * 1000).toISOString(),
