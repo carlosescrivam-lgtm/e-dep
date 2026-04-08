@@ -64,6 +64,7 @@ export default function Dashboard() {
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState("");
   const [currentAccessBlocked, setCurrentAccessBlocked] = useState(false);
   const [search, setSearch] = useState("");
+  const [adminSearch, setAdminSearch] = useState("");
   const [filter, setFilter] = useState<"all" | "open" | "closed">("open");
   const [fullName, setFullName] = useState("");
   const [customText, setCustomText] = useState("");
@@ -1630,6 +1631,12 @@ const adminUnlimitedCount = adminFuneralHomes.filter(
     (home.subscription_plan || "").toLowerCase() === "unlimited"
 ).length;
 
+const filteredAdminFuneralHomes = adminFuneralHomes.filter((home) =>
+  (home.name || "")
+    .toLowerCase()
+    .includes(adminSearch.toLowerCase())
+);
+
 if (isSubscriptionBlocked) {
   return (
     <div
@@ -2124,12 +2131,33 @@ if (currentRole === "admin" && !isAdminSupportView) {
               </p>
             </div>
 
-            <button onClick={loadAdminData} style={filterStyle}>
-              Actualizar
-            </button>
+            <div
+  style={{
+    display: "flex",
+    gap: 10,
+    alignItems: "center",
+    flexWrap: "wrap",
+  }}
+>
+  <input
+    value={adminSearch}
+    onChange={(e) => setAdminSearch(e.target.value)}
+    placeholder="Buscar funeraria..."
+    style={{
+      ...inputStyle,
+      width: isMobile ? "100%" : 240,
+      minWidth: isMobile ? "100%" : 240,
+      padding: "12px 14px",
+    }}
+  />
+
+  <button onClick={loadAdminData} style={filterStyle}>
+    Actualizar
+  </button>
+</div>
           </div>
 
-          {adminFuneralHomes.length === 0 ? (
+          {filteredAdminFuneralHomes.length === 0 ? (
             <div style={panelStyle}>No hay funerarias registradas.</div>
           ) : (
 
@@ -2143,7 +2171,8 @@ if (currentRole === "admin" && !isAdminSupportView) {
     gap: isMobile ? 14 : 18,
   }}
 >
-              {adminFuneralHomes.map((home) => {
+              {filteredAdminFuneralHomes.map((home) => {
+              
                const homeStatus = (home.subscription_status || "").toLowerCase();
 
 const isActive = homeStatus === "active";
