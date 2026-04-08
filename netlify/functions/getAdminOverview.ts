@@ -10,7 +10,7 @@ export const handler: Handler = async () => {
   try {
     const { data: homes, error: homesError } = await supabase
       .from("funeral_homes")
-      .select("id, name, subscription_status, subscription_plan, subscription_until, trial_until, access_blocked, created_at")
+      .select("id, name, country, subscription_status, subscription_plan, subscription_until, trial_until, access_blocked, created_at")
       .or("is_system.is.false,is_system.is.null")
       .order("created_at", { ascending: false });
 
@@ -23,7 +23,7 @@ export const handler: Handler = async () => {
 
     const { data: systemParticularsHome, error: systemHomeError } = await supabase
       .from("funeral_homes")
-      .select("id, name, subscription_status, subscription_plan, subscription_until, trial_until, access_blocked, created_at")
+      .select("id, name, country, subscription_status, subscription_plan, subscription_until, trial_until, access_blocked, created_at")
       .eq("is_system", true)
       .eq("system_key", "particulars")
       .maybeSingle();

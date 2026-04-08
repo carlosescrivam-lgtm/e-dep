@@ -65,6 +65,7 @@ export default function Dashboard() {
   const [currentAccessBlocked, setCurrentAccessBlocked] = useState(false);
   const [search, setSearch] = useState("");
   const [adminSearch, setAdminSearch] = useState("");
+  const [adminCountryFilter, setAdminCountryFilter] = useState("");
   const [filter, setFilter] = useState<"all" | "open" | "closed">("open");
   const [fullName, setFullName] = useState("");
   const [customText, setCustomText] = useState("");
@@ -78,6 +79,7 @@ export default function Dashboard() {
   const [phone, setPhone] = useState("");
   const [contactEmail, setContactEmail] = useState("");
   const [website, setWebsite] = useState("");
+  const [country, setCountry] = useState("");
   const [logoUrl, setLogoUrl] = useState("");
   const [savingFuneralHome, setSavingFuneralHome] = useState(false);
   const [uploadingLogo, setUploadingLogo] = useState(false);
@@ -297,7 +299,7 @@ async function loadFuneralHomeData(funeralHomeIdOverride?: string) {
 
   const { data, error } = await supabase
   .from("funeral_homes")
-  .select("name, address, city, postal_code, phone, contact_email, website, logo_url, subscription_status, subscription_plan, trial_until, subscription_start, subscription_until, access_blocked")
+  .select("name, address, city, postal_code, phone, contact_email, website, logo_url, country, subscription_status, subscription_plan, trial_until, subscription_start, subscription_until, access_blocked")
   .eq("id", funeralHomeId)
   .maybeSingle();
   if (error) throw error;
@@ -310,6 +312,7 @@ async function loadFuneralHomeData(funeralHomeIdOverride?: string) {
   setPhone(data.phone || "");
   setContactEmail(data.contact_email || "");
   setWebsite(data.website || "");
+  setCountry(data.country || "");
   setLogoUrl(data.logo_url || "");
   setCurrentSubscriptionStatus(data.subscription_status || "inactive");
 setCurrentSubscriptionPlan(data.subscription_plan || "");
@@ -1122,6 +1125,7 @@ async function saveFuneralHomeData() {
         postal_code: postalCode.trim() || null,
         phone: phone.trim() || null,
         contact_email: contactEmail.trim() || null,
+        country: country || null,
         website: website.trim() || null,
         logo_url: logoUrl.trim() || null,
       })
@@ -1631,10 +1635,25 @@ const adminUnlimitedCount = adminFuneralHomes.filter(
     (home.subscription_plan || "").toLowerCase() === "unlimited"
 ).length;
 
-const filteredAdminFuneralHomes = adminFuneralHomes.filter((home) =>
-  (home.name || "")
+const filteredAdminFuneralHomes = adminFuneralHomes.filter((home) => {
+  const matchesSearch = (home.name || "")
     .toLowerCase()
-    .includes(adminSearch.toLowerCase())
+    .includes(adminSearch.toLowerCase());
+
+  const matchesCountry =
+    !adminCountryFilter || (home.country || "") === adminCountryFilter;
+
+  return matchesSearch && matchesCountry;
+});
+
+const groupedAdminFuneralHomes = filteredAdminFuneralHomes.reduce(
+  (acc: Record<string, any[]>, home: any) => {
+    const key = home.country || "Sin país";
+    if (!acc[key]) acc[key] = [];
+    acc[key].push(home);
+    return acc;
+  },
+  {}
 );
 
 if (isSubscriptionBlocked) {
@@ -2012,26 +2031,8 @@ if (currentRole === "admin" && !isAdminSupportView) {
             padding: 20,
           }}
         >
-          <div
-            style={{
-              display: "flex",
-              justifyContent: "space-between",
-              alignItems: "center",
-              gap: 12,
-              marginBottom: 18,
-              flexWrap: "wrap",
-            }}
-          >
-            <div>
-              <h2
-                style={{
-                  margin: 0,
-                  fontSize: 24,
-                  fontWeight: 800,
-                  letterSpacing: "-0.02em",
-                }}
-              >
-
+         
+           
 {adminSystemParticularsHome ? (
   <div
     style={{
@@ -2121,6 +2122,9 @@ if (currentRole === "admin" && !isAdminSupportView) {
 <div
   style={{
     marginBottom: 18,
+    display: "grid",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 220px",
+    gap: 10,
   }}
 >
   <input
@@ -2133,443 +2137,495 @@ if (currentRole === "admin" && !isAdminSupportView) {
       padding: "12px 14px",
     }}
   />
+
+  <select
+    value={adminCountryFilter}
+    onChange={(e) => setAdminCountryFilter(e.target.value)}
+    style={{
+      ...inputStyle,
+      width: "100%",
+      padding: "12px 14px",
+      appearance: "auto",
+      background: "rgba(255,255,255,0.95)",
+    }}
+  >
+    <option value="">Todos los países</option>
+    <option value="España">España</option>
+    <option value="Argentina">Argentina</option>
+    <option value="Chile">Chile</option>
+    <option value="Colombia">Colombia</option>
+    <option value="México">México</option>
+  </select>
 </div>
 
-                Funerarias registradas
-              </h2>
-              <p
-                style={{
-                  margin: "6px 0 0 0",
-                  color: "#64748b",
-                  fontSize: 14,
-                }}
-              >
-                Vista general del uso de la plataforma por cada funeraria.
-              </p>
-            </div>
-
-            <div
+<div
   style={{
     display: "flex",
-    gap: 10,
+    justifyContent: "space-between",
     alignItems: "center",
+    gap: 12,
+    marginBottom: 18,
     flexWrap: "wrap",
   }}
 >
- 
+  <div>
+    <h2
+      style={{
+        margin: 0,
+        fontSize: 24,
+        fontWeight: 800,
+        letterSpacing: "-0.02em",
+      }}
+    >
+      Funerarias registradas
+    </h2>
+    <p
+      style={{
+        margin: "6px 0 0 0",
+        color: "#64748b",
+        fontSize: 14,
+      }}
+    >
+      Vista general del uso de la plataforma por cada funeraria.
+    </p>
+  </div>
 
-  <button onClick={loadAdminData} style={filterStyle}>
-    Actualizar
-  </button>
+  <div
+    style={{
+      display: "flex",
+      gap: 10,
+      alignItems: "center",
+      flexWrap: "wrap",
+    }}
+  >
+    <button onClick={loadAdminData} style={filterStyle}>
+      Actualizar
+    </button>
+  </div>
 </div>
-          </div>
+   
+   
+{filteredAdminFuneralHomes.length === 0 ? (
+  <div style={panelStyle}>No hay funerarias registradas.</div>
+) : (
+  <div style={{ display: "grid", gap: 24 }}>
+    {Object.entries(groupedAdminFuneralHomes).map(([countryName, homes]) => (
+      <div key={countryName}>
+        <div
+          style={{
+            marginBottom: 12,
+            fontSize: 18,
+            fontWeight: 800,
+            color: "#0f172a",
+          }}
+        >
+          {countryName}
+        </div>
 
-          {filteredAdminFuneralHomes.length === 0 ? (
-            <div style={panelStyle}>No hay funerarias registradas.</div>
-          ) : (
+        <div
+          style={{
+            display: "grid",
+            gridTemplateColumns: isMobile
+              ? "1fr"
+              : "repeat(auto-fit, minmax(320px, 1fr))",
+            gap: isMobile ? 14 : 18,
+          }}
+        >
+          {(homes as any[]).map((home) => {
+            const homeStatus = (home.subscription_status || "").toLowerCase();
+            const isActive = homeStatus === "active";
+            const isTrial = homeStatus === "trial";
 
+            const statusLabel = isActive
+              ? "Activa"
+              : isTrial
+              ? "En prueba"
+              : "Inactiva";
 
-           <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: isMobile
-      ? "1fr"
-      : "repeat(auto-fit, minmax(320px, 1fr))",
-    gap: isMobile ? 14 : 18,
-  }}
->
-              {filteredAdminFuneralHomes.map((home) => {
-              
-               const homeStatus = (home.subscription_status || "").toLowerCase();
+            const accessLabel = home.access_blocked
+              ? "Acceso bloqueado"
+              : "Acceso permitido";
 
-const isActive = homeStatus === "active";
-const isTrial = homeStatus === "trial";
+            const accessColor = home.access_blocked ? "#991b1b" : "#065f46";
+            const accessBg = home.access_blocked
+              ? "rgba(239,68,68,0.12)"
+              : "rgba(16,185,129,0.15)";
 
-const statusLabel = isActive
-  ? "Activa"
-  : isTrial
-  ? "En prueba"
-  : "Inactiva";
+            const statusBg = isActive
+              ? "rgba(16,185,129,0.15)"
+              : isTrial
+              ? "rgba(245,158,11,0.15)"
+              : "rgba(239,68,68,0.12)";
 
-  const accessLabel = home.access_blocked ? "Acceso bloqueado" : "Acceso permitido";
-const accessColor = home.access_blocked ? "#991b1b" : "#065f46";
-const accessBg = home.access_blocked
-  ? "rgba(239,68,68,0.12)"
-  : "rgba(16,185,129,0.15)";
+            const statusColor = isActive
+              ? "#065f46"
+              : isTrial
+              ? "#92400e"
+              : "#991b1b";
 
-const statusBg = isActive
-  ? "rgba(16,185,129,0.15)"
-  : isTrial
-  ? "rgba(245,158,11,0.15)"
-  : "rgba(239,68,68,0.12)";
+            const statusDot = isActive
+              ? "#10b981"
+              : isTrial
+              ? "#f59e0b"
+              : "#ef4444";
 
-const statusColor = isActive
-  ? "#065f46"
-  : isTrial
-  ? "#92400e"
-  : "#991b1b";
+            const getAdminRenewalDaysText = (dateString?: string | null) => {
+              if (!dateString) return "";
 
-const statusDot = isActive
-  ? "#10b981"
-  : isTrial
-  ? "#f59e0b"
-  : "#ef4444";
+              const today = new Date();
+              const renewalDate = new Date(dateString);
 
-  const getRenewalDaysText = (dateString?: string | null) => {
-  if (!dateString) return "";
+              const todayOnly = new Date(
+                today.getFullYear(),
+                today.getMonth(),
+                today.getDate()
+              );
 
-  const today = new Date();
-  const renewalDate = new Date(dateString);
+              const renewalOnly = new Date(
+                renewalDate.getFullYear(),
+                renewalDate.getMonth(),
+                renewalDate.getDate()
+              );
 
-  const todayOnly = new Date(
-    today.getFullYear(),
-    today.getMonth(),
-    today.getDate()
-  );
+              const diffMs = renewalOnly.getTime() - todayOnly.getTime();
+              const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
 
-  const renewalOnly = new Date(
-    renewalDate.getFullYear(),
-    renewalDate.getMonth(),
-    renewalDate.getDate()
-  );
+              if (diffDays < 0) return "Prueba vencida";
+              if (diffDays === 0) return "Renueva hoy";
+              if (diffDays === 1) return "Renueva en 1 día";
 
-  const diffMs = renewalOnly.getTime() - todayOnly.getTime();
-  const diffDays = Math.ceil(diffMs / (1000 * 60 * 60 * 24));
+              return `Renueva en ${diffDays} días`;
+            };
 
-  if (diffDays < 0) return "Prueba vencida";
-  if (diffDays === 0) return "Renueva hoy";
-  if (diffDays === 1) return "Renueva en 1 día";
+            const adminRenewalText = isTrial
+              ? getAdminRenewalDaysText(home.trial_until)
+              : isActive
+              ? getAdminRenewalDaysText(home.subscription_until)
+              : "";
 
-  return `Renueva en ${diffDays} días`;
-};
+            return (
+              <div
+                key={home.id}
+                style={{
+                  background: "rgba(255,255,255,0.88)",
+                  backdropFilter: "blur(12px)",
+                  border: "1px solid rgba(255,255,255,0.75)",
+                  borderRadius: 24,
+                  padding: "20px 20px 20px 26px",
+                  boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
+                  position: "relative",
+                  overflow: "hidden",
+                }}
+              >
+                <div
+                  style={{
+                    position: "absolute",
+                    left: 0,
+                    top: 0,
+                    bottom: 0,
+                    width: 6,
+                    borderTopLeftRadius: 24,
+                    borderBottomLeftRadius: 24,
+                    background: isActive ? "#10b981" : isTrial ? "#f59e0b" : "#ef4444",
+                  }}
+                />
 
-const adminRenewalText = isTrial
-  ? getRenewalDaysText(home.trial_until)
-  : isActive
-  ? getRenewalDaysText(home.subscription_until)
-  : "";
+                <div
+                  style={{
+                    position: "absolute",
+                    right: -40,
+                    top: -40,
+                    width: 120,
+                    height: 120,
+                    borderRadius: "50%",
+                    background: isActive
+                      ? "rgba(16,185,129,0.12)"
+                      : isTrial
+                      ? "rgba(245,158,11,0.12)"
+                      : "rgba(239,68,68,0.10)",
+                  }}
+                />
 
-                return (
+                <div style={{ position: "relative", zIndex: 1 }}>
                   <div
-                    key={home.id}
                     style={{
-                      background: "rgba(255,255,255,0.88)",
-                      backdropFilter: "blur(12px)",
-                      border: "1px solid rgba(255,255,255,0.75)",
-                      borderRadius: 24,
-                      padding: "20px 20px 20px 26px",
-                      boxShadow: "0 18px 40px rgba(15,23,42,0.08)",
-                      position: "relative",
-                      overflow: "hidden",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "space-between",
+                      gap: 10,
+                      marginBottom: 12,
+                      flexWrap: "wrap",
                     }}
                   >
                     <div
-  style={{
-    position: "absolute",
-    left: 0,
-    top: 0,
-    bottom: 0,
-    width: 6,
-    borderTopLeftRadius: 24,
-    borderBottomLeftRadius: 24,
-    background: isActive ? "#10b981" : isTrial ? "#f59e0b" : "#ef4444",
-  }}
-/>
-
-                    <div
                       style={{
-                        position: "absolute",
-                        right: -40,
-                        top: -40,
-                        width: 120,
-                        height: 120,
-                        borderRadius: "50%",
-                        background: isActive
-  ? "rgba(16,185,129,0.12)"
-  : isTrial
-  ? "rgba(245,158,11,0.12)"
-  : "rgba(239,68,68,0.10)",
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 8,
+                        flexWrap: "wrap",
                       }}
-                    />
-
-                    <div style={{ position: "relative", zIndex: 1 }}>
-
-          
-                     
-
- <div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    justifyContent: "space-between",
-    gap: 10,
-    marginBottom: 12,
-    flexWrap: "wrap",
-  }}
->
-<div
-  style={{
-    display: "flex",
-    alignItems: "center",
-    gap: 8,
-    flexWrap: "wrap",
-  }}
->
-  <div
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      gap: 6,
-      borderRadius: 999,
-      padding: "6px 12px",
-      fontSize: 12,
-      fontWeight: 700,
-      background: statusBg,
-      color: statusColor,
-    }}
-  >
-    <span
-      style={{
-        width: 8,
-        height: 8,
-        borderRadius: "50%",
-        background: statusDot,
-        display: "inline-block",
-      }}
-    />
-    {statusLabel}
-  </div>
-
-  <div
-    style={{
-      display: "inline-flex",
-      alignItems: "center",
-      borderRadius: 999,
-      padding: "6px 12px",
-      fontSize: 12,
-      fontWeight: 700,
-      background: accessBg,
-      color: accessColor,
-    }}
-  >
-    {accessLabel}
-  </div>
-
-  {true && (
-    <button
-      type="button"
-      onClick={() =>
-        handleDeleteFuneralHome(home.id, home.name || "Funeraria")
-      }
-      style={{
-        border: "1px solid rgba(239,68,68,0.18)",
-        background: "rgba(254,242,242,0.95)",
-        color: "#b91c1c",
-        borderRadius: 10,
-        padding: "8px 12px",
-        fontWeight: 700,
-        fontSize: 13,
-        cursor: "pointer",
-      }}
-    >
-      Eliminar funeraria
-    </button>
-  )}
-</div>
-</div>
-
-
-                      <h3
+                    >
+                      <div
                         style={{
-                          margin: 0,
-                          fontSize: 23,
-                          lineHeight: 1.2,
-                          fontWeight: 800,
-                          letterSpacing: "-0.02em",
+                          display: "inline-flex",
+                          alignItems: "center",
+                          gap: 6,
+                          borderRadius: 999,
+                          padding: "6px 12px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: statusBg,
+                          color: statusColor,
                         }}
                       >
-                        {home.name || "Sin nombre"}
-                      </h3>
-
-                      <p
-                        style={{
-                          margin: "8px 0 0 0",
-                          color: "#64748b",
-                          fontSize: 14,
-                        }}
-                      >
-                        Alta: {formatDate(home.created_at)}
-                      </p>
-
-{isTrial ? (
-  <div
-    style={{
-      marginTop: 10,
-      padding: 12,
-      borderRadius: 16,
-      background: "rgba(245,158,11,0.08)",
-      border: "1px solid rgba(245,158,11,0.20)",
-      color: "#92400e",
-    }}
-  >
-    <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
-      Prueba gratuita activa
-    </div>
-
-    <div style={{ fontSize: 13, lineHeight: 1.6 }}>
-      {home.trial_until
-        ? `Finaliza el ${new Date(home.trial_until).toLocaleDateString("es-ES")}`
-        : "Periodo de prueba en curso"}
-    </div>
-
-    {adminRenewalText ? (
-      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
-        {adminRenewalText}
-      </div>
-    ) : null}
-  </div>
-
-) : isActive ? (
-  <div
-    style={{
-      marginTop: 10,
-      padding: 12,
-      borderRadius: 16,
-      background: "rgba(16,185,129,0.08)",
-      border: "1px solid rgba(16,185,129,0.18)",
-      color: "#065f46",
-    }}
-  >
-   <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
-  Plan {(home.subscription_plan || "sin plan").toString().toUpperCase()}
-  {home.subscription_until
-    ? ` · Renueva el ${new Date(home.subscription_until).toLocaleDateString("es-ES")}`
-    : ""}
-</div>
-
-    {adminRenewalText ? (
-      <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
-        {adminRenewalText}
-      </div>
-    ) : null}
-  </div>
-)
- : (
-  <div
-    style={{
-      marginTop: 10,
-      padding: 12,
-      borderRadius: 16,
-      background: "rgba(239,68,68,0.06)",
-      border: "1px solid rgba(239,68,68,0.14)",
-      color: "#991b1b",
-      fontSize: 13,
-      fontWeight: 700,
-    }}
-  >
-    Sin suscripción activa
-  </div>
-)}
-
-                 <div
-  style={{
-    display: "grid",
-    gridTemplateColumns: "1fr 1fr",
-    gap: isMobile ? 8 : 12,
-    marginTop: isMobile ? 14 : 18,
-    marginBottom: isMobile ? 12 : 16,
-  }}
->
-                     
-<MiniInfo
-  label="Páginas"
-  value={
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        fontWeight: 500,
-        color: "#64748b",
-      }}
-    >
-      <span>Totales: {home.total_pages || 0}</span>
-      <span>Abiertas: {home.open_pages || 0}</span>
-      <span>Cerradas: {home.closed_pages || 0}</span>
-    </div>
-  }
-/>
-                      
-                       
-<MiniInfo
-  label="Mensajes"
-  value={
-    <div
-      style={{
-        display: "flex",
-        flexDirection: "column",
-        gap: 2,
-        fontWeight: 500,
-        color: "#64748b",
-      }}
-    >
-      <span>Totales: {home.total_condolences || 0}</span>
-      <span>Publicados: {home.approved_condolences || 0}</span>
-      <span>Pendientes: {home.pending_condolences || 0}</span>
-      <span>Rechazados: {home.rejected_condolences || 0}</span>
-    </div>
-  }
-/>
-                   
-
-
-<div
-  style={{
-    display: "flex",
-    gap: 10,
-    marginTop: 10,
-    flexWrap: "wrap",
-  }}
->
-  <button
-    onClick={() =>
-      openFuneralHomeSupportView(home.id, home.name || "Funeraria")
-    }
-    style={primarySmallButtonStyle}
-  >
-    Ver panel
-  </button>
-
-  {home.access_blocked ? (
-    <button
-      onClick={() => toggleFuneralHomeAccess(home.id, false)}
-      style={ghostButtonStyle}
-    >
-      Activar acceso
-    </button>
-  ) : (
-    <button
-      onClick={() => toggleFuneralHomeAccess(home.id, true)}
-      style={dangerButtonStyle}
-    >
-      Desactivar acceso
-    </button>
-  )}
-</div>
-
+                        <span
+                          style={{
+                            width: 8,
+                            height: 8,
+                            borderRadius: "50%",
+                            background: statusDot,
+                            display: "inline-block",
+                          }}
+                        />
+                        {statusLabel}
                       </div>
+
+                      <div
+                        style={{
+                          display: "inline-flex",
+                          alignItems: "center",
+                          borderRadius: 999,
+                          padding: "6px 12px",
+                          fontSize: 12,
+                          fontWeight: 700,
+                          background: accessBg,
+                          color: accessColor,
+                        }}
+                      >
+                        {accessLabel}
+                      </div>
+
+                      <button
+                        type="button"
+                        onClick={() =>
+                          handleDeleteFuneralHome(home.id, home.name || "Funeraria")
+                        }
+                        style={{
+                          border: "1px solid rgba(239,68,68,0.18)",
+                          background: "rgba(254,242,242,0.95)",
+                          color: "#b91c1c",
+                          borderRadius: 10,
+                          padding: "8px 12px",
+                          fontWeight: 700,
+                          fontSize: 13,
+                          cursor: "pointer",
+                        }}
+                      >
+                        Eliminar funeraria
+                      </button>
                     </div>
                   </div>
-                );
-              })}
-            </div>
-          )}
+
+                  <h3
+                    style={{
+                      margin: 0,
+                      fontSize: 23,
+                      lineHeight: 1.2,
+                      fontWeight: 800,
+                      letterSpacing: "-0.02em",
+                    }}
+                  >
+                    {home.name || "Sin nombre"}
+                  </h3>
+
+                  <div
+                    style={{
+                      marginTop: 4,
+                      fontSize: 13,
+                      color: "#64748b",
+                      fontWeight: 600,
+                    }}
+                  >
+                    {home.country || "Sin país"}
+                  </div>
+
+                  <p
+                    style={{
+                      margin: "8px 0 0 0",
+                      color: "#64748b",
+                      fontSize: 14,
+                    }}
+                  >
+                    Alta: {formatDate(home.created_at)}
+                  </p>
+
+                  {isTrial ? (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        padding: 12,
+                        borderRadius: 16,
+                        background: "rgba(245,158,11,0.08)",
+                        border: "1px solid rgba(245,158,11,0.20)",
+                        color: "#92400e",
+                      }}
+                    >
+                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+                        Prueba gratuita activa
+                      </div>
+
+                      <div style={{ fontSize: 13, lineHeight: 1.6 }}>
+                        {home.trial_until
+                          ? `Finaliza el ${new Date(home.trial_until).toLocaleDateString("es-ES")}`
+                          : "Periodo de prueba en curso"}
+                      </div>
+
+                      {adminRenewalText ? (
+                        <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+                          {adminRenewalText}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : isActive ? (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        padding: 12,
+                        borderRadius: 16,
+                        background: "rgba(16,185,129,0.08)",
+                        border: "1px solid rgba(16,185,129,0.18)",
+                        color: "#065f46",
+                      }}
+                    >
+                      <div style={{ fontSize: 14, fontWeight: 800, marginBottom: 4 }}>
+                        Plan {(home.subscription_plan || "sin plan").toString().toUpperCase()}
+                        {home.subscription_until
+                          ? ` · Renueva el ${new Date(home.subscription_until).toLocaleDateString("es-ES")}`
+                          : ""}
+                      </div>
+
+                      {adminRenewalText ? (
+                        <div style={{ fontSize: 13, fontWeight: 700, marginTop: 4 }}>
+                          {adminRenewalText}
+                        </div>
+                      ) : null}
+                    </div>
+                  ) : (
+                    <div
+                      style={{
+                        marginTop: 10,
+                        padding: 12,
+                        borderRadius: 16,
+                        background: "rgba(239,68,68,0.06)",
+                        border: "1px solid rgba(239,68,68,0.14)",
+                        color: "#991b1b",
+                        fontSize: 13,
+                        fontWeight: 700,
+                      }}
+                    >
+                      Sin suscripción activa
+                    </div>
+                  )}
+
+                  <div
+                    style={{
+                      display: "grid",
+                      gridTemplateColumns: "1fr 1fr",
+                      gap: isMobile ? 8 : 12,
+                      marginTop: isMobile ? 14 : 18,
+                      marginBottom: isMobile ? 12 : 16,
+                    }}
+                  >
+                    <MiniInfo
+                      label="Páginas"
+                      value={
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            fontWeight: 500,
+                            color: "#64748b",
+                          }}
+                        >
+                          <span>Totales: {home.total_pages || 0}</span>
+                          <span>Abiertas: {home.open_pages || 0}</span>
+                          <span>Cerradas: {home.closed_pages || 0}</span>
+                        </div>
+                      }
+                    />
+
+                    <MiniInfo
+                      label="Mensajes"
+                      value={
+                        <div
+                          style={{
+                            display: "flex",
+                            flexDirection: "column",
+                            gap: 2,
+                            fontWeight: 500,
+                            color: "#64748b",
+                          }}
+                        >
+                          <span>Totales: {home.total_condolences || 0}</span>
+                          <span>Publicados: {home.approved_condolences || 0}</span>
+                          <span>Pendientes: {home.pending_condolences || 0}</span>
+                          <span>Rechazados: {home.rejected_condolences || 0}</span>
+                        </div>
+                      }
+                    />
+                  </div>
+
+                  <div
+                    style={{
+                      display: "flex",
+                      gap: 10,
+                      marginTop: 10,
+                      flexWrap: "wrap",
+                    }}
+                  >
+                    <button
+                      onClick={() =>
+                        openFuneralHomeSupportView(home.id, home.name || "Funeraria")
+                      }
+                      style={primarySmallButtonStyle}
+                    >
+                      Ver panel
+                    </button>
+
+                    {home.access_blocked ? (
+                      <button
+                        onClick={() => toggleFuneralHomeAccess(home.id, false)}
+                        style={ghostButtonStyle}
+                      >
+                        Activar acceso
+                      </button>
+                    ) : (
+                      <button
+                        onClick={() => toggleFuneralHomeAccess(home.id, true)}
+                        style={dangerButtonStyle}
+                      >
+                        Desactivar acceso
+                      </button>
+                    )}
+                  </div>
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      </div>
+    ))}
+  </div>
+)}
+          
+            
+          
         </div>
       </div>
     </div>
   );
 }
-  
 
   return (
     <div
@@ -3248,6 +3304,24 @@ const adminRenewalText = isTrial
         placeholder="https://..."
         style={inputStyle}
       />
+
+      <FieldLabel>País</FieldLabel>
+<select
+  value={country}
+  onChange={(e) => setCountry(e.target.value)}
+  style={{
+    ...inputStyle,
+    appearance: "auto",
+    background: "rgba(255,255,255,0.95)",
+  }}
+>
+  <option value="">Selecciona un país</option>
+  <option value="España">España</option>
+  <option value="Argentina">Argentina</option>
+  <option value="Chile">Chile</option>
+  <option value="Colombia">Colombia</option>
+  <option value="México">México</option>
+</select>
 
       <FieldLabel>Logo de la funeraria</FieldLabel>
 
