@@ -677,7 +677,34 @@ closesAt.setDate(closesAt.getDate() + Number(closeDays));
 };
 
 
-    const { error } = await supabase.from("deceased_pages").insert(payload);
+    const isAdminCreatingInParticulars =
+  isAdminSupportView &&
+  effectiveFuneralHomeId === adminSystemParticularsHome?.id;
+
+let error;
+
+if (isAdminCreatingInParticulars) {
+  const session = await supabase.auth.getSession();
+
+  const res = await fetch("/.netlify/functions/createAdminParticularPage", {
+    method: "POST",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${session.data.session?.access_token}`,
+    },
+    body: JSON.stringify(payload),
+  });
+
+  const data = await res.json();
+
+  if (!res.ok) {
+    error = { message: data.error };
+  }
+
+} else {
+  const result = await supabase.from("deceased_pages").insert(payload);
+  error = result.error;
+}
 
     if (error) throw error;
 
@@ -699,8 +726,13 @@ closesAt.setDate(closesAt.getDate() + Number(closeDays));
 
     setShowCreateForm(false);
 
-    await loadData(effectiveFuneralHomeId || undefined);
-    alert("Página creada correctamente.");
+    if (isAdminSupportView && adminViewingFuneralHomeId) {
+  await loadAdminSupportData(adminViewingFuneralHomeId);
+  await loadAdminData();
+} else {
+  await loadData(effectiveFuneralHomeId || undefined);
+}
+alert("Página creada correctamente.");
   } catch (err: any) {
     console.error(err);
     alert(
@@ -1404,8 +1436,8 @@ async function reopenPage(pageId: string, pageName: string) {
 }
 
   function getPublicUrl(item: PageCard) {
-    return `${siteBase}/${item.slug}?token=${item.access_token}`;
-  }
+  return `${siteBase}/p/${item.slug}?token=${item.access_token}`;
+}
 
   async function copyLink(item: PageCard) {
     try {

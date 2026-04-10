@@ -26,14 +26,12 @@ export default function App() {
 
   if (loading) return <div style={{ padding: 24 }}>Cargando...</div>;
 
-  return (
+return (
   <Routes>
     <Route path="/p/:slug" element={<PublicPage />} />
-<Route path="/:slug" element={<PublicPage />} />
     <Route path="/particular" element={<ParticularCreatePage />} />
     <Route path="/particular/success" element={<ParticularSuccessPage />} />
     <Route path="/admin-login" element={<AdminLoginPage />} />
-
     <Route path="/*" element={loggedIn ? <Dashboard /> : <Auth />} />
   </Routes>
 );
