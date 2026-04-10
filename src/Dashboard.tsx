@@ -66,6 +66,10 @@ export default function Dashboard() {
   const [search, setSearch] = useState("");
   const [adminSearch, setAdminSearch] = useState("");
   const [adminCountryFilter, setAdminCountryFilter] = useState("");
+  const [adminSelectedMonth, setAdminSelectedMonth] = useState(() => {
+  const now = new Date();
+  return `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, "0")}`;
+});
   const [filter, setFilter] = useState<"all" | "open" | "closed">("open");
   const [fullName, setFullName] = useState("");
   const [customText, setCustomText] = useState("");
@@ -1656,6 +1660,70 @@ const groupedAdminFuneralHomes = filteredAdminFuneralHomes.reduce(
   {}
 );
 
+const countryOrder = ["España", "Argentina", "Chile", "Colombia", "México", "Sin país"];
+
+const countryFlags: Record<string, string> = {
+  España: "🇪🇸",
+  Argentina: "🇦🇷",
+  Chile: "🇨🇱",
+  Colombia: "🇨🇴",
+  México: "🇲🇽",
+  "Sin país": "🌐",
+};
+
+const [selectedYear, selectedMonth] = adminSelectedMonth.split("-").map(Number);
+const monthNames = [
+  "enero",
+  "febrero",
+  "marzo",
+  "abril",
+  "mayo",
+  "junio",
+  "julio",
+  "agosto",
+  "septiembre",
+  "octubre",
+  "noviembre",
+  "diciembre",
+];
+
+const selectedMonthName = monthNames[selectedMonth - 1];
+
+const startOfSelectedMonth = new Date(selectedYear, selectedMonth - 1, 1);
+const endOfSelectedMonth = new Date(selectedYear, selectedMonth, 1);
+
+const countryBusinessStats = countryOrder.map((countryName) => {
+  const homesInCountry = adminFuneralHomes.filter(
+    (home) => (home.country || "Sin país") === countryName
+  );
+
+  const activeHomes = homesInCountry.filter(
+    (home) => (home.subscription_status || "").toLowerCase() === "active"
+  );
+
+  const newPaidThisMonth = activeHomes.filter((home) => {
+    if (!home.subscription_started_at) return false;
+    const startedAt = new Date(home.subscription_started_at);
+    return startedAt >= startOfSelectedMonth && startedAt < endOfSelectedMonth;
+  });
+
+  const totalActive = activeHomes.length;
+  const totalNewPaidThisMonth = newPaidThisMonth.length;
+
+  const commissionNew = totalNewPaidThisMonth * 50;
+  const commissionBase = totalActive * 7;
+  const commissionTotal = commissionNew + commissionBase;
+
+  return {
+    countryName,
+    totalActive,
+    totalNewPaidThisMonth,
+    commissionNew,
+    commissionBase,
+    commissionTotal,
+  };
+});
+
 if (isSubscriptionBlocked) {
   return (
     <div
@@ -2020,6 +2088,72 @@ if (currentRole === "admin" && !isAdminSupportView) {
 </div>
 </div>
 
+<div
+  style={{
+    display: "grid",
+    gridTemplateColumns: isMobile
+      ? "1fr"
+      : "repeat(auto-fit, minmax(240px, 1fr))",
+    gap: 16,
+    marginBottom: 24,
+  }}
+>
+  {countryBusinessStats.map((stat) => (
+    <div
+      key={stat.countryName}
+      style={{
+        background: "rgba(255,255,255,0.84)",
+        backdropFilter: "blur(12px)",
+        border: "1px solid rgba(255,255,255,0.72)",
+        borderRadius: 22,
+        padding: 18,
+        boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
+      }}
+    >
+      <div
+        style={{
+          fontSize: 18,
+          fontWeight: 800,
+          marginBottom: 12,
+          color: "#0f172a",
+        }}
+      >
+        {countryFlags[stat.countryName] || "🌐"} {stat.countryName}
+
+<div
+  style={{
+    marginTop: 6,
+    fontSize: 12,
+    color: "#64748b",
+    fontWeight: 500,
+  }}
+>
+  Comisiones calculadas para {stat.countryName} en el mes {selectedMonthName} de {selectedYear}
+</div>
+      </div>
+
+      <div style={{ display: "grid", gap: 6, fontSize: 14, color: "#334155" }}>
+        <div>Activas: {stat.totalActive}</div>
+        <div>Nuevas este mes: {stat.totalNewPaidThisMonth}</div>
+        <div>Comisión nuevas: {stat.commissionNew}€</div>
+        <div>Comisión base: {stat.commissionBase}€</div>
+      </div>
+
+      <div
+        style={{
+          marginTop: 12,
+          paddingTop: 12,
+          borderTop: "1px solid #e2e8f0",
+          fontSize: 16,
+          fontWeight: 800,
+          color: "#0f172a",
+        }}
+      >
+        Total comisión: {stat.commissionTotal}€
+      </div>
+    </div>
+  ))}
+</div>
 
         <div
           style={{
@@ -2123,7 +2257,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
   style={{
     marginBottom: 18,
     display: "grid",
-    gridTemplateColumns: isMobile ? "1fr" : "1fr 220px",
+    gridTemplateColumns: isMobile ? "1fr" : "1fr 220px 180px",
     gap: 10,
   }}
 >
@@ -2156,6 +2290,18 @@ if (currentRole === "admin" && !isAdminSupportView) {
     <option value="Colombia">Colombia</option>
     <option value="México">México</option>
   </select>
+
+  <input
+    type="month"
+    value={adminSelectedMonth}
+    onChange={(e) => setAdminSelectedMonth(e.target.value)}
+    style={{
+      ...inputStyle,
+      width: "100%",
+      padding: "12px 14px",
+      background: "rgba(255,255,255,0.95)",
+    }}
+  />
 </div>
 
 <div
@@ -2209,7 +2355,19 @@ if (currentRole === "admin" && !isAdminSupportView) {
   <div style={panelStyle}>No hay funerarias registradas.</div>
 ) : (
   <div style={{ display: "grid", gap: 24 }}>
-    {Object.entries(groupedAdminFuneralHomes).map(([countryName, homes]) => (
+    
+{Object.entries(groupedAdminFuneralHomes)
+  .sort(([a], [b]) => {
+    const indexA = countryOrder.indexOf(a);
+    const indexB = countryOrder.indexOf(b);
+
+    if (indexA === -1) return 1;
+    if (indexB === -1) return -1;
+
+    return indexA - indexB;
+  })
+  .map(([countryName, homes]) => (
+
       <div key={countryName}>
         <div
           style={{
@@ -2219,7 +2377,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
             color: "#0f172a",
           }}
         >
-          {countryName}
+          {countryFlags[countryName] || "🌐"} {countryName}
         </div>
 
         <div

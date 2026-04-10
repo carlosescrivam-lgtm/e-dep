@@ -128,6 +128,7 @@ export const handler: Handler = async (event) => {
             subscription_plan: finalPlan,
             subscription_start: subscriptionStart,
             subscription_until: subscriptionUntil,
+            subscription_started_at: new Date().toISOString(),
             stripe_customer_id: stripeCustomerId,
           })
           .eq("id", funeralHomeId);
