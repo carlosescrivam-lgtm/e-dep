@@ -29,7 +29,7 @@ export default function App() {
   return (
   <Routes>
     <Route path="/p/:slug" element={<PublicPage />} />
-
+<Route path="/:slug" element={<PublicPage />} />
     <Route path="/particular" element={<ParticularCreatePage />} />
     <Route path="/particular/success" element={<ParticularSuccessPage />} />
     <Route path="/admin-login" element={<AdminLoginPage />} />

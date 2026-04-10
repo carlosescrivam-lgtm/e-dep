@@ -1404,7 +1404,7 @@ async function reopenPage(pageId: string, pageName: string) {
 }
 
   function getPublicUrl(item: PageCard) {
-    return `${siteBase}/p/${item.slug}?token=${item.access_token}`;
+    return `${siteBase}/${item.slug}?token=${item.access_token}`;
   }
 
   async function copyLink(item: PageCard) {
@@ -2098,9 +2098,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
     marginBottom: 24,
   }}
 >
-  {countryBusinessStats
-  .filter((stat) => stat.totalActive > 0)
-  .map((stat) => (
+  {countryBusinessStats.map((stat) => (
     <div
       key={stat.countryName}
       style={{
