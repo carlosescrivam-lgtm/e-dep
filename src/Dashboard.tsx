@@ -1694,8 +1694,8 @@ const endOfSelectedMonth = new Date(selectedYear, selectedMonth, 1);
 
 const countryBusinessStats = countryOrder.map((countryName) => {
   const homesInCountry = adminFuneralHomes.filter(
-    home.country === countryName
-  );
+  (home) => home.country === countryName
+);
 
   const activeHomes = homesInCountry.filter(
     (home) => (home.subscription_status || "").toLowerCase() === "active"
