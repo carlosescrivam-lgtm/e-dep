@@ -1660,7 +1660,7 @@ const groupedAdminFuneralHomes = filteredAdminFuneralHomes.reduce(
   {}
 );
 
-const countryOrder = ["España", "Argentina", "Chile", "Colombia", "México", "Sin país"];
+const countryOrder = ["España", "Argentina", "Chile", "Colombia", "México"];
 
 const countryFlags: Record<string, string> = {
   España: "🇪🇸",
@@ -1694,7 +1694,7 @@ const endOfSelectedMonth = new Date(selectedYear, selectedMonth, 1);
 
 const countryBusinessStats = countryOrder.map((countryName) => {
   const homesInCountry = adminFuneralHomes.filter(
-    (home) => (home.country || "Sin país") === countryName
+    home.country === countryName
   );
 
   const activeHomes = homesInCountry.filter(
@@ -2098,17 +2098,28 @@ if (currentRole === "admin" && !isAdminSupportView) {
     marginBottom: 24,
   }}
 >
-  {countryBusinessStats.map((stat) => (
+  {countryBusinessStats
+  .filter((stat) => stat.totalActive > 0)
+  .map((stat) => (
     <div
       key={stat.countryName}
       style={{
-        background: "rgba(255,255,255,0.84)",
-        backdropFilter: "blur(12px)",
-        border: "1px solid rgba(255,255,255,0.72)",
-        borderRadius: 22,
-        padding: 18,
-        boxShadow: "0 14px 30px rgba(15,23,42,0.06)",
-      }}
+  background:
+    stat.commissionTotal > 0
+      ? "linear-gradient(135deg, rgba(255,255,255,0.96) 0%, rgba(236,253,245,0.96) 100%)"
+      : "rgba(255,255,255,0.84)",
+  backdropFilter: "blur(12px)",
+  border:
+    stat.commissionTotal > 0
+      ? "1px solid rgba(16,185,129,0.30)"
+      : "1px solid rgba(255,255,255,0.72)",
+  borderRadius: 22,
+  padding: 18,
+  boxShadow:
+    stat.commissionTotal > 0
+      ? "0 18px 36px rgba(16,185,129,0.10)"
+      : "0 14px 30px rgba(15,23,42,0.06)",
+}}
     >
       <div
         style={{
@@ -2130,6 +2141,25 @@ if (currentRole === "admin" && !isAdminSupportView) {
 >
   Comisiones calculadas para {stat.countryName} en el mes {selectedMonthName} de {selectedYear}
 </div>
+
+{stat.commissionTotal > 0 && (
+  <div
+    style={{
+      display: "inline-flex",
+      alignItems: "center",
+      gap: 6,
+      marginTop: 10,
+      padding: "6px 10px",
+      borderRadius: 999,
+      background: "rgba(16,185,129,0.12)",
+      color: "#047857",
+      fontSize: 12,
+      fontWeight: 800,
+    }}
+  >
+    💶 Generando comisión
+  </div>
+)}
       </div>
 
       <div style={{ display: "grid", gap: 6, fontSize: 14, color: "#334155" }}>
