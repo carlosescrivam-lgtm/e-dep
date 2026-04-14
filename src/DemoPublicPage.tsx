@@ -123,69 +123,94 @@ export default function DemoPublicPage() {
       </div>
 
       {/* TARJETA DIFUNTO */}
-      <div
+     <div
+  style={{
+    maxWidth: 620,
+    width: "100%",
+    margin: "0 auto 18px auto",
+    padding: 16,
+    background: "linear-gradient(180deg, rgba(17,24,39,0.06), white)",
+    borderRadius: 14,
+    border: "1px solid rgba(0,0,0,0.06)",
+    boxShadow: "0 12px 35px rgba(0,0,0,0.12)",
+    textAlign: "center",
+    boxSizing: "border-box",
+  }}
+>
+  <div
+    style={{
+      height: 6,
+      borderRadius: 999,
+      background: "#111827",
+      marginBottom: 12,
+      opacity: 0.85,
+    }}
+  />
+
+  {demoPage.photoUrl && demoPage.theme !== "minimal" && (
+    <div style={{ marginBottom: 12 }}>
+      <img
+        src={demoPage.photoUrl}
+        alt={demoPage.fullName}
         style={{
-          maxWidth: 620,
-          margin: "0 auto 18px auto",
-          padding: 16,
-          background: "linear-gradient(180deg, rgba(17,24,39,0.06), white)",
-          borderRadius: 14,
-          border: "1px solid rgba(0,0,0,0.06)",
-          boxShadow: "0 12px 35px rgba(0,0,0,0.12)",
-          textAlign: "center",
+          width: demoPage.theme === "photo" ? "100%" : 160,
+          height: demoPage.theme === "photo" ? "auto" : 160,
+          objectFit: "cover",
+          borderRadius: demoPage.theme === "photo" ? 12 : "50%",
+          border: demoPage.theme === "photo" ? "none" : "4px solid white",
+          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+          display: "block",
+          margin: "0 auto",
         }}
-      >
-        <div
-          style={{
-            height: 6,
-            borderRadius: 999,
-            background: "#111827",
-            marginBottom: 12,
-            opacity: 0.85,
-          }}
-        />
+      />
+    </div>
+  )}
 
-        <div
-          style={{
-            fontSize: 26,
-            fontWeight: 900,
-            marginBottom: 6,
-            color: "#111827",
-          }}
-        >
-          {demoPage.fullName}
-        </div>
+  <div
+    style={{
+      fontSize: 26,
+      fontWeight: 900,
+      letterSpacing: -0.3,
+      marginBottom: 6,
+      color: "#111827",
+    }}
+  >
+    {demoPage.fullName}
+  </div>
 
-        {demoPage.message && (
-          <div
-            style={{
-              marginTop: 8,
-              fontSize: 14,
-              color: "#555",
-              lineHeight: 1.5,
-            }}
-          >
-            {demoPage.message}
-          </div>
-        )}
+  {demoPage.message && (
+    <div
+      style={{
+        marginTop: 8,
+        fontSize: 14,
+        color: "#555",
+        lineHeight: 1.5,
+      }}
+    >
+      {demoPage.message}
+    </div>
+  )}
 
-        <div style={{ marginTop: 14 }}>
-          <button
-            onClick={() => document.getElementById("demo-form")?.scrollIntoView({ behavior: "smooth" })}
-            style={{
-              padding: "10px 16px",
-              borderRadius: 12,
-              border: "none",
-              background: "#111827",
-              color: "white",
-              fontWeight: 800,
-              cursor: "pointer",
-            }}
-          >
-            Deja un mensaje
-          </button>
-        </div>
-      </div>
+  <div style={{ marginTop: 14, display: "flex", justifyContent: "center" }}>
+    <button
+      onClick={() =>
+        document.getElementById("demo-form")?.scrollIntoView({ behavior: "smooth" })
+      }
+      style={{
+        padding: "10px 16px",
+        borderRadius: 12,
+        border: "none",
+        background: "#111827",
+        color: "white",
+        fontWeight: 800,
+        cursor: "pointer",
+        minWidth: 180,
+      }}
+    >
+      Deja un mensaje
+    </button>
+  </div>
+</div>
 
       {/* FORMULARIO */}
       <div
@@ -298,6 +323,57 @@ export default function DemoPublicPage() {
           Volver al dashboard demo
         </button>
       </div>
+      <div
+  style={{
+    display: "flex",
+    gap: 10,
+    flexWrap: "wrap",
+    marginBottom: 16,
+    justifyContent: "center",
+  }}
+>
+  <button
+    type="button"
+    onClick={async () => {
+      await navigator.clipboard.writeText(window.location.href);
+      alert("Enlace demo copiado.");
+    }}
+    style={{
+      border: "1px solid #dbe3ee",
+      borderRadius: 12,
+      padding: "10px 14px",
+      background: "white",
+      color: "#0f172a",
+      fontWeight: 700,
+      cursor: "pointer",
+    }}
+  >
+    Copiar enlace
+  </button>
+
+  <button
+    type="button"
+    onClick={() =>
+      window.open(
+        `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
+          window.location.href
+        )}`,
+        "_blank"
+      )
+    }
+    style={{
+      border: "1px solid #dbe3ee",
+      borderRadius: 12,
+      padding: "10px 14px",
+      background: "white",
+      color: "#0f172a",
+      fontWeight: 700,
+      cursor: "pointer",
+    }}
+  >
+    QR demo
+  </button>
+</div>
     </div>
   </div>
 );

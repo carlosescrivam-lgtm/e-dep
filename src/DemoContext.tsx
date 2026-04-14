@@ -11,6 +11,12 @@ type DemoPage = {
   slug: string;
   fullName: string;
   message: string;
+  status: "open" | "closed";
+  theme: "classic" | "photo" | "minimal";
+  createdAt: string;
+  closesAt: string;
+  isSearchable: boolean;
+  photoUrl: string | null;
 };
 
 type DemoContextValue = {
