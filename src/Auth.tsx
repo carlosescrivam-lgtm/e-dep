@@ -241,26 +241,54 @@ if (entryView === "chooser") {
         justifyContent: "center",
       }}
     >
-    <button
-  type="button"
-  onClick={() => {
-    window.location.href = "/admin-login";
-  }}
+   
+   <div
   style={{
     position: "absolute",
     top: 16,
     right: 16,
-    background: "none",
-    border: "none",
-    padding: 0,
-    color: "#334155",
-    cursor: "pointer",
-    fontSize: 13,
-    fontWeight: 700,
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "flex-end",
+    gap: 6,
   }}
 >
-  Acceso admin
-</button>
+  <button
+    type="button"
+    onClick={() => {
+      window.location.href = "/admin-login";
+    }}
+    style={{
+      background: "none",
+      border: "none",
+      padding: 0,
+      color: "#334155",
+      cursor: "pointer",
+      fontSize: 13,
+      fontWeight: 700,
+    }}
+  >
+    Acceso admin
+  </button>
+
+  <button
+    type="button"
+    onClick={() => {
+      window.location.href = "/demo-login";
+    }}
+    style={{
+      background: "none",
+      border: "none",
+      padding: 0,
+      color: "#334155",
+      cursor: "pointer",
+      fontSize: 13,
+      fontWeight: 700,
+    }}
+  >
+    Acceso demo
+  </button>
+</div>
 
       <div
   style={{
