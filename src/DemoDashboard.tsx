@@ -148,38 +148,52 @@ const [, setPhotoFile] = useState<File | null>(null);
             Crear página demo
           </div>
 
-          <div style={{ display: "grid", gap: 12 }}>
-            <input
-              value={fullNameInput}
-              onChange={(e) => setFullNameInput(e.target.value)}
-              placeholder="Nombre del difunto"
-              style={{
-                padding: "14px 16px",
-                borderRadius: 14,
-                border: "1px solid #dbe3ee",
-                fontSize: 15,
-              }}
-            />
+          <div
+  style={{
+    display: "grid",
+    gap: 12,
+    width: "100%",
+    minWidth: 0,
+  }}
+>
+           <input
+  value={fullNameInput}
+  onChange={(e) => setFullNameInput(e.target.value)}
+  placeholder="Nombre del difunto"
+  style={{
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "14px 16px",
+    borderRadius: 14,
+    border: "1px solid #dbe3ee",
+    fontSize: 15,
+  }}
+/>
 
-            <textarea
-              value={messageInput}
-              onChange={(e) => setMessageInput(e.target.value)}
-              placeholder="Mensaje inicial (opcional)"
-              style={{
-                padding: "14px 16px",
-                borderRadius: 14,
-                border: "1px solid #dbe3ee",
-                fontSize: 15,
-                minHeight: 80,
-              }}
-            />
+           <textarea
+  value={messageInput}
+  onChange={(e) => setMessageInput(e.target.value)}
+  placeholder="Mensaje inicial (opcional)"
+  style={{
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "14px 16px",
+    borderRadius: 14,
+    border: "1px solid #dbe3ee",
+    fontSize: 15,
+    minHeight: 80,
+    resize: "vertical",
+  }}
+/>
 
-            <select
+<select
   value={themeInput}
   onChange={(e) =>
     setThemeInput(e.target.value as "classic" | "photo" | "minimal")
   }
   style={{
+    width: "100%",
+    boxSizing: "border-box",
     padding: "14px 16px",
     borderRadius: 14,
     border: "1px solid #dbe3ee",
@@ -220,6 +234,8 @@ const [, setPhotoFile] = useState<File | null>(null);
     }
   }}
   style={{
+   width: "100%",
+    boxSizing: "border-box",
     padding: "14px 16px",
     borderRadius: 14,
     border: "1px solid #dbe3ee",
@@ -229,18 +245,27 @@ const [, setPhotoFile] = useState<File | null>(null);
 />
 
 {photoPreview ? (
-  <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-    <img
-      src={photoPreview}
-      alt="Vista previa"
-      style={{
-        width: 88,
-        height: 88,
-        objectFit: "cover",
-        borderRadius: 14,
-        border: "1px solid rgba(0,0,0,0.08)",
-      }}
-    />
+  <div
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 12,
+    flexWrap: "wrap",
+    minWidth: 0,
+  }}
+>
+   <img
+  src={photoPreview}
+  alt="Vista previa"
+  style={{
+    width: 88,
+    height: 88,
+    objectFit: "cover",
+    borderRadius: 14,
+    border: "1px solid rgba(0,0,0,0.08)",
+    maxWidth: "100%",
+  }}
+/>
 
     <button
       type="button"

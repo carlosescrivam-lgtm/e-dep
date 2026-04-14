@@ -1414,10 +1414,16 @@ async function reopenPage(pageId: string, pageName: string) {
         throw new Error(data?.error || "No se pudo reabrir la página.");
       }
     } else {
-      const { error } = await supabase
-        .from("deceased_pages")
-        .update({ status: "open" })
-        .eq("id", pageId);
+     const newCloseDate = new Date();
+newCloseDate.setDate(newCloseDate.getDate() + 7);
+
+const { error } = await supabase
+  .from("deceased_pages")
+  .update({
+    status: "open",
+    closes_at: newCloseDate.toISOString(),
+  })
+  .eq("id", pageId);
 
       if (error) throw error;
     }

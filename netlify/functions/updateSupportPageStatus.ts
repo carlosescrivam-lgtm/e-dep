@@ -33,10 +33,18 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    const { error } = await supabase
-      .from("deceased_pages")
-      .update({ status })
-      .eq("id", pageId);
+   let updatePayload: Record<string, any> = { status };
+
+if (status === "open") {
+  const newCloseDate = new Date();
+  newCloseDate.setDate(newCloseDate.getDate() + 7);
+  updatePayload.closes_at = newCloseDate.toISOString();
+}
+
+const { error } = await supabase
+  .from("deceased_pages")
+  .update(updatePayload)
+  .eq("id", pageId);
 
     if (error) {
       return {
