@@ -39,7 +39,7 @@ export default function DemoDashboard() {
   const [messageInput, setMessageInput] = useState("");
   const [themeInput, setThemeInput] = useState<"classic" | "photo" | "minimal">("classic");
 const [photoPreview, setPhotoPreview] = useState("");
-const [photoFile, setPhotoFile] = useState<File | null>(null);
+const [, setPhotoFile] = useState<File | null>(null);
 
   return (
     <div
