@@ -30,6 +30,8 @@ export default function DemoPublicPage() {
             width: "100%",
             maxWidth: 560,
             background: "rgba(255,255,255,0.92)",
+            boxSizing: "border-box",
+overflow: "hidden",
             border: "1px solid rgba(255,255,255,0.75)",
             borderRadius: 28,
             boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
@@ -229,31 +231,50 @@ export default function DemoPublicPage() {
           Escribe tu mensaje
         </div>
 
-        <form onSubmit={handleSubmit} style={{ display: "grid", gap: 12 }}>
+        <form
+  onSubmit={handleSubmit}
+  style={{
+    display: "grid",
+    gap: 12,
+    width: "100%",
+    minWidth: 0,
+  }}
+>
           <input
-            value={authorName}
-            onChange={(e) => setAuthorName(e.target.value)}
-            placeholder="Tu nombre (opcional)"
-            style={{
-              width: "100%",
-              padding: 12,
-              borderRadius: 12,
-              border: "1px solid rgba(17,24,39,0.12)",
-            }}
-          />
+  value={authorName}
+  onChange={(e) => setAuthorName(e.target.value)}
+  placeholder="Tu nombre"
+  style={{
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "14px 16px",
+    borderRadius: 16,
+    border: "1px solid #dbe3ee",
+    background: "rgba(255,255,255,0.95)",
+    fontSize: 15,
+    outline: "none",
+    color: "#0f172a",
+  }}
+/>
 
-          <textarea
-            value={messageText}
-            onChange={(e) => setMessageText(e.target.value)}
-            placeholder="Tu mensaje..."
-            style={{
-              width: "100%",
-              padding: 12,
-              minHeight: 120,
-              borderRadius: 12,
-              border: "1px solid rgba(17,24,39,0.12)",
-            }}
-          />
+    <textarea
+  value={messageText}
+  onChange={(e) => setMessageText(e.target.value)}
+  placeholder="Escribe tu mensaje de condolencia"
+  rows={5}
+  style={{
+    width: "100%",
+    boxSizing: "border-box",
+    padding: "14px 16px",
+    borderRadius: 16,
+    border: "1px solid #dbe3ee",
+    background: "rgba(255,255,255,0.95)",
+    fontSize: 15,
+    outline: "none",
+    color: "#0f172a",
+    resize: "vertical",
+  }}
+/>
 
           <button
             type="submit"

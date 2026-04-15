@@ -242,15 +242,28 @@ if (entryView === "chooser") {
       }}
     >
    
-   <div
+
+
+      <div
   style={{
-    position: "absolute",
-    top: 16,
-    right: 16,
+    position: "relative",
+    width: "100%",
+    maxWidth: 460,
+          background: "rgba(255,255,255,0.92)",
+          border: "1px solid rgba(255,255,255,0.75)",
+          borderRadius: 28,
+          boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
+          padding: 28,
+        }}
+      >
+
+<div
+  style={{
     display: "flex",
-    flexDirection: "column",
-    alignItems: "flex-end",
-    gap: 6,
+    justifyContent: "flex-end",
+    gap: 12,
+    flexWrap: "wrap",
+    marginBottom: 12,
   }}
 >
   <button
@@ -290,18 +303,6 @@ if (entryView === "chooser") {
   </button>
 </div>
 
-      <div
-  style={{
-    position: "relative",
-    width: "100%",
-    maxWidth: 460,
-          background: "rgba(255,255,255,0.92)",
-          border: "1px solid rgba(255,255,255,0.75)",
-          borderRadius: 28,
-          boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
-          padding: 28,
-        }}
-      >
         {showInstall && (
           <div
             style={{
