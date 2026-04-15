@@ -125,7 +125,7 @@ overflow: "hidden",
       </div>
 
       {/* TARJETA DIFUNTO */}
-     <div
+    <div
   style={{
     maxWidth: 620,
     width: "100%",
@@ -137,6 +137,7 @@ overflow: "hidden",
     boxShadow: "0 12px 35px rgba(0,0,0,0.12)",
     textAlign: "center",
     boxSizing: "border-box",
+    overflow: "hidden",
   }}
 >
   <div
@@ -217,17 +218,19 @@ overflow: "hidden",
 
       {/* FORMULARIO */}
       <div
-        id="demo-form"
-        style={{
-          maxWidth: 620,
-          margin: "16px auto",
-          padding: 16,
-          background: "white",
-          borderRadius: 14,
-          border: "1px solid rgba(0,0,0,0.06)",
-          boxShadow: "0 10px 28px rgba(0,0,0,0.10)",
-        }}
-      >
+  id="demo-form"
+  style={{
+    maxWidth: 620,
+    margin: "16px auto",
+    padding: 16,
+    background: "white",
+    borderRadius: 14,
+    border: "1px solid rgba(0,0,0,0.06)",
+    boxShadow: "0 10px 28px rgba(0,0,0,0.10)",
+    boxSizing: "border-box",
+    overflow: "hidden",
+  }}
+>
         <div style={{ fontSize: 15, fontWeight: 800, marginBottom: 10 }}>
           Escribe tu mensaje
         </div>

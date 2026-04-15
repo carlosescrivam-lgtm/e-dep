@@ -87,37 +87,7 @@ export default function Footer() {
             </div>
           </div>
 
-          <div>
-            <div
-              style={{
-                fontSize: 14,
-                fontWeight: 800,
-                marginBottom: 10,
-                color: "#fff",
-              }}
-            >
-              Titular
-            </div>
-
-            <div
-              style={{
-                fontSize: 14,
-                lineHeight: 1.8,
-                color: "rgba(255,255,255,0.72)",
-              }}
-            >
-              Carlos Escrivá Masip
-              <br />
-              NIF: 20820547G
-              <br />
-              C/ Cronista Carreres 5
-              <br />
-              46003 - Valencia - España
-              <br />
-              <a href="mailto:Carlosescriva@e-dep.org" style={linkStyle}>
-                Carlosescriva@e-dep.org
-              </a>
-            </div>
+          
           </div>
         </div>
 
@@ -135,9 +105,9 @@ export default function Footer() {
           }}
         >
           <span>© {new Date().getFullYear()} E-Dep. Todos los derechos reservados.</span>
-          <span>Hecho en Valencia</span>
+          <span>Hecho en España</span>
         </div>
-      </div>
+      
     </footer>
   );
 }

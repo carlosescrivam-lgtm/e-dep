@@ -241,7 +241,7 @@ return (
   style={{
     minHeight: "100vh",
     padding: 18,
-    background: "#f3f4f6",
+    background: "linear-gradient(180deg, #f8fafc 0%, #eef2f7 55%, #e8edf5 100%)",
     fontFamily: "system-ui",
     position: "relative",
     overflow: "visible",
@@ -309,26 +309,27 @@ return (
       {/* Tarjeta del difunto (más estrecha) */}
 
 <div
-  style={{
-    maxWidth: 620,
-    width: "100%",
-    margin: "0 auto 18px auto",
-    padding: window.innerWidth < 640 ? 14 : 16,
-    background: "linear-gradient(180deg, rgba(17,24,39,0.06), white)",
-    borderRadius: 14,
-    border: "1px solid rgba(0,0,0,0.06)",
-    boxShadow: "0 12px 35px rgba(0,0,0,0.12)",
-    textAlign: "center",
-    boxSizing: "border-box",
-  }}
+style={{
+  maxWidth: 620,
+  width: "100%",
+  margin: "0 auto 20px auto",
+  padding: window.innerWidth < 640 ? 16 : 20,
+  background: "linear-gradient(180deg, rgba(17,24,39,0.05), rgba(255,255,255,0.98))",
+  borderRadius: 20,
+  border: "1px solid rgba(255,255,255,0.72)",
+  boxShadow: "0 20px 50px rgba(15,23,42,0.10)",
+  textAlign: "center",
+  boxSizing: "border-box",
+  backdropFilter: "blur(10px)",
+}}
 >
 <div
   style={{
-    height: 6,
-    borderRadius: 999,
-    background: "#111827",
-    marginBottom: 12,
-    opacity: 0.85,
+   height: 6,
+borderRadius: 999,
+background: "linear-gradient(90deg, #0f172a 0%, #334155 100%)",
+marginBottom: 14,
+opacity: 0.95,
   }}
   />
 
@@ -354,11 +355,12 @@ return (
 
   <div
     style={{
-      fontSize: window.innerWidth < 640 ? 22 : 26,
-      fontWeight: 900,
-      letterSpacing: -0.3,
-      marginBottom: 6,
-      color: "#111827",
+    fontSize: window.innerWidth < 640 ? 24 : 30,
+fontWeight: 900,
+letterSpacing: "-0.03em",
+marginBottom: 8,
+color: "#0f172a",
+lineHeight: 1.05,
     }}
   >
     {page.full_name}
@@ -376,15 +378,16 @@ return (
         type="button"
         onClick={() => setShowForm(true)}
         style={{
-          padding: "10px 16px",
-          borderRadius: 12,
-          border: "none",
-          background: "#111827",
-          color: "white",
-          fontWeight: 800,
-          cursor: "pointer",
-          minWidth: 180,
-        }}
+  padding: "11px 18px",
+  borderRadius: 14,
+  border: "none",
+  background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+  color: "white",
+  fontWeight: 800,
+  cursor: "pointer",
+  minWidth: 190,
+  boxShadow: "0 14px 30px rgba(15,23,42,0.18)",
+}}
       >
         Deja un mensaje
       </button>
@@ -393,14 +396,15 @@ return (
         type="button"
         onClick={() => setShowForm(false)}
         style={{
-          padding: "10px 16px",
-          borderRadius: 12,
-          border: "1px solid rgba(17,24,39,0.14)",
-          background: "white",
-          fontWeight: 800,
-          cursor: "pointer",
-          minWidth: 180,
-        }}
+  padding: "11px 18px",
+  borderRadius: 14,
+  border: "1px solid rgba(15,23,42,0.12)",
+  background: "rgba(255,255,255,0.94)",
+  color: "#0f172a",
+  fontWeight: 800,
+  cursor: "pointer",
+  minWidth: 190,
+}}
       >
         Cerrar
       </button>
@@ -620,7 +624,16 @@ onChange={async (e) => {
 )}
       <div style={{ maxWidth: 980, margin: "0 auto", position: "relative", zIndex: 1 }}>
 
-        <h3 style={{ margin: "0 0 10px 0", color: "var(--muted)", fontSize: 12, fontWeight: 800 }}>
+        <h3
+  style={{
+    margin: "4px 0 12px 0",
+    color: "#64748b",
+    fontSize: 12,
+    fontWeight: 800,
+    letterSpacing: "0.06em",
+    textTransform: "uppercase",
+  }}
+>
   Mensajes de condolencia
 </h3>
 
@@ -700,7 +713,17 @@ onChange={async (e) => {
   <div style={{ fontSize: 12, color: "var(--muted)" }}>
     {new Date(m.created_at).toLocaleString()}
   </div>
-  <p style={{ marginTop: 8, marginBottom: 0, lineHeight: 1.5 }}>{m.message}</p>
+  <p
+  style={{
+    marginTop: 10,
+    marginBottom: 0,
+    lineHeight: 1.7,
+    color: "#334155",
+    fontSize: 15,
+  }}
+>
+  {m.message}
+</p>
 
   {m.photo_url && (
   <img
