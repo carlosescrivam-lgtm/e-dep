@@ -11,7 +11,7 @@ import DemoLoginPage from "./DemoLoginPage";
 import DemoDashboard from "./DemoDashboard";
 import { DemoProvider } from "./DemoContext";
 import DemoPublicPage from "./DemoPublicPage";
-import Footer from "./components/Footer";
+
 import {
   AvisoLegalPage,
   PrivacidadPage,
