@@ -11,7 +11,14 @@ import DemoLoginPage from "./DemoLoginPage";
 import DemoDashboard from "./DemoDashboard";
 import { DemoProvider } from "./DemoContext";
 import DemoPublicPage from "./DemoPublicPage";
-
+import Footer from "./components/Footer";
+import {
+  AvisoLegalPage,
+  PrivacidadPage,
+  CookiesPage,
+  CondicionesPage,
+  ContactoPage,
+} from "./LegalTexts";
 export default function App() {
   const [loading, setLoading] = useState(true);
   const [loggedIn, setLoggedIn] = useState(false);
@@ -42,7 +49,11 @@ export default function App() {
         <Route path="/demo-login" element={<DemoLoginPage />} />
         <Route path="/demo-dashboard" element={<DemoDashboard />} />
         <Route path="/demo/:slug" element={<DemoPublicPage />} />
-
+        <Route path="/aviso-legal" element={<AvisoLegalPage />} />
+<Route path="/privacidad" element={<PrivacidadPage />} />
+<Route path="/cookies" element={<CookiesPage />} />
+<Route path="/condiciones" element={<CondicionesPage />} />
+<Route path="/contacto" element={<ContactoPage />} />
         <Route path="/*" element={loggedIn ? <Dashboard /> : <Auth />} />
       </Routes>
     </DemoProvider>

@@ -152,19 +152,20 @@ overflow: "hidden",
   {demoPage.photoUrl && demoPage.theme !== "minimal" && (
     <div style={{ marginBottom: 12 }}>
       <img
-        src={demoPage.photoUrl}
-        alt={demoPage.fullName}
-        style={{
-          width: demoPage.theme === "photo" ? "100%" : 160,
-          height: demoPage.theme === "photo" ? "auto" : 160,
-          objectFit: "cover",
-          borderRadius: demoPage.theme === "photo" ? 12 : "50%",
-          border: demoPage.theme === "photo" ? "none" : "4px solid white",
-          boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
-          display: "block",
-          margin: "0 auto",
-        }}
-      />
+  src={demoPage.photoUrl}
+  alt={demoPage.fullName}
+  style={{
+    width: demoPage.theme === "photo" ? "100%" : (window.innerWidth < 640 ? 120 : 160),
+    height: demoPage.theme === "photo" ? "auto" : (window.innerWidth < 640 ? 120 : 160),
+    objectFit: "cover",
+    borderRadius: demoPage.theme === "photo" ? 12 : "50%",
+    border: demoPage.theme === "photo" ? "none" : "4px solid white",
+    boxShadow: "0 8px 20px rgba(0,0,0,0.15)",
+    display: "block",
+    margin: "0 auto",
+    maxWidth: "100%",
+  }}
+/>
     </div>
   )}
 

@@ -1,6 +1,6 @@
 import { useState, useEffect } from "react";
 import { supabase } from "./lib/supabaseClient";
-
+import Footer from "./components/Footer";
 export default function Auth() {
   const [mode, setMode] = useState<"login" | "register">("login");
   const [funeralHomeName, setFuneralHomeName] = useState("");
@@ -227,7 +227,8 @@ async function handleInstallClick() {
 }
 
 if (entryView === "chooser") {
-  return (
+ return (
+  <>
     <div
       style={{
         minHeight: "100vh",
@@ -511,10 +512,13 @@ if (entryView === "chooser") {
         </div>
       </div>
     </div>
+    <Footer />
+  </>
   );
 }
 
-  return (
+ return (
+  <>
     <div
       style={{
         minHeight: "100vh",
@@ -813,10 +817,10 @@ style={{
             {msg}
           </div>
         ) : null}
-
-
-      </div>
-    </div>
+     </div>
+     </div>
+     <Footer />
+  </> 
   );
 }
 
