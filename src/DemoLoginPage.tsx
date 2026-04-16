@@ -33,6 +33,8 @@ export default function DemoLoginPage() {
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
       }}
     >
+
+  
       <div
         style={{
           width: "100%",
@@ -44,35 +46,53 @@ export default function DemoLoginPage() {
           padding: 32,
         }}
       >
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            borderRadius: 999,
-            background: "rgba(59,130,246,0.10)",
-            color: "#1d4ed8",
-            fontSize: 13,
-            fontWeight: 700,
-            marginBottom: 18,
-          }}
-        >
-          Modo demo
-        </div>
+      
+<div
+  style={{
+    position: "relative",
+    marginBottom: 20,
+  }}
+>
+  {/* Botón derecha */}
+  <button
+    type="button"
+    onClick={() => {
+      window.location.href = "/";
+    }}
+    style={{
+      position: "absolute",
+      top: 0,
+      right: 0,
+      background: "none",
+      border: "none",
+      padding: 0,
+      color: "#334155",
+      cursor: "pointer",
+      fontSize: 14,
+      fontWeight: 600,
+    }}
+  >
+    ← Inicio
+  </button>
 
-        <h1
-          style={{
-            margin: 0,
-            fontSize: 32,
-            lineHeight: 1.1,
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
-            color: "#0f172a",
-          }}
-        >
-          Acceso de demostración
-        </h1>
+  {/* Logo centrado */}
+  <div
+    style={{
+      display: "flex",
+      justifyContent: "center",
+    }}
+  >
+    <img
+      src="/logo-blue.png"
+      alt="E-Dep"
+      style={{
+        height: 150,
+        objectFit: "contain",
+      }}
+    />
+  </div>
+</div>
+       
 
         <p
           style={{

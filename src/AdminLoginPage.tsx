@@ -146,20 +146,37 @@ export default function AdminLoginPage() {
           ← Volver
         </button>
 
-        <div
-          style={{
-            display: "inline-flex",
-            padding: "8px 12px",
-            borderRadius: 999,
-            background: "#e2e8f0",
-            color: "#0f172a",
-            fontSize: 12,
-            fontWeight: 700,
-            marginBottom: 14,
-          }}
-        >
-          E-Dep · Acceso admin
-        </div>
+   <div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  }}
+>
+  <img
+    src="/logo-blue.png"
+    alt="E-Dep"
+    style={{
+      height: 150,
+      objectFit: "contain",
+    }}
+  />
+
+  <h1
+    style={{
+      marginTop: 10,
+      marginBottom: 0,
+      fontSize: 22,
+      fontWeight: 700,
+      color: "#334155",
+      textAlign: "center",
+    }}
+  >
+    Acceso administrador
+  </h1>
+</div>
 
         <h1
           style={{

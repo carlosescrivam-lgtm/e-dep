@@ -348,12 +348,7 @@ if (entryView === "chooser") {
   }}
 >
   <div
-    style={{
-      padding: "8px 16px",
-      borderRadius: 16,
-      background: "rgba(255,255,255,0.9)",
-      boxShadow: "0 10px 30px rgba(15,23,42,0.15)",
-    }}
+    
   >
     <img
       src="/logo-blue.png"
@@ -614,20 +609,23 @@ style={{
   ← Volver
 </button>
 
-        <div
-          style={{
-            display: "inline-flex",
-            padding: "8px 12px",
-            borderRadius: 999,
-            background: "#e2e8f0",
-            color: "#0f172a",
-            fontSize: 12,
-            fontWeight: 700,
-            marginBottom: 14,
-          }}
-        >
-          E-Dep · Acceso funerarias
-        </div>
+
+       <div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    marginBottom: 12,
+  }}
+>
+  <img
+    src="/logo-blue.png"
+    alt="E-Dep"
+    style={{
+      height: 150,
+      objectFit: "contain",
+    }}
+  />
+</div>
 
         <h1
           style={{
