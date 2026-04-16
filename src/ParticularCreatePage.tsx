@@ -76,48 +76,37 @@ const isMinimalTheme = theme === "minimal";
     padding: isMobile ? 16 : 24,
   }}
 >
-            <div
-              style={{
-                display: "inline-flex",
-                padding: "8px 12px",
-                borderRadius: 999,
-                background: "#e2e8f0",
-                color: "#0f172a",
-                fontSize: 12,
-                fontWeight: 700,
-                marginBottom: 14,
-              }}
-            >
-              E-Dep · Particulares
-            </div>
+           
+<div
+  style={{
+    display: "flex",
+    flexDirection: "column",
+    alignItems: "center",
+    justifyContent: "center",
+    marginBottom: 16,
+  }}
+>
+  <img
+    src="/logo-blue.png"
+    alt="E-Dep"
+    style={{
+      height: 150,
+      objectFit: "contain",
+    }}
+  />
 
-            <h1
-              style={{
-                margin: 0,
-                fontSize: isMobile ? 24 : 30,
-                lineHeight: 1.1,
-                fontWeight: 800,
-                letterSpacing: "-0.03em",
-                color: "#0f172a",
-              }}
-            >
-              Crea una página de recuerdo y condolencias
-            </h1>
-
-            <p
-              style={{
-                marginTop: 10,
-                marginBottom: 22,
-                color: "#475569",
-                lineHeight: 1.6,
-                fontSize: 15,
-              }}
-            >
-              Pensada para familias, amigos, compañeros de trabajo, equipos deportivos
-              o cualquier grupo cercano que quiera compartir mensajes de apoyo y conservar
-              un recuerdo bonito.
-            </p>
-
+  <h1
+    style={{
+      marginTop: 10,
+      fontSize: 22,
+      fontWeight: 700,
+      textAlign: "center",
+      color: "#0f172a",
+    }}
+  >
+    Crear página de condolencias
+  </h1>
+</div>
            
 <div
   style={{
@@ -162,6 +151,14 @@ const isMinimalTheme = theme === "minimal";
     setOpenFaq={setOpenFaq}
     question="¿Los mensajes se publican directamente?"
     answer="Todos los mensajes pasan primero por un filtro de IA que descarta los claramente inapropiados. Los no descartados se publican al instante. Algunos quedan como dudosos y nuestro equipo de E-Dep los revisa uno a uno y los acepta o descarta segun la conveniencia. Todos los mensajes con foto pasan a pendientes de revision siempre, para evitar publicidad etc en la página"
+  />
+
+  <FaqItem
+    id="faq5"
+    openFaq={openFaq}
+    setOpenFaq={setOpenFaq}
+    question="¿Dónde recibiré el PDF final con todos los mensajes?"
+    answer="El PDF que se crea automáticamente al concluir el período elegido de 3, 5 o 7 días, se envía al e-mail de contacto que dejaste al crear la página"
   />
 </div>
 
