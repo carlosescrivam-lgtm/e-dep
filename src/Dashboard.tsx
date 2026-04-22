@@ -1654,7 +1654,7 @@ const effectiveFuneralHomeId =
 
 const isSubscriptionBlocked =
   (currentRole === "funeral_home" || isAdminSupportView) &&
-  (currentAccessBlocked || (!isTrialActive && !isPaidActive));
+  currentAccessBlocked;
 const adminTrialCount = adminFuneralHomes.filter(
   (home) => (home.subscription_status || "").toLowerCase() === "trial"
 ).length;
@@ -1843,8 +1843,9 @@ if (isSubscriptionBlocked) {
           }}
         >
           Tu cuenta de funeraria existe, pero la suscripción no está activa en
-          este momento. Para volver a utilizar el panel y crear páginas de
-          condolencias, contacta con E-Dep.
+          este momento. Para volver a utilizar el panel ponte en contacto con E-dep (carlosescriva@e-dep.org).
+           Para crear nuevas páginas, debes activar un plan de suscripción.
+          
         </p>
 
         <div
@@ -2457,8 +2458,21 @@ if (currentRole === "admin" && !isAdminSupportView) {
         >
           {(homes as any[]).map((home) => {
             const homeStatus = (home.subscription_status || "").toLowerCase();
-            const isActive = homeStatus === "active";
-            const isTrial = homeStatus === "trial";
+
+const nowTs = Date.now();
+const trialUntilTs = home.trial_until
+  ? new Date(home.trial_until).getTime()
+  : 0;
+
+const subscriptionUntilTs = home.subscription_until
+  ? new Date(home.subscription_until).getTime()
+  : 0;
+
+const isTrial = homeStatus === "trial" && trialUntilTs > nowTs;
+
+const isActive =
+  homeStatus === "active" &&
+  (!home.subscription_until || subscriptionUntilTs > nowTs);
 
             const statusLabel = isActive
               ? "Activa"
