@@ -1663,7 +1663,6 @@ const effectiveFuneralHomeId =
 const shouldShowExpiredAccessGate =
   !loading &&
   currentRole === "funeral_home" &&
-  !currentAccessBlocked &&
   !isTrialActive &&
   !isPaidActive &&
   !allowExpiredAccess;
