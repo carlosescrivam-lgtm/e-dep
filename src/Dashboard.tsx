@@ -117,7 +117,7 @@ const [showStripePanel, setShowStripePanel] = useState(false);
 const [showSecurityPanel, setShowSecurityPanel] = useState(false);
 const [accountEmail, setAccountEmail] = useState("");
 const [newPassword, setNewPassword] = useState("");
-
+const [allowExpiredAccess, setAllowExpiredAccess] = useState(false);
 
   useEffect(() => {
   async function init() {
@@ -1573,7 +1573,11 @@ const isPaidActive =
 
 const normalizedPlan = (currentSubscriptionPlan || "").trim().toLowerCase();
 
-const currentPlanLimit = isTrialActive
+const hasCreationAccess = isTrialActive || isPaidActive;
+
+const currentPlanLimit = !hasCreationAccess
+  ? 0
+  : isTrialActive
   ? 3
   : normalizedPlan === "unlimited"
   ? null
@@ -1581,7 +1585,7 @@ const currentPlanLimit = isTrialActive
   ? 20
   : normalizedPlan === "basic"
   ? 10
-  : 10;
+  : 0;
 
     const isCurrentBasicPlan = normalizedPlan === "basic" && isPaidActive;
 const isCurrentProPlan = normalizedPlan === "pro" && isPaidActive;
@@ -1624,21 +1628,23 @@ const pagesRemainingThisMonth =
     ? null
     : Math.max(currentPlanLimit - pagesThisMonth, 0);
 
-const monthlyUsageText =
-  currentPlanLimit === null
-    ? `Páginas creadas en tu ciclo actual: ${pagesThisMonth} (ilimitado)`
-    : `Páginas creadas en tu ciclo actual: ${pagesThisMonth} / ${currentPlanLimit}`;
+const monthlyUsageText = !hasCreationAccess
+  ? "Para crear nuevas páginas, debes activar un plan de suscripción."
+  : currentPlanLimit === null
+  ? `Páginas creadas en tu ciclo actual: ${pagesThisMonth} (ilimitado)`
+  : `Páginas creadas en tu ciclo actual: ${pagesThisMonth} / ${currentPlanLimit}`;
 
-const planLimitWarningText =
-  currentPlanLimit === null
-    ? "Tu plan no tiene límite mensual"
-    : pagesRemainingThisMonth === 0
-    ? "Has alcanzado el límite mensual de tu plan"
-    : pagesRemainingThisMonth === 1
-    ? "⚠️ Te queda 1 página disponible este mes"
-    : pagesRemainingThisMonth !== null && pagesRemainingThisMonth <= 3
-    ? `⚠️ Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`
-    : `Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`;
+const planLimitWarningText = !hasCreationAccess
+  ? "Puedes seguir gestionando tus páginas ya creadas."
+  : currentPlanLimit === null
+  ? "Tu plan no tiene límite mensual"
+  : pagesRemainingThisMonth === 0
+  ? "Has alcanzado el límite mensual de tu plan"
+  : pagesRemainingThisMonth === 1
+  ? "⚠️ Te queda 1 página disponible este mes"
+  : pagesRemainingThisMonth !== null && pagesRemainingThisMonth <= 3
+  ? `⚠️ Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`
+  : `Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`;
 
 const canCreatePage =
   (isTrialActive &&
@@ -1655,6 +1661,14 @@ const effectiveFuneralHomeId =
 const isSubscriptionBlocked =
   (currentRole === "funeral_home" || isAdminSupportView) &&
   currentAccessBlocked;
+
+const shouldShowExpiredAccessGate =
+  currentRole === "funeral_home" &&
+  !currentAccessBlocked &&
+  !isTrialActive &&
+  !isPaidActive &&
+  !allowExpiredAccess;
+
 const adminTrialCount = adminFuneralHomes.filter(
   (home) => (home.subscription_status || "").toLowerCase() === "trial"
 ).length;
@@ -1762,7 +1776,7 @@ const countryBusinessStats = countryOrder.map((countryName) => {
   };
 });
 
-if (isSubscriptionBlocked) {
+if (shouldShowExpiredAccessGate) {
   return (
     <div
       style={{
@@ -1772,7 +1786,6 @@ if (isSubscriptionBlocked) {
         padding: 24,
         fontFamily:
           'Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif',
-        color: "#0f172a",
         display: "flex",
         alignItems: "center",
         justifyContent: "center",
@@ -1781,84 +1794,89 @@ if (isSubscriptionBlocked) {
       <div
         style={{
           width: "100%",
-          maxWidth: 620,
-          background: "rgba(255,255,255,0.92)",
+          maxWidth: 560,
+          background: "rgba(255,255,255,0.94)",
           border: "1px solid rgba(255,255,255,0.75)",
           borderRadius: 28,
           boxShadow: "0 24px 60px rgba(15,23,42,0.12)",
           padding: 32,
           textAlign: "center",
-          position: "relative",
-          overflow: "hidden",
         }}
       >
         <div
           style={{
-            position: "absolute",
-            right: -40,
-            top: -40,
-            width: 140,
-            height: 140,
-            borderRadius: "50%",
-            background: "rgba(239,68,68,0.08)",
-          }}
-        />
-
-        <div
-          style={{
-            display: "inline-flex",
-            alignItems: "center",
-            gap: 8,
-            padding: "8px 14px",
-            borderRadius: 999,
-            background: "rgba(239,68,68,0.10)",
-            color: "#b91c1c",
-            fontSize: 13,
-            fontWeight: 700,
-            marginBottom: 18,
+            fontSize: 28,
+            fontWeight: 800,
+            color: "#0f172a",
+            marginBottom: 12,
+            letterSpacing: "-0.02em",
           }}
         >
-          Suscripción inactiva
+          Tu plan ha finalizado
         </div>
 
-        <h1
+        <div
           style={{
-            margin: 0,
-            fontSize: 34,
-            lineHeight: 1.1,
-            fontWeight: 800,
-            letterSpacing: "-0.03em",
-          }}
-        >
-          Tu acceso está desactivado
-        </h1>
-
-        <p
-          style={{
-            marginTop: 14,
-            marginBottom: 0,
+            fontSize: 15,
             color: "#475569",
-            fontSize: 16,
-            lineHeight: 1.7,
+            lineHeight: 1.8,
+            marginBottom: 22,
           }}
         >
-          Tu cuenta de funeraria existe, pero la suscripción no está activa en
-          este momento. Para volver a utilizar el panel ponte en contacto con E-dep (carlosescriva@e-dep.org).
-           Para crear nuevas páginas, debes activar un plan de suscripción.
-          
-        </p>
+          Tu cuenta sigue existiendo y puedes acceder a tus páginas ya creadas.
+          <br />
+          <br />
+          Para crear nuevas páginas, debes activar un plan de suscripción.
+        </div>
 
         <div
           style={{
-            marginTop: 26,
             display: "flex",
             justifyContent: "center",
             gap: 12,
             flexWrap: "wrap",
           }}
         >
-          <button onClick={handleLogout} style={ghostButtonStyle}>
-            Salir
+          <button
+            type="button"
+            onClick={() => {
+              setAllowExpiredAccess(true);
+              setTimeout(() => {
+                document
+                  .getElementById("plans-section")
+                  ?.scrollIntoView({ behavior: "smooth" });
+              }, 100);
+            }}
+            style={{
+              padding: "12px 16px",
+              borderRadius: 14,
+              border: "none",
+              background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+              color: "white",
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: "pointer",
+              boxShadow: "0 14px 30px rgba(15,23,42,0.16)",
+            }}
+          >
+            Activar un plan
+          </button>
+
+          <button
+            type="button"
+            onClick={() => setAllowExpiredAccess(true)}
+            style={{
+              padding: "12px 16px",
+              borderRadius: 14,
+              border: "1px solid #dbe3ee",
+              background: "white",
+              color: "#0f172a",
+              fontWeight: 700,
+              fontSize: 14,
+              cursor: "pointer",
+            }}
+          >
+            Acceder a mis páginas
           </button>
         </div>
       </div>
