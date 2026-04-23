@@ -118,7 +118,7 @@ const [showSecurityPanel, setShowSecurityPanel] = useState(false);
 const [accountEmail, setAccountEmail] = useState("");
 const [newPassword, setNewPassword] = useState("");
 const [allowExpiredAccess, setAllowExpiredAccess] = useState(false);
-
+const [openPlanSectionAfterAccess, setOpenPlanSectionAfterAccess] = useState(false);
   useEffect(() => {
   async function init() {
     try {
@@ -236,6 +236,19 @@ useEffect(() => {
 
   return () => window.removeEventListener("resize", handleResize);
 }, []);
+
+useEffect(() => {
+  if (!allowExpiredAccess || !openPlanSectionAfterAccess) return;
+
+  const timeout = setTimeout(() => {
+    document
+      .getElementById("plans-section")
+      ?.scrollIntoView({ behavior: "smooth", block: "start" });
+  }, 250);
+
+  return () => clearTimeout(timeout);
+}, [allowExpiredAccess, openPlanSectionAfterAccess]);
+
 
 
 
@@ -1837,14 +1850,11 @@ if (shouldShowExpiredAccessGate) {
         >
           <button
             type="button"
-            onClick={() => {
-              setAllowExpiredAccess(true);
-              setTimeout(() => {
-                document
-                  .getElementById("plans-section")
-                  ?.scrollIntoView({ behavior: "smooth" });
-              }, 100);
-            }}
+onClick={() => {
+  setOpenPlanSectionAfterAccess(true);
+  setShowSubscriptionPanel(true);
+  setAllowExpiredAccess(true);
+}}
             style={{
               padding: "12px 16px",
               borderRadius: 14,
@@ -3731,7 +3741,7 @@ const isActive =
   )}
 </div>
 
-<div style={{ marginBottom: 18 }}>
+<div id="plans-section" style={{ marginBottom: 18 }}>
   <button
     type="button"
     onClick={() => setShowSubscriptionPanel((prev) => !prev)}
