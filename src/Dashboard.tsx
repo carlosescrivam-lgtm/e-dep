@@ -1658,9 +1658,7 @@ const canCreatePage =
 const effectiveFuneralHomeId =
   isAdminSupportView ? adminViewingFuneralHomeId : currentFuneralHomeId;
 
-const isSubscriptionBlocked =
-  (currentRole === "funeral_home" || isAdminSupportView) &&
-  currentAccessBlocked;
+
 
 const shouldShowExpiredAccessGate =
   currentRole === "funeral_home" &&
