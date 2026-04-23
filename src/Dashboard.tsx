@@ -3171,40 +3171,26 @@ const isActive =
 >
   {isMobile ? (
     <>
-      <div
-        style={{
-          display: "block",
-          textAlign: "center",
-          marginBottom: 14,
-        }}
-      >
-        <div
-          style={{
-            display: "inline-block",
-            padding: "10px 18px",
-            borderRadius: 14,
-            background: "rgba(255,255,255,0.18)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            fontSize: 15,
-            fontWeight: 800,
-            letterSpacing: "0.02em",
-            backdropFilter: "blur(6px)",
-          }}
-        >
-          E-Dep.org
-        </div>
-
-        <div
-          style={{
-            fontSize: 13,
-            marginTop: 6,
-            opacity: 0.85,
-            fontWeight: 500,
-          }}
-        >
-          Libro de condolencias digital
-        </div>
-      </div>
+     <div
+  style={{
+    display: "flex",
+    justifyContent: "center",
+    alignItems: "center",
+    marginBottom: 14,
+  }}
+>
+  <img
+    src="/logo-grey.png"
+    alt="E-Dep"
+    style={{
+      height: isMobile ? 42 : 48,
+      maxWidth: "80%",
+      objectFit: "contain",
+      display: "block",
+      filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.15))",
+    }}
+  />
+</div>
 
       <h1
         style={{
