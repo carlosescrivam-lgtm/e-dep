@@ -1647,6 +1647,12 @@ const monthlyUsageText = !hasCreationAccess
   ? `Páginas creadas en tu ciclo actual: ${pagesThisMonth} (ilimitado)`
   : `Páginas creadas en tu ciclo actual: ${pagesThisMonth} / ${currentPlanLimit}`;
 
+  const supportWhatsappUrl =
+  "https://wa.me/34619816386?text=Hola,%20soy%20usuario%20de%20E-Dep%20y%20necesito%20ayuda%20con%20mi%20panel.";
+
+const supportEmailUrl =
+  "mailto:contacto@e-dep.org?subject=Ayuda%20E-Dep&body=Hola,%20soy%20una%20funeraria%20usuaria%20de%20E-Dep%20y%20necesito%20ayuda%20con%20mi%20panel.";
+
 const planLimitWarningText = !hasCreationAccess
   ? "Puedes seguir gestionando tus páginas ya creadas."
   : currentPlanLimit === null
@@ -2979,7 +2985,72 @@ const isActive =
     )}
   </div>
 
-  {!isMobile && (
+ {!isMobile && (
+  <div
+    style={{
+      display: "flex",
+      alignItems: "center",
+      gap: 10,
+      flexWrap: "wrap",
+      justifyContent: "flex-end",
+    }}
+  >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "6px 10px",
+        borderRadius: 999,
+        background: "rgba(255,255,255,0.15)",
+        border: "1px solid rgba(255,255,255,0.25)",
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#fff",
+          letterSpacing: "0.02em",
+        }}
+      >
+        AYUDA?
+      </span>
+
+      <a
+        href={supportEmailUrl}
+        title="Escribir por email"
+        style={{
+          textDecoration: "none",
+          fontSize: 16,
+          lineHeight: 1,
+        }}
+      >
+        📧
+      </a>
+
+     <a
+  href={supportWhatsappUrl}
+  target="_blank"
+  rel="noreferrer"
+  title="Hablar por WhatsApp"
+  style={{
+    display: "flex",
+    alignItems: "center",
+  }}
+>
+  <img
+    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+    alt="WhatsApp"
+    style={{
+      width: 18,
+      height: 18,
+    }}
+  />
+</a>
+    </div>
+
     <button
       onClick={handleLogout}
       style={{
@@ -2996,8 +3067,11 @@ const isActive =
     >
       Salir
     </button>
-  )}
+  </div>
+)}
 </div>
+
+
 
 {isMobile && (
   <div
@@ -3005,10 +3079,69 @@ const isActive =
       position: "relative",
       zIndex: 4,
       display: "flex",
-      justifyContent: "flex-start",
+      justifyContent: "space-between",
+      alignItems: "center",
+      gap: 10,
       marginBottom: 14,
+      flexWrap: "wrap",
     }}
   >
+    <div
+      style={{
+        display: "flex",
+        alignItems: "center",
+        gap: 8,
+        padding: "6px 10px",
+        borderRadius: 999,
+        background: "rgba(255,255,255,0.15)",
+        border: "1px solid rgba(255,255,255,0.25)",
+        backdropFilter: "blur(4px)",
+      }}
+    >
+      <span
+        style={{
+          fontSize: 12,
+          fontWeight: 700,
+          color: "#fff",
+          letterSpacing: "0.02em",
+        }}
+      >
+        AYUDA?
+      </span>
+
+      <a
+        href={supportEmailUrl}
+        title="Escribir por email"
+        style={{
+          textDecoration: "none",
+          fontSize: 16,
+          lineHeight: 1,
+        }}
+      >
+        📧
+      </a>
+
+     <a
+  href={supportWhatsappUrl}
+  target="_blank"
+  rel="noreferrer"
+  title="Hablar por WhatsApp"
+  style={{
+    display: "flex",
+    alignItems: "center",
+  }}
+>
+  <img
+    src="https://upload.wikimedia.org/wikipedia/commons/6/6b/WhatsApp.svg"
+    alt="WhatsApp"
+    style={{
+      width: 18,
+      height: 18,
+    }}
+  />
+</a>
+    </div>
+
     <button
       onClick={handleLogout}
       style={{
