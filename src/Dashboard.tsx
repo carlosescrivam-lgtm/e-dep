@@ -3429,40 +3429,25 @@ const isActive =
   }}
 >
   
-        <div
-          style={{
-            display: "inline-block",
-            padding: "10px 18px",
-            borderRadius: 14,
-            background: "rgba(255,255,255,0.18)",
-            border: "1px solid rgba(255,255,255,0.25)",
-            fontSize: 16,
-            fontWeight: 800,
-            letterSpacing: "0.02em",
-            backdropFilter: "blur(6px)",
-          }}
-        >
-          E-Dep.org
-        </div>
-
-        <div
-          style={{
-            fontSize: 14,
-            marginTop: 6,
-            marginBottom: 18,
-            opacity: 0.85,
-            fontWeight: 500,
-          }}
-        >
-          Libro de condolencias digital
-        </div>
+<img
+  src="/logo-grey.png"
+  alt="E-Dep"
+  style={{
+    height: 120,
+    objectFit: "contain",
+    display: "block",
+    margin: "0 auto",
+    filter: "drop-shadow(0 6px 14px rgba(0,0,0,0.15))",
+  }}
+/>
+       
 
         <h1
           style={{
             margin: 0,
             fontSize: 40,
             lineHeight: 1.05,
-            fontWeight: 800,
+            fontWeight: 700,
             letterSpacing: "-0.03em",
           }}
         >
