@@ -17,7 +17,7 @@ export function AvisoLegalPage() {
         <strong>Domicilio:</strong> C/ Cronista Carreres 5 - 46003 - Valencia -
         España
         <br />
-        <strong>Email de contacto:</strong> Carlosescriva@e-dep.org
+        <strong>Email de contacto:</strong> contacto@e-dep.org
       </p>
 
       <p>
@@ -57,7 +57,7 @@ export function PrivacidadPage() {
         <br />
         NIF: 20820547G
         <br />
-        Email: Carlosescriva@e-dep.org
+        Email: contacto@e-dep.org
       </p>
 
       <p>
@@ -111,7 +111,7 @@ export function PrivacidadPage() {
       </p>
       <p>
         Puedes ejercer tus derechos de acceso, rectificación, supresión,
-        oposición y limitación enviando un email a Carlosescriva@e-dep.org.
+        oposición y limitación enviando un email a contacto@e-dep.org.
       </p>
 
       <p>
@@ -219,7 +219,7 @@ export function ContactoPage() {
       </p>
 
       <p>
-        <strong>Email:</strong> Carlosescriva@e-dep.org
+        <strong>Email:</strong> contacto@e-dep.org
       </p>
 
       <p>Este canal está disponible para:</p>
