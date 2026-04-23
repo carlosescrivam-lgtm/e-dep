@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [currentFuneralHomeId, setCurrentFuneralHomeId] = useState<string | null>(null);
   const [currentFuneralHomeName, setCurrentFuneralHomeName] = useState("");
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState("");
-  const [currentAccessBlocked, setCurrentAccessBlocked] = useState(false);
+  
   const [search, setSearch] = useState("");
   const [adminSearch, setAdminSearch] = useState("");
   const [adminCountryFilter, setAdminCountryFilter] = useState("");
@@ -323,7 +323,7 @@ setCurrentSubscriptionPlan(data.subscription_plan || "");
 setCurrentTrialUntil(data.trial_until || null);
 setCurrentSubscriptionStart(data.subscription_start || null);
 setCurrentSubscriptionUntil(data.subscription_until || null);
-setCurrentAccessBlocked(!!data.access_blocked);
+
 }
 
 async function updatePassword() {
@@ -507,7 +507,7 @@ setCurrentSubscriptionStatus(home.subscription_status || "inactive");
 setCurrentSubscriptionPlan(home.subscription_plan || "");
 setCurrentTrialUntil(home.trial_until || null);
 setCurrentSubscriptionUntil(home.subscription_until || null);
-setCurrentAccessBlocked(!!home.access_blocked);
+
 setFuneralHomeNameEdit(home.name || "");
 setAddress(home.address || "");
 setCity(home.city || "");
