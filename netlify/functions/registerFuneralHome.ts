@@ -19,6 +19,13 @@ export const handler: Handler = async (event) => {
 
     const name = body?.name?.trim();
 const email = body?.email?.trim().toLowerCase();
+if (!email) {
+  return {
+    statusCode: 400,
+    body: JSON.stringify({ error: "Falta el email" }),
+  };
+}
+
 const normalizedEmail = email.trim().toLowerCase();
 
 const { data: existingEmail } = await supabase
@@ -57,7 +64,7 @@ const country = body?.country?.trim() || null;
   await supabase.auth.admin.createUser({
     email,
     password,
-    email_confirm: true,
+    email_confirm: false,
   });
 console.log("Usuario auth creado:", authData?.user?.id, email);
     if (authError) {
