@@ -19,6 +19,24 @@ export const handler: Handler = async (event) => {
 
     const name = body?.name?.trim();
 const email = body?.email?.trim().toLowerCase();
+const normalizedEmail = email.trim().toLowerCase();
+
+const { data: existingEmail } = await supabase
+  .from("registered_funeral_home_emails")
+  .select("id")
+  .eq("email", normalizedEmail)
+  .maybeSingle();
+
+if (existingEmail) {
+  return {
+    statusCode: 400,
+    body: JSON.stringify({
+      error:
+        "Este email ya ha sido utilizado para registrar una funeraria en E-Dep.",
+    }),
+  };
+}
+
 const password = body?.password;
 
 const address = body?.address?.trim() || null;
@@ -105,7 +123,9 @@ console.log("Resultado insert funeral_home_users:", {
         body: JSON.stringify({ error: relationError.message }),
       };
     }
-
+await supabase.from("registered_funeral_home_emails").insert({
+  email: normalizedEmail,
+});
     return {
       statusCode: 200,
       body: JSON.stringify({
