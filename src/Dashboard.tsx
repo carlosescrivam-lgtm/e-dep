@@ -1454,8 +1454,23 @@ const { error } = await supabase
   }
 }
 
-  function getPublicUrl(item: PageCard) {
-  return `${siteBase}/p/${item.slug}?token=${item.access_token}`;
+function slugifyPublic(value: string) {
+  return value
+    .toLowerCase()
+    .trim()
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .replace(/[^a-z0-9\s-]/g, "")
+    .replace(/\s+/g, "-")
+    .replace(/-+/g, "-");
+}
+
+function getPublicUrl(item: PageCard) {
+  const funeralHomeSlug = slugifyPublic(
+    item.funeral_home_name || "funeraria"
+  );
+
+  return `${siteBase}/p/${item.slug}/${funeralHomeSlug}`;
 }
 
   async function copyLink(item: PageCard) {

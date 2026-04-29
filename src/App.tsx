@@ -42,6 +42,7 @@ export default function App() {
     <DemoProvider>
       <Routes>
         <Route path="/p/:slug" element={<PublicPage />} />
+        <Route path="/p/:slug/:funeralHomeSlug" element={<PublicPage />} />
         <Route path="/particular" element={<ParticularCreatePage />} />
         <Route path="/particular/success" element={<ParticularSuccessPage />} />
         <Route path="/admin-login" element={<AdminLoginPage />} />
