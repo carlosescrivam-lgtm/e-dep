@@ -64,7 +64,7 @@ const country = body?.country?.trim() || null;
   await supabase.auth.admin.createUser({
     email,
     password,
-    email_confirm: false,
+    email_confirm: true,
   });
 console.log("Usuario auth creado:", authData?.user?.id, email);
     if (authError) {
