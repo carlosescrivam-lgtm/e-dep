@@ -1467,7 +1467,7 @@ function slugifyPublic(value: string) {
 
 function getPublicUrl(item: PageCard) {
   const funeralHomeSlug = slugifyPublic(
-    item.funeral_home_name || "funeraria"
+    item.funeral_home_name || currentFuneralHomeName || "funeraria"
   );
 
   return `${siteBase}/p/${item.slug}/${funeralHomeSlug}`;

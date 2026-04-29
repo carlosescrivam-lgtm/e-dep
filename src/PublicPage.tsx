@@ -42,32 +42,39 @@ const fileInputRef = useRef<HTMLInputElement | null>(null);
 const noticeRef = useRef<HTMLDivElement | null>(null);
 
 
-  async function loadPage() {
-    if (!slug || !token) {
+ async function loadPage() {
+  try {
+    if (!slug) {
       setLoading(false);
       return;
     }
 
-    const res = await fetch(
-      `/.netlify/functions/getPage?slug=${encodeURIComponent(slug)}&token=${encodeURIComponent(token)}`
-    );
+    const url = token
+      ? `/.netlify/functions/getPage?slug=${encodeURIComponent(
+          slug
+        )}&token=${encodeURIComponent(token)}`
+      : `/.netlify/functions/getPage?slug=${encodeURIComponent(slug)}`;
+
+    const res = await fetch(url);
 
     if (!res.ok) {
-      setLoading(false);
+      setPage(null);
+      setMessages([]);
       return;
     }
 
     const json: { page: Page; messages: Condolence[] } = await res.json();
-    console.log("PAGE JSON:", json.page);
-console.log("PHOTO URL:", json.page?.photo_url);
-setPage(json.page);
 
-const next = json.messages ?? [];
-setMessages(next);
-
-
-setLoading(false);
+    setPage(json.page);
+    setMessages(json.messages ?? []);
+  } catch (err) {
+    console.error("Error cargando página pública:", err);
+    setPage(null);
+    setMessages([]);
+  } finally {
+    setLoading(false);
   }
+}
 
 
 async function submitMessage() {
