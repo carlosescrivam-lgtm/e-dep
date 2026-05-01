@@ -1680,9 +1680,7 @@ const planLimitWarningText = !hasCreationAccess
   ? `⚠️ Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`
   : `Te quedan ${pagesRemainingThisMonth} páginas disponibles en tu ciclo actual`;
 
-const isViewingSystemParticulars =
-  isAdminSupportView &&
-  effectiveFuneralHomeId === adminSystemParticularsHome?.id;
+
 
 const canCreatePage =
   isViewingSystemParticulars ||
@@ -1696,7 +1694,9 @@ const canCreatePage =
 
 const effectiveFuneralHomeId =
   isAdminSupportView ? adminViewingFuneralHomeId : currentFuneralHomeId;
-
+const isViewingSystemParticulars =
+  isAdminSupportView &&
+  effectiveFuneralHomeId === adminSystemParticularsHome?.id;
 
 
 const shouldShowExpiredAccessGate =
