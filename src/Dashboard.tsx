@@ -1510,26 +1510,12 @@ async function sharePageQr(item: PageCard) {
   window.open(qrUrl, "_blank");
 }
 
-  async function copyLink(item: PageCard) {
-    try {
-      await navigator.clipboard.writeText(getPublicUrl(item));
-      alert("Enlace copiado.");
-    } catch (err) {
-      console.error(err);
-      alert("No se pudo copiar el enlace.");
-    }
-  }
-
+  
   function openPage(item: PageCard) {
     window.open(getPublicUrl(item), "_blank");
   }
 
-  function openQr(item: PageCard) {
-    const qrUrl = `https://api.qrserver.com/v1/create-qr-code/?size=300x300&data=${encodeURIComponent(
-      getPublicUrl(item)
-    )}`;
-    window.open(qrUrl, "_blank");
-  }
+  
 
 function openFuneralHomeSupportView(homeId: string, homeName: string) {
   setAdminViewingFuneralHomeId(homeId);
