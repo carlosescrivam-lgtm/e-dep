@@ -1478,8 +1478,8 @@ async function sharePageLink(item: PageCard) {
 
   if (navigator.share) {
     await navigator.share({
-      title: item.full_name || "Página de condolencias",
-      text: "Te comparto la página de condolencias.",
+      title: `Condolencias de ${item.full_name || "ser querido"}`,
+      text: `E-Dep, a través de ${item.funeral_home_name || "tu funeraria"}, comparte contigo la página de condolencias en memoria de ${item.full_name || "tu ser querido"}.`, 
       url,
     });
     return;
@@ -1501,7 +1501,7 @@ async function sharePageQr(item: PageCard) {
   if (navigator.share) {
     await navigator.share({
       title: item.full_name || "QR de condolencias",
-      text: "Te comparto el QR de la página de condolencias.",
+      text: `El servicio de condolencias E-Dep, a través de ${item.funeral_home_name || "tu funeraria"}, comparte contigo el QR de esta página.`, 
       url: qrUrl,
     });
     return;
