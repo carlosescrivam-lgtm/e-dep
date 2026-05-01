@@ -62,7 +62,7 @@ export default function Dashboard() {
   const [currentFuneralHomeId, setCurrentFuneralHomeId] = useState<string | null>(null);
   const [currentFuneralHomeName, setCurrentFuneralHomeName] = useState("");
   const [currentSubscriptionStatus, setCurrentSubscriptionStatus] = useState("");
-  
+  const [toast, setToast] = useState<string | null>(null);
   const [search, setSearch] = useState("");
   const [adminSearch, setAdminSearch] = useState("");
   const [adminCountryFilter, setAdminCountryFilter] = useState("");
@@ -1471,6 +1471,43 @@ function getPublicUrl(item: PageCard) {
   );
 
   return `${siteBase}/p/${item.slug}/${funeralHomeSlug}`;
+}
+
+async function sharePageLink(item: PageCard) {
+  const url = getPublicUrl(item);
+
+  if (navigator.share) {
+    await navigator.share({
+      title: item.full_name || "Página de condolencias",
+      text: "Te comparto la página de condolencias.",
+      url,
+    });
+    return;
+  }
+
+  await navigator.clipboard.writeText(url);
+  alert("Enlace copiado.");
+}
+
+function getQrUrl(item: PageCard) {
+  return `https://api.qrserver.com/v1/create-qr-code/?size=600x600&data=${encodeURIComponent(
+    getPublicUrl(item)
+  )}`;
+}
+
+async function sharePageQr(item: PageCard) {
+  const qrUrl = getQrUrl(item);
+
+  if (navigator.share) {
+    await navigator.share({
+      title: item.full_name || "QR de condolencias",
+      text: "Te comparto el QR de la página de condolencias.",
+      url: qrUrl,
+    });
+    return;
+  }
+
+  window.open(qrUrl, "_blank");
 }
 
   async function copyLink(item: PageCard) {
@@ -4817,15 +4854,60 @@ onChange={async (e) => {
                             Enlace público
                           </div>
                           <div
-                            style={{
-                              fontSize: isMobile ? 12 : 13,
-                              color: "#0f172a",
-                              lineHeight: 1.5,
-                              wordBreak: "break-all",
-                            }}
-                          >
-                            {getPublicUrl(item)}
-                          </div>
+  style={{
+    display: "flex",
+    alignItems: "center",
+    gap: 8,
+    background: "#ffffff",
+    border: "1px solid #e2e8f0",
+    borderRadius: 10,
+    padding: "8px 10px",
+  }}
+>
+  <span
+    style={{
+      fontSize: isMobile ? 12 : 13,
+      color: "#0f172a",
+      lineHeight: 1.4,
+      overflow: "hidden",
+      textOverflow: "ellipsis",
+      whiteSpace: "nowrap",
+      flex: 1,
+    }}
+  >
+    {getPublicUrl(item)}
+  </span>
+
+ <button
+  type="button"
+  onClick={async () => {
+  await navigator.clipboard.writeText(getPublicUrl(item));
+  setToast("Enlace copiado");
+
+  setTimeout(() => {
+    setToast(null);
+  }, 2000);
+}}
+  title="Copiar enlace"
+  style={{
+    width: 32,
+    height: 32,
+    border: "1px solid #e2e8f0",
+    background: "#f8fafc",
+    borderRadius: 10,
+    cursor: "pointer",
+    display: "inline-flex",
+    alignItems: "center",
+    justifyContent: "center",
+    color: "#334155",
+    fontSize: 16,
+    fontWeight: 800,
+    flexShrink: 0,
+  }}
+>
+  📋
+</button>
+</div>
                         </div>
 
                     <div
@@ -4835,26 +4917,32 @@ onChange={async (e) => {
     gap: isMobile ? 8 : 10,
   }}
 >
-  <button
-    onClick={() => copyLink(item)}
-    style={ghostButtonStyle}
-  >
-    Copiar enlace
-  </button>
-
-  <button
-                            onClick={() => openQr(item)}
-                            style={ghostButtonStyle}
-                          >
-                            QR
-                          </button>
-
-  <button
+<button
     onClick={() => openPage(item)}
     style={primarySmallButtonStyle}
   >
     Ver página
   </button>
+
+
+
+<button
+  type="button"
+  onClick={() => sharePageLink(item)}
+  style={ghostButtonStyle}
+>
+  Compartir enlace
+</button>
+
+<button
+  type="button"
+  onClick={() => sharePageQr(item)}
+  style={ghostButtonStyle}
+>
+  Compartir QR
+</button>
+
+  
 
                         
 <button
@@ -5346,6 +5434,28 @@ onChange={async (e) => {
           </div>
         </div>
       </div>
+
+{toast && (
+  <div
+    style={{
+      position: "fixed",
+      bottom: 20,
+      left: "50%",
+      transform: "translateX(-50%)",
+      background: "#0f172a",
+      color: "white",
+      padding: "10px 16px",
+      borderRadius: 12,
+      fontSize: 14,
+      fontWeight: 600,
+      boxShadow: "0 10px 25px rgba(0,0,0,0.2)",
+      zIndex: 9999,
+    }}
+  >
+    {toast}
+  </div>
+)}
+
     </div>
   );
 }
