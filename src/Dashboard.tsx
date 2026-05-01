@@ -1682,12 +1682,7 @@ const planLimitWarningText = !hasCreationAccess
 
 
 
-const canCreatePage =
-  isViewingSystemParticulars ||
-  (isTrialActive &&
-    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit)) ||
-  (isPaidActive &&
-    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
+
 
  const isAdminSupportView =
   currentRole === "admin" && !!adminViewingFuneralHomeId;
@@ -1697,6 +1692,13 @@ const effectiveFuneralHomeId =
 const isViewingSystemParticulars =
   isAdminSupportView &&
   effectiveFuneralHomeId === adminSystemParticularsHome?.id;
+
+  const canCreatePage =
+  isViewingSystemParticulars ||
+  (isTrialActive &&
+    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit)) ||
+  (isPaidActive &&
+    (currentPlanLimit === null || pagesThisMonth < currentPlanLimit));
 
 
 const shouldShowExpiredAccessGate =
