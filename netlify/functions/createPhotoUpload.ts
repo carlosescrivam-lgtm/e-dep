@@ -15,17 +15,21 @@ export const handler: Handler = async (event) => {
     const fileName = body?.fileName;
     const mimeType = body?.mimeType;
 
-    if (!slug || !token || !fileName || !mimeType) {
+    if (!slug || !fileName || !mimeType) {
       return { statusCode: 400, body: JSON.stringify({ error: "Missing data" }) };
     }
 
     // validar página + token
-    const { data: page, error: pageError } = await supabase
-      .from("deceased_pages")
-      .select("id, status, closes_at")
-      .eq("slug", slug)
-      .eq("access_token", token)
-      .maybeSingle();
+    let pageQuery = supabase
+  .from("deceased_pages")
+  .select("id, status, closes_at")
+  .eq("slug", slug);
+
+if (token) {
+  pageQuery = pageQuery.eq("access_token", token);
+}
+
+const { data: page, error: pageError } = await pageQuery.maybeSingle();
 
     if (pageError) return { statusCode: 500, body: JSON.stringify({ error: pageError.message }) };
     if (!page) return { statusCode: 404, body: JSON.stringify({ error: "Not found" }) };
