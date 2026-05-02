@@ -82,10 +82,10 @@ async function submitMessage() {
   setIsAnalyzing(true);
 
   try {
-    if (!slug || !token) {
-      alert("Enlace inválido (falta token).");
-      return;
-    }
+  if (!slug) {
+  alert("Enlace inválido.");
+  return;
+}
 
     if (!message.trim()) {
       alert("Escribe un mensaje.");
