@@ -165,19 +165,23 @@ const author_name = body?.author_name ?? null;
 const message = body?.message;
 const photo_path = body?.photo_path ?? null;
 
-    if (!slug || !token || !message || !String(message).trim()) {
+    if (!slug || !message || !String(message).trim()) {
   return {
     statusCode: 400,
     body: JSON.stringify({ error: "Faltan datos obligatorios." }),
   };
 }
 
-    const { data: page, error: pageError } = await supabase
+    let pageQuery = supabase
   .from("deceased_pages")
   .select("id, status, closes_at")
-  .eq("slug", slug)
-  .eq("access_token", token)
-  .maybeSingle();
+  .eq("slug", slug);
+
+if (token) {
+  pageQuery = pageQuery.eq("access_token", token);
+}
+
+const { data: page, error: pageError } = await pageQuery.maybeSingle();
 
     if (pageError) {
       return {
