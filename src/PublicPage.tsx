@@ -198,10 +198,12 @@ if (data?.moderation_status === "rejected") {
     await loadPage();
     setShowForm(false);
   } catch (err: any) {
-  console.error(err);
-  alert(err?.message || "No se pudo enviar el mensaje.");
-} finally {
-  setIsAnalyzing(false);
+  console.error("Error enviando mensaje:", err);
+  alert(
+    err?.message === "Failed to fetch"
+      ? "No se pudo subir la imagen. Prueba con una foto más ligera o haz una captura de pantalla y sube esa imagen."
+      : err?.message || "No se pudo enviar el mensaje."
+  );
 }
 }
  
@@ -532,8 +534,20 @@ onChange={async (e) => {
 
     setPhotoFile(compressed as File);
     setPhotoPreview(URL.createObjectURL(compressed));
- } catch (err) {
-  console.error("No se pudo comprimir la imagen, se usará original:", err);
+} catch (err) {
+  console.error("No se pudo comprimir la imagen:", err);
+
+  const maxFallbackSize = 4 * 1024 * 1024; // 4MB
+
+  if (f.size > maxFallbackSize) {
+    alert(
+      "La imagen es demasiado grande para subirla desde el móvil. Prueba a hacer una captura de pantalla de la foto o selecciona una imagen más ligera."
+    );
+    setPhotoFile(null);
+    setPhotoPreview("");
+    if (fileInputRef.current) fileInputRef.current.value = "";
+    return;
+  }
 
   setPhotoFile(f);
   setPhotoPreview(URL.createObjectURL(f));
