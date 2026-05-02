@@ -532,12 +532,12 @@ onChange={async (e) => {
 
     setPhotoFile(compressed as File);
     setPhotoPreview(URL.createObjectURL(compressed));
-  } catch (err) {
-    alert("No se pudo comprimir la imagen. Prueba con otra.");
-    setPhotoFile(null);
-    setPhotoPreview("");
-    if (fileInputRef.current) fileInputRef.current.value = "";
-  }
+ } catch (err) {
+  console.error("No se pudo comprimir la imagen, se usará original:", err);
+
+  setPhotoFile(f);
+  setPhotoPreview(URL.createObjectURL(f));
+}
 }}
 
 />
