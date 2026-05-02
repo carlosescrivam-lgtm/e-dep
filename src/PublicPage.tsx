@@ -201,7 +201,7 @@ if (data?.moderation_status === "rejected") {
   console.error("Error enviando mensaje:", err);
   alert(
     err?.message === "Failed to fetch"
-      ? "No se pudo subir la imagen. Prueba con una foto más ligera o haz una captura de pantalla y sube esa imagen."
+      ? "No se pudo subir la imagen. Recuerda que el tamaño máximo recomendado es 3MB. Prueba con una foto más ligera."
       : err?.message || "No se pudo enviar el mensaje."
   );
 }
@@ -541,7 +541,7 @@ onChange={async (e) => {
 
   if (f.size > maxFallbackSize) {
     alert(
-      "La imagen es demasiado grande para subirla desde el móvil. Prueba a hacer una captura de pantalla de la foto o selecciona una imagen más ligera."
+      "La imagen es demasiado grande. Tamaño máximo recomendado: 3MB. Prueba con una foto más ligera."
     );
     setPhotoFile(null);
     setPhotoPreview("");
@@ -555,6 +555,18 @@ onChange={async (e) => {
 }}
 
 />
+
+<div
+  style={{
+    marginTop: 6,
+    fontSize: 12,
+    color: "#64748b",
+    lineHeight: 1.5,
+  }}
+>
+  Puedes añadir una foto al mensaje. Tamaño máximo recomendado: 3MB.
+  Si la imagen es muy grande, prueba con una captura de pantalla o una foto más ligera.
+</div>
 
 <div
   style={{
