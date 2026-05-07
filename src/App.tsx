@@ -11,7 +11,7 @@ import DemoLoginPage from "./DemoLoginPage";
 import DemoDashboard from "./DemoDashboard";
 import { DemoProvider } from "./DemoContext";
 import DemoPublicPage from "./DemoPublicPage";
-
+import AuthNew from "./AuthNew";
 import {
   AvisoLegalPage,
   PrivacidadPage,
@@ -55,7 +55,7 @@ export default function App() {
 <Route path="/cookies" element={<CookiesPage />} />
 <Route path="/condiciones" element={<CondicionesPage />} />
 <Route path="/contacto" element={<ContactoPage />} />
-        <Route path="/*" element={loggedIn ? <Dashboard /> : <Auth />} />
+        <Route path="/*" element={loggedIn ? <Dashboard /> : <AuthNew />} />
       </Routes>
     </DemoProvider>
   );
