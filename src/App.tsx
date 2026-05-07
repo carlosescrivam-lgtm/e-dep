@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { Routes, Route } from "react-router-dom";
 import { supabase } from "./lib/supabaseClient";
-import Auth from "./Auth";
+// import Auth from "./Auth";
 import Dashboard from "./Dashboard";
 import PublicPage from "./PublicPage";
 import ParticularCreatePage from "./ParticularCreatePage";
