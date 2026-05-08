@@ -807,6 +807,57 @@ if (entryView === "chooser") {
 
           <section
             style={{
+              padding: "12px 0 46px",
+            }}
+          >
+            <div style={sectionHeaderStyle}>
+              <div style={eyebrowStyle}>Presentación</div>
+
+              <h2 style={sectionTitleStyle}>
+                Descubre cómo funciona E-Dep
+              </h2>
+
+              <p style={sectionTextStyle}>
+                Una breve presentación visual del servicio y de la experiencia
+                que ofrece a funerarias y familias.
+              </p>
+            </div>
+
+            <div
+              style={{
+                display: "flex",
+                justifyContent: "center",
+              }}
+            >
+              <div
+                style={{
+                  width: "100%",
+                  maxWidth: 420,
+                  borderRadius: 28,
+                  overflow: "hidden",
+                  boxShadow: "0 24px 60px rgba(15,23,42,0.18)",
+                  background: "#000",
+                }}
+              >
+                <iframe
+                  width="100%"
+                  height="720"
+                  src="https://www.youtube.com/embed/t0QIs9xg9Ek"
+                  title="Presentación E-Dep"
+                  frameBorder="0"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowFullScreen
+                  style={{
+                    display: "block",
+                    border: "none",
+                  }}
+                />
+              </div>
+            </div>
+          </section>
+
+          <section
+            style={{
               margin: "46px 0 36px",
               padding: 32,
               borderRadius: 30,
