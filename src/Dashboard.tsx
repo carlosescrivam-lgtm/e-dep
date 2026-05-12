@@ -108,6 +108,7 @@ const [isMobile, setIsMobile] = useState(
 );
 
 const [currentSubscriptionPlan, setCurrentSubscriptionPlan] = useState("");
+
 const [currentTrialUntil, setCurrentTrialUntil] = useState<string | null>(null);
 const [currentSubscriptionStart, setCurrentSubscriptionStart] = useState<string | null>(null);
 const [currentSubscriptionUntil, setCurrentSubscriptionUntil] = useState<string | null>(null);
@@ -1522,7 +1523,7 @@ function openFuneralHomeSupportView(homeId: string, homeName: string) {
   setAdminViewingFuneralHomeName(homeName);
 }
 
-async function startCheckout(plan: "basic" | "pro" | "unlimited") {
+async function startCheckout(plan: "starter" | "basic" | "pro" | "unlimited") {
   try {
     const res = await fetch("/.netlify/functions/createCheckoutSession", {
       method: "POST",
@@ -1637,7 +1638,7 @@ const currentPlanLimit = !hasCreationAccess
   : normalizedPlan === "basic"
   ? 10
   : 0;
-
+    const isCurrentStarterPlan = normalizedPlan === "starter" && isPaidActive;
     const isCurrentBasicPlan = normalizedPlan === "basic" && isPaidActive;
 const isCurrentProPlan = normalizedPlan === "pro" && isPaidActive;
 const isCurrentUnlimitedPlan = normalizedPlan === "unlimited" && isPaidActive;
@@ -1733,6 +1734,12 @@ const shouldShowExpiredAccessGate =
 
 const adminTrialCount = adminFuneralHomes.filter(
   (home) => (home.subscription_status || "").toLowerCase() === "trial"
+).length;
+
+const adminStarterCount = adminFuneralHomes.filter(
+  (home) =>
+    (home.subscription_status || "").toLowerCase() === "active" &&
+    (home.subscription_plan || "").toLowerCase() === "starter"
 ).length;
 
 const adminBasicCount = adminFuneralHomes.filter(
@@ -2175,6 +2182,7 @@ if (currentRole === "admin" && !isAdminSupportView) {
     <div style={{ fontWeight: 700, marginBottom: 6 }}>Planes</div>
 
     <div>Trial: {adminTrialCount}</div>
+    <div>Starter: {adminStarterCount}</div>
     <div>Basic: {adminBasicCount}</div>
     <div>Pro: {adminProCount}</div>
     <div>Ilimitado: {adminUnlimitedCount}</div>
@@ -3925,16 +3933,18 @@ const isActive =
     >
       <div style={{ fontSize: 16, fontWeight: 800, color: "#0f172a", marginBottom: 6 }}>
         {isTrialActive
-          ? "Prueba gratuita activa"
-          : currentSubscriptionStatus === "active"
-          ? currentSubscriptionPlan === "basic"
-            ? "Plan Básico activo"
-            : currentSubscriptionPlan === "pro"
-            ? "Plan Profesional activo"
-            : currentSubscriptionPlan === "unlimited"
-            ? "Plan Ilimitado activo"
-            : "Plan activo"
-          : "Sin suscripción activa"}
+  ? "Prueba gratuita activa"
+  : currentSubscriptionStatus === "active"
+  ? currentSubscriptionPlan === "starter"
+    ? "Plan Inicio activo"
+    : currentSubscriptionPlan === "basic"
+    ? "Plan Básico activo"
+    : currentSubscriptionPlan === "pro"
+    ? "Plan Profesional activo"
+    : currentSubscriptionPlan === "unlimited"
+    ? "Plan Ilimitado activo"
+    : "Plan activo"
+  : "Sin suscripción activa"}
       </div>
 
       <div style={{ fontSize: 13, color: "#64748b", marginBottom: 6 }}>
@@ -4015,6 +4025,18 @@ const isActive =
           {planLimitWarningText}
         </div>
       </div>
+
+    <button
+  onClick={() => startCheckout("starter")}
+  disabled={isCurrentStarterPlan}
+  style={{
+    ...planButtonStyle,
+    opacity: isCurrentStarterPlan ? 0.55 : 1,
+    cursor: isCurrentStarterPlan ? "not-allowed" : "pointer",
+  }}
+>
+  {isCurrentStarterPlan ? "Plan actual" : "Plan Inicio"}
+</button>
 
       <div style={{ display: "flex", gap: 10, flexWrap: "wrap" }}>
         <button

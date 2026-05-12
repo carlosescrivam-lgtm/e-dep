@@ -268,40 +268,24 @@ if (entryView === "chooser") {
   }}
 >
   <button
-    type="button"
-    onClick={() => {
-      window.location.href = "/admin-login";
-    }}
-    style={{
-      background: "none",
-      border: "none",
-      padding: 0,
-      color: "#334155",
-      cursor: "pointer",
-      fontSize: 13,
-      fontWeight: 700,
-    }}
-  >
-    Acceso admin
-  </button>
+  type="button"
+  onClick={() => {
+    window.location.href = "/admin-login";
+  }}
+  style={topLinkStyle}
+>
+  Acceso admin
+</button>
 
   <button
-    type="button"
-    onClick={() => {
-      window.location.href = "/demo-login";
-    }}
-    style={{
-      background: "none",
-      border: "none",
-      padding: 0,
-      color: "#334155",
-      cursor: "pointer",
-      fontSize: 13,
-      fontWeight: 700,
-    }}
-  >
-    Acceso demo
-  </button>
+  type="button"
+  onClick={() => {
+    window.location.href = "/demo-login";
+  }}
+  style={topLinkStyle}
+>
+  Acceso demo
+</button>
 </div>
 
         {showInstall && (
@@ -387,45 +371,23 @@ if (entryView === "chooser") {
         </p>
 
         <button
-          onClick={() => {
-            setEntryView("funeral");
-            setMsg("");
-          }}
-          style={{
-            width: "100%",
-            border: "none",
-            borderRadius: 16,
-            padding: "15px 18px",
-            background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
-            color: "white",
-            fontWeight: 700,
-            fontSize: 15,
-            cursor: "pointer",
-            marginBottom: 12,
-          }}
-        >
-          Soy empresa funeraria
-        </button>
+  onClick={() => {
+    setEntryView("funeral");
+    setMsg("");
+  }}
+  style={primaryButtonStyle}
+>
+  Soy empresa funeraria
+</button>
 
         <button
-          onClick={() => {
-            window.location.href = "/particular";
-          }}
-          style={{
-            width: "100%",
-            border: "1px solid #dbe3ee",
-            borderRadius: 16,
-            padding: "13px 18px",
-            background: "white",
-            color: "#0f172a",
-            fontWeight: 700,
-            fontSize: 14,
-            cursor: "pointer",
-            marginBottom: 28,
-          }}
-        >
-          Soy particular
-        </button>
+  onClick={() => {
+    window.location.href = "/particular";
+  }}
+  style={secondaryButtonStyle}
+>
+  Soy particular
+</button>
 
         <div style={{ marginTop: 10 }}>
           <div

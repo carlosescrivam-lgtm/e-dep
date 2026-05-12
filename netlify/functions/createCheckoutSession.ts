@@ -11,7 +11,8 @@ const supabase = createClient(
   process.env.SUPABASE_SERVICE_ROLE_KEY!
 );
 
-const PRICE_BY_PLAN: Record<string, string | undefined> = {
+const priceMap: Record<string, string | undefined> = {
+  starter: process.env.STRIPE_PRICE_STARTER,
   basic: process.env.STRIPE_PRICE_BASIC,
   pro: process.env.STRIPE_PRICE_PRO,
   unlimited: process.env.STRIPE_PRICE_UNLIMITED,
@@ -33,13 +34,14 @@ export const handler: Handler = async (event) => {
       };
     }
 
-    const priceId = PRICE_BY_PLAN[plan];
-    if (!priceId) {
-      return {
-        statusCode: 400,
-        body: JSON.stringify({ error: "Plan no válido." }),
-      };
-    }
+  const priceMap: Record<string, string | undefined> = {
+  starter: process.env.STRIPE_PRICE_STARTER,
+  basic: process.env.STRIPE_PRICE_BASIC,
+  pro: process.env.STRIPE_PRICE_PRO,
+  unlimited: process.env.STRIPE_PRICE_UNLIMITED,
+};
+
+const priceId = priceMap[plan];
 
     const { data: funeralHome, error: homeError } = await supabase
       .from("funeral_homes")
