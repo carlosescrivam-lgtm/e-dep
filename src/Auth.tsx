@@ -817,3 +817,35 @@ const inputStyle: React.CSSProperties = {
   boxSizing: "border-box",
   color: "#0f172a",
 };
+const topLinkStyle: React.CSSProperties = {
+  border: "none",
+  background: "transparent",
+  color: "#334155",
+  fontSize: 14,
+  fontWeight: 700,
+  cursor: "pointer",
+  textDecoration: "none",
+};
+
+const primaryButtonStyle: React.CSSProperties = {
+  border: "none",
+  background: "linear-gradient(135deg, #0f172a 0%, #334155 100%)",
+  color: "white",
+  borderRadius: 14,
+  padding: "12px 16px",
+  fontSize: 15,
+  fontWeight: 800,
+  cursor: "pointer",
+  boxShadow: "0 14px 30px rgba(15,23,42,0.18)",
+};
+
+const secondaryButtonStyle: React.CSSProperties = {
+  border: "1px solid #dbe3ee",
+  background: "white",
+  color: "#0f172a",
+  borderRadius: 14,
+  padding: "12px 16px",
+  fontSize: 15,
+  fontWeight: 800,
+  cursor: "pointer",
+};
